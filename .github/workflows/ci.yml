@@ -24,15 +24,16 @@ jobs:
 
     steps:
       - name: Descargar el repositorio
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Instalar pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11.21.0
+        # Sin `version`: la action lee el campo `packageManager` del
+        # package.json de la raíz. Así la versión de pnpm se declara en un solo
+        # lugar y el CI no puede quedar desalineado con el entorno local.
+        uses: pnpm/action-setup@v6
 
       - name: Instalar Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           # Cachea el store de pnpm entre corridas: sin esto cada job vuelve a
@@ -68,7 +69,7 @@ jobs:
 
       - name: Guardar el reporte como artefacto
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reporte-eslint
           path: reports/eslint-report.json
