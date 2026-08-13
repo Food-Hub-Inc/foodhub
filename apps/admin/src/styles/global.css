@@ -1,0 +1,79 @@
+@import 'tailwindcss';
+@import '@heroui/styles';
+
+/* Plus Jakarta Sans, en los pesos declarados por la guía visual (400 a 800).
+   Se sirve desde node_modules y no desde el CDN de Google Fonts: el panel debe
+   abrir sin depender de terceros y sin filtrar la IP de los administradores a
+   un servicio externo en cada carga. */
+@import '@fontsource/plus-jakarta-sans/400.css';
+@import '@fontsource/plus-jakarta-sans/500.css';
+@import '@fontsource/plus-jakarta-sans/600.css';
+@import '@fontsource/plus-jakarta-sans/700.css';
+@import '@fontsource/plus-jakarta-sans/800.css';
+
+/* ==========================================================================
+   FoodHub - Tokens de diseño del panel de administración
+   --------------------------------------------------------------------------
+   Transcripción literal de la "Guía visual del sistema" (Etapa 5, sección 00
+   del documento de maquetación de pantallas). Los valores NO se eligen acá:
+   se copian del documento de diseño para que la interfaz implementada y los
+   mockups aprobados coincidan.
+
+   Tailwind v4 no usa tailwind.config.js: el tema se declara con @theme y cada
+   token queda disponible como utilidad (bg-primary, text-secondary, rounded-md).
+   ========================================================================== */
+
+@theme {
+  /* --- Paleta de colores (guía visual, sección 01) ----------------------- */
+  --color-primary: #ec6829; /* botones primarios, íconos activos */
+  --color-primary-dark: #c8521a; /* estados pressed / hover */
+  --color-secondary: #6c757d; /* color de apoyo (logo) */
+
+  --color-background: #fafaf7; /* fondo general de la app */
+  --color-surface: #ffffff; /* fondo de cards y modales */
+  --color-border: #e6e1dc; /* bordes de inputs y dividers */
+
+  --color-text-primary: #1f1a17; /* texto principal */
+  --color-text-secondary: #57514c; /* subtítulos */
+  --color-text-disabled: #bcb6b0; /* texto deshabilitado */
+
+  --color-error: #d92d20; /* errores y acciones destructivas */
+  --color-success: #12815a; /* confirmaciones */
+  --color-warning: #b4540a; /* alertas / últimas unidades */
+
+  /* --- Tipografía (guía visual, sección 02) ------------------------------ */
+  --font-sans:
+    'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --text-h1: 1.5rem; /* 24px / peso 800 - headers principales */
+  --text-h2: 1.125rem; /* 18px / peso 700 - subtítulos y card titles */
+  --text-h3: 0.9375rem; /* 15px / peso 700 - sección menor */
+  --text-body: 0.875rem; /* 14px / peso 400 - texto de párrafos */
+  --text-label: 0.75rem; /* 12px / peso 600 - labels de formularios */
+  --text-caption: 0.6875rem; /* 11px / peso 500 - timestamps y notas */
+
+  /* --- Radios (guía visual, sección 04: múltiplos de 4px) ---------------- */
+  --radius-xs: 4px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Foco siempre visible: quien navega con teclado tiene que saber dónde
+     está parado. Se estiliza, nunca se elimina. */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}

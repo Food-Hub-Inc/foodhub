@@ -1,0 +1,40 @@
+{
+  // ===========================================================================
+  //  FoodHub - Opciones de compilacion compartidas por todo el monorepo.
+  //  Cada workspace extiende este archivo y solo declara lo propio de su
+  //  runtime (DOM para admin, React Native para mobile, Node para api).
+  //
+  //  El bloque de chequeos estrictos no es decorativo: `strict` +
+  //  `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes` obligan a
+  //  contemplar los casos nulos en tiempo de compilacion, que es donde salen
+  //  mas barato que en produccion.
+  // ===========================================================================
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "exactOptionalPropertyTypes": true,
+
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "incremental": true,
+    "noEmit": true
+  },
+  "exclude": ["node_modules", "dist", "build", "coverage", ".expo", ".turbo"]
+}

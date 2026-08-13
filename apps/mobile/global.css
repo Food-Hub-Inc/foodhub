@@ -1,0 +1,60 @@
+@import 'tailwindcss';
+@import 'uniwind';
+@import 'heroui-native/styles';
+@source './node_modules/heroui-native/lib';
+
+/* ==========================================================================
+   FoodHub - Tokens de diseño de la aplicación móvil
+   --------------------------------------------------------------------------
+   Los MISMOS valores que usa el panel de administración
+   (apps/admin/src/styles/global.css), transcritos de la "Guía visual del
+   sistema" de la Etapa 5. Ambas aplicaciones comparten identidad visual
+   porque comparten los tokens, no porque alguien los replique a ojo.
+
+   Cualquier cambio de color o tipografía debe hacerse en los dos archivos y
+   quedar reflejado antes en el documento de diseño.
+   ========================================================================== */
+
+@theme {
+  /* --- Paleta de colores (guía visual, sección 01) ----------------------- */
+  --color-primary: #ec6829;
+  --color-primary-dark: #c8521a;
+  --color-secondary: #6c757d;
+
+  --color-background: #fafaf7;
+  --color-surface: #ffffff;
+  --color-border: #e6e1dc;
+
+  --color-text-primary: #1f1a17;
+  --color-text-secondary: #57514c;
+  --color-text-disabled: #bcb6b0;
+
+  --color-error: #d92d20;
+  --color-success: #12815a;
+  --color-warning: #b4540a;
+
+  /* --- Tipografía (guía visual, sección 02) ------------------------------ */
+  /* Los nombres de familia corresponden a los que registra expo-font en
+     app/_layout.tsx; en React Native no existe el fallback por peso numérico
+     de la web: cada peso es una familia distinta. */
+  --font-sans: 'PlusJakartaSans_400Regular';
+  --font-medium: 'PlusJakartaSans_500Medium';
+  --font-semibold: 'PlusJakartaSans_600SemiBold';
+  --font-bold: 'PlusJakartaSans_700Bold';
+  --font-extrabold: 'PlusJakartaSans_800ExtraBold';
+
+  --text-h1: 24px;
+  --text-h2: 18px;
+  --text-h3: 15px;
+  --text-body: 14px;
+  --text-label: 12px;
+  --text-caption: 11px;
+
+  /* --- Radios (guía visual, sección 04: múltiplos de 4px) ---------------- */
+  --radius-xs: 4px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+}

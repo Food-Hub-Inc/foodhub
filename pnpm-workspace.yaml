@@ -1,0 +1,41 @@
+# Workspaces del monorepo FoodHub.
+# apps/*     -> aplicaciones desplegables (mobile, admin, api)
+# packages/* -> codigo compartido entre aplicaciones (config, db, shared)
+packages:
+  - "apps/*"
+  - "packages/*"
+
+allowBuilds:
+  esbuild: true
+
+# Versiones unificadas para todo el monorepo. Al declararlas aca evitamos que
+# dos workspaces instalen versiones distintas del mismo paquete, lo que en
+# React Native provoca errores de "duplicate module" dificiles de diagnosticar.
+catalog:
+  # --- Lenguaje y tooling comun -------------------------------------------
+  # TypeScript se fija en la linea 6.x a proposito: typescript-eslint 8.x
+  # declara "typescript >=4.8.4 <6.1.0" como peer. TypeScript 7 todavia no
+  # expone la API programatica estable que necesita el linter (llega en 7.1).
+  typescript: 6.0.3
+  eslint: 10.8.1
+  prettier: 3.9.6
+  typescript-eslint: 8.67.0
+
+  # --- Runtime compartido --------------------------------------------------
+  zod: 4.4.3
+  "@supabase/supabase-js": 2.112.3
+
+  # --- Persistencia --------------------------------------------------------
+  drizzle-orm: 0.45.2
+  drizzle-kit: 0.31.10
+  postgres: 3.4.9
+
+minimumReleaseAgeExclude:
+  - globals@17.11.0
+
+# Paquetes autorizados a ejecutar scripts de instalacion. pnpm los bloquea por
+# defecto para que una dependencia comprometida no pueda correr codigo
+# arbitrario durante `pnpm install`. Se habilitan solo los imprescindibles:
+# esbuild compila su binario nativo y sin el no funcionan Vite ni drizzle-kit.
+onlyBuiltDependencies:
+  - esbuild

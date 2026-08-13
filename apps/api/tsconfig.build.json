@@ -1,0 +1,9 @@
+{
+  // Configuracion usada solo por `pnpm build`: a diferencia del tsconfig de
+  // desarrollo, si emite JavaScript y excluye las pruebas del bundle.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false
+  },
+  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts", "src/**/__tests__/**"]
+}

@@ -1,0 +1,17 @@
+node_modules
+dist
+build
+coverage
+.turbo
+.expo
+android
+ios
+pnpm-lock.yaml
+reports
+packages/db/drizzle
+*.drawio
+
+# Skills de agente. Las importadas con `npx skills` son contenido de terceros:
+# reformatearlas generaria ruido en cada `npx skills update`. Se excluye el
+# directorio completo por coherencia con el ignore de eslint.config.mjs.
+.claude/skills

@@ -1,0 +1,11 @@
+{
+  "name": "@foodhub/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Presets de TypeScript compartidos por los workspaces de FoodHub.",
+  "files": [
+    "tsconfig.node.json",
+    "tsconfig.react.json",
+    "tsconfig.react-native.json"
+  ]
+}

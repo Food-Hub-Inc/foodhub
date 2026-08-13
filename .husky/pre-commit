@@ -1,0 +1,3 @@
+# Corre ESLint y Prettier SOLO sobre los archivos en staging (lint-staged).
+# Analizar el repositorio entero en cada commit haria el hook inusable.
+pnpm exec lint-staged

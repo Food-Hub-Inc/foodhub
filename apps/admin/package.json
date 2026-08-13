@@ -1,0 +1,41 @@
+{
+  "name": "@foodhub/admin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Panel de administración web de FoodHub. React + Vite + HeroUI v3.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@fontsource/plus-jakarta-sans": "5.3.0",
+    "@foodhub/shared": "workspace:*",
+    "@heroui/react": "3.2.4",
+    "@react-aria/i18n": "^3.13.1",
+    "@react-aria/ssr": "^3.10.1",
+    "@react-aria/utils": "^3.34.1",
+    "@supabase/supabase-js": "catalog:",
+    "@tanstack/react-query": "5.101.4",
+    "react": "19.2.8",
+    "react-aria": "^3.51.0",
+    "react-aria-components": "^1.20.0",
+    "react-dom": "19.2.8",
+    "react-router-dom": "7.18.2",
+    "zod": "catalog:",
+    "zustand": "5.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "6.0.5",
+    "tailwindcss": "4.3.3",
+    "typescript": "catalog:",
+    "vite": "8.2.1",
+    "vitest": "4.1.10"
+  }
+}

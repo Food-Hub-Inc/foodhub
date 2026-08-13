@@ -1,0 +1,33 @@
+# El equipo trabaja en Windows, macOS y Linux. Sin esta normalización, cada
+# checkout en un sistema distinto genera un diff completo por los fines de
+# línea, y `prettier --check` falla en el CI (que corre en Linux con LF).
+#
+# `text=auto eol=lf` guarda todo en LF dentro del repositorio y lo entrega en LF
+# en cualquier sistema operativo, en coherencia con `endOfLine: 'lf'` de
+# prettier.config.mjs.
+* text=auto eol=lf
+
+# Los scripts de shell fallan si llevan CRLF.
+*.sh text eol=lf
+
+# Los .bat y .cmd de Windows sí necesitan CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binarios: git no debe tocarlos.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.keystore binary
+*.jks binary
+
+# El lockfile se genera: se marca para que no ensucie los diffs de los PR.
+pnpm-lock.yaml linguist-generated=true -diff

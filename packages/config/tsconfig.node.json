@@ -1,0 +1,14 @@
+{
+  // Preset para codigo que corre en Node: apps/api y los paquetes compartidos.
+  // No incluye la libreria DOM a proposito, para que un `document.querySelector`
+  // escrito por error en el backend falle al compilar y no en produccion.
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "verbatimModuleSyntax": false
+  }
+}

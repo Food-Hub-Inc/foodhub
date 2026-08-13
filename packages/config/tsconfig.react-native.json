@@ -1,0 +1,16 @@
+{
+  // Preset para la aplicacion movil (apps/mobile, Expo + React Native).
+  // Se apoya en expo/tsconfig.base, que aporta los tipos de las APIs nativas
+  // y la resolucion de modulos de Metro.
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    // React Native no expone `exactOptionalPropertyTypes` de forma compatible
+    // con las props opcionales de sus componentes; se relaja solo aca.
+    "exactOptionalPropertyTypes": false
+  }
+}

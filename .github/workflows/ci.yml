@@ -1,0 +1,75 @@
+name: CI
+
+# Se ejecuta en cada pull request hacia develop o main, y en los push directos
+# a esas ramas. Las reglas de versionado (punto 1.2.4) exigen PR para todo
+# merge a develop, así que en la práctica todo cambio pasa por acá antes de
+# integrarse.
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+# Si se empuja un commit nuevo a una rama con CI en curso, se cancela la
+# corrida anterior: no tiene sentido gastar minutos en un commit ya superado.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  calidad:
+    name: Análisis estático y tipos
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v5
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.21.0
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          # Cachea el store de pnpm entre corridas: sin esto cada job vuelve a
+          # descargar ~900 paquetes.
+          cache: pnpm
+
+      - name: Instalar dependencias
+        # --frozen-lockfile falla si el pnpm-lock.yaml no coincide con los
+        # package.json. Evita que una dependencia entre al repositorio sin
+        # quedar registrada en el lockfile.
+        run: pnpm install --frozen-lockfile
+
+      - name: Verificar formato (Prettier)
+        run: pnpm run format:check
+
+      - name: Análisis estático (ESLint)
+        # --max-warnings 0 hace que una advertencia también corte el build. Es
+        # deliberado: si las advertencias no frenan nada, se acumulan hasta que
+        # nadie las lee.
+        run: pnpm exec eslint . --max-warnings 0
+
+      - name: Verificación de tipos
+        run: pnpm run typecheck
+
+      - name: Pruebas
+        run: pnpm run test
+
+      - name: Publicar reporte de ESLint
+        # Se ejecuta incluso si el paso de ESLint falló: el reporte es
+        # justamente lo que hay que mirar cuando falla.
+        if: always()
+        run: pnpm exec eslint . --format json --output-file reports/eslint-report.json || true
+
+      - name: Guardar el reporte como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-eslint
+          path: reports/eslint-report.json
+          retention-days: 14

@@ -1,0 +1,3 @@
+# Valida el mensaje contra la convencion definida en la Etapa 2:
+#   tipo(modulo): descripcion breve en minusculas
+pnpm exec commitlint --edit "$1"

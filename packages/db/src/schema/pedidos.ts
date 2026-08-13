@@ -1,0 +1,182 @@
+import { sql } from 'drizzle-orm';
+import {
+  check,
+  index,
+  integer,
+  numeric,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
+import { estadoPedidoEnum, origenTransicionEnum } from './enums.js';
+import { motivoCancelacion } from './catalogo.js';
+import { cocinero, usuario } from './usuarios.js';
+import { publicacion } from './publicaciones.js';
+
+/**
+ * Modulo de pedidos: el proceso transaccional central del sistema
+ * (alcance 2.2.2.2.2).
+ */
+
+/**
+ * Diagrama: Pedido.
+ *
+ * `estadoPedidoActual` es una columna desnormalizada respecto de
+ * historial_estado_pedido: el estado vigente se podria derivar de la ultima
+ * transicion, pero el listado de pedidos filtra por estado en cada carga y
+ * resolverlo con una subconsulta por fila no escala.
+ * historial_estado_pedido conserva la trazabilidad completa.
+ */
+export const pedido = pgTable(
+  'pedido',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+
+    /**
+     * Identificador visible para el usuario (ej. "FH-000123"). Se muestra en
+     * la app y en el chat: un UUID no es dictable por telefono ni memorizable.
+     */
+    numeroPedido: varchar('numero_pedido', { length: 20 }).notNull().unique(),
+
+    clientePedidoId: uuid('cliente_pedido_id')
+      .notNull()
+      .references(() => usuario.id, { onDelete: 'restrict' }),
+    cocineroPedidoId: uuid('cocinero_pedido_id')
+      .notNull()
+      .references(() => cocinero.usuarioId, { onDelete: 'restrict' }),
+
+    estadoPedidoActual: estadoPedidoEnum('estado_pedido_actual')
+      .notNull()
+      .default('CREADO'),
+
+    instruccionesCliente: varchar('instrucciones_cliente', { length: 300 }),
+    tiempoEstimadoPreparacionMin: integer('tiempo_estimado_preparacion_min'),
+    tiempoFinalPreparacionMin: integer('tiempo_final_preparacion_min'),
+
+    // --- Rechazo / cancelacion ----------------------------------------------
+    origenRechazo: origenTransicionEnum('origen_rechazo'),
+    motivoRechazo: text('motivo_rechazo'),
+    usuarioOrigenRechazoId: uuid('usuario_origen_rechazo_id').references(
+      () => usuario.id,
+      { onDelete: 'set null' },
+    ),
+    motivoCancelacionId: uuid('motivo_cancelacion_id').references(
+      () => motivoCancelacion.id,
+      { onDelete: 'restrict' },
+    ),
+
+    fechaCreacion: timestamp('fecha_creacion', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    fechaUltimaTransicion: timestamp('fecha_ultima_transicion', {
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // Un pedido rechazado sin motivo deja al cliente sin explicacion: la base
+    // lo impide, ademas de la validacion de zod en la API.
+    check(
+      'pedido_rechazo_con_motivo',
+      sql`${t.estadoPedidoActual} <> 'RECHAZADO' or ${t.motivoCancelacionId} is not null`,
+    ),
+    // Nadie puede pedirse a si mismo.
+    check(
+      'pedido_partes_distintas',
+      sql`${t.clientePedidoId} <> ${t.cocineroPedidoId}`,
+    ),
+    // Indices compuestos: ambos listados (el del cliente y el del cocinero)
+    // filtran por estado y ordenan por fecha descendente.
+    index('pedido_cliente_idx').on(
+      t.clientePedidoId,
+      t.estadoPedidoActual,
+      t.fechaCreacion.desc(),
+    ),
+    index('pedido_cocinero_idx').on(
+      t.cocineroPedidoId,
+      t.estadoPedidoActual,
+      t.fechaCreacion.desc(),
+    ),
+    // Usado por el job de expiracion automatica (US-PED-10), que busca los
+    // pedidos en CREADO cuya fecha supera el limite parametrizado.
+    index('pedido_expiracion_idx')
+      .on(t.fechaCreacion)
+      .where(sql`${t.estadoPedidoActual} = 'CREADO'`),
+  ],
+);
+
+/**
+ * Diagrama: ItemPedido.
+ *
+ * Los campos *Snapshot congelan el plato tal como estaba al confirmar el
+ * pedido. Si el cocinero cambia el precio o borra la publicacion despues, el
+ * historial del cliente y el total cobrado siguen siendo los originales.
+ * Sin este congelamiento el importe de un pedido cerrado podria cambiar solo.
+ */
+export const itemPedido = pgTable(
+  'item_pedido',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    pedidoId: uuid('pedido_id')
+      .notNull()
+      .references(() => pedido.id, { onDelete: 'cascade' }),
+    publicacionId: uuid('publicacion_id')
+      .notNull()
+      .references(() => publicacion.id, { onDelete: 'restrict' }),
+    cantidad: integer('cantidad').notNull(),
+    precioUnitarioSnapshot: numeric('precio_unitario_snapshot', {
+      precision: 12,
+      scale: 2,
+    }).notNull(),
+    nombrePlatoSnapshot: varchar('nombre_plato_snapshot', {
+      length: 120,
+    }).notNull(),
+    imagenSnapshot: text('imagen_snapshot'),
+  },
+  (t) => [
+    check('item_pedido_cantidad_positiva', sql`${t.cantidad} > 0`),
+    check('item_pedido_precio_positivo', sql`${t.precioUnitarioSnapshot} > 0`),
+    index('item_pedido_pedido_idx').on(t.pedidoId),
+  ],
+);
+
+/**
+ * Diagrama: HistorialEstadoPedido. Registro append-only de cada transicion.
+ *
+ * Responde "quien cambio que y cuando" sobre el ciclo de vida del pedido, dato
+ * que el modulo de pedidos expone a ambas partes y que el administrador usa
+ * para resolver reclamos.
+ */
+export const historialEstadoPedido = pgTable(
+  'historial_estado_pedido',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    pedidoId: uuid('pedido_id')
+      .notNull()
+      .references(() => pedido.id, { onDelete: 'cascade' }),
+    // Nullable solo en la primera fila: la creacion del pedido no tiene estado
+    // anterior del que provenir.
+    estadoPedidoAnterior: estadoPedidoEnum('estado_pedido_anterior'),
+    estadoPedidoActual: estadoPedidoEnum('estado_pedido_actual').notNull(),
+    origenTransicion: origenTransicionEnum('origen_transicion').notNull(),
+    // Nullable cuando el origen es SISTEMA (expiracion automatica).
+    usuarioResponsableId: uuid('usuario_responsable_id').references(
+      () => usuario.id,
+      { onDelete: 'set null' },
+    ),
+    motivo: text('motivo'),
+    fechaTransicion: timestamp('fecha_transicion', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index('historial_pedido_idx').on(t.pedidoId, t.fechaTransicion),
+    check(
+      'historial_transicion_efectiva',
+      sql`${t.estadoPedidoAnterior} is null or ${t.estadoPedidoAnterior} <> ${t.estadoPedidoActual}`,
+    ),
+  ],
+);
