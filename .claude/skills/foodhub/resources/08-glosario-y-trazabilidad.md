@@ -50,7 +50,6 @@ no reconstruyéndola a mano al final.
 | **Snapshot**                  | copia de nombre, precio e imagen guardada en el ítem al confirmar    |
 | **Reseña**                    | calificación del cliente hacia el cocinero, pública                  |
 | **Calificación del cocinero** | calificación del cocinero hacia el cliente, no pública               |
-| **Zona de cobertura**         | área declarada por el cocinero al registrarse                        |
 | **Feed**                      | listado dinámico de publicaciones recientes cercanas                 |
 | **Evento de seguridad**       | login fallido o acceso denegado por rol                              |
 | **Registro de auditoría**     | alta, baja o modificación de una entidad de negocio                  |

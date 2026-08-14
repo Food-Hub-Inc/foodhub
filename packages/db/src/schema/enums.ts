@@ -20,11 +20,11 @@ import {
 /**
  * Tipos ENUM de PostgreSQL.
  *
- * CRITERIO DE TRADUCCION del diagrama de clases (DG12082026_V4) al modelo
+ * CRITERIO DE TRADUCCION del diagrama de clases (DG12082026_V5) al modelo
  * relacional, aplicado de forma uniforme en todo el schema:
  *
  *   - Si el diagrama modela el conjunto de valores como una CLASE propia
- *     (Categoria, MotivoCancelacion, TipoConsulta, RolDestino, Ciudad...),
+ *     (Categoria, MotivoCancelacion, TipoConsulta, RolDestino...),
  *     se traduce a TABLA. Son entidades que el administrador da de alta y baja
  *     desde el panel, segun el Modulo de configuracion y parametros
  *     (alcance 2.2.2.2.3), y por lo tanto necesitan ABM.

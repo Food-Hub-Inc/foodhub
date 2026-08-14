@@ -84,7 +84,7 @@ export const conversacion = pgTable(
       t.fechaUltimoMensaje.desc(),
     ),
   ],
-);
+).enableRLS();
 
 /**
  * Diagrama: Mensaje (abstracta) con MensajeTexto y MensajeImagen.
@@ -132,4 +132,4 @@ export const mensaje = pgTable(
     // Paginacion del chat: mensajes de una conversacion, del mas nuevo al mas viejo.
     index('mensaje_conversacion_idx').on(t.conversacionId, t.fechaEnvio.desc()),
   ],
-);
+).enableRLS();

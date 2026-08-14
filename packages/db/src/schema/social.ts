@@ -72,7 +72,7 @@ export const resena = pgTable(
       .where(sql`${t.estadoResena} = 'VISIBLE'`),
     index('resena_cliente_idx').on(t.clienteResId),
   ],
-);
+).enableRLS();
 
 /**
  * Diagrama: CalificacionCocinero. La otra direccion de la reputacion: el
@@ -107,7 +107,7 @@ export const calificacionCocinero = pgTable(
     ),
     index('calificacion_cliente_idx').on(t.clienteEvaluadoId),
   ],
-);
+).enableRLS();
 
 /**
  * Diagrama: ReaccionResena. Likes y dislikes de la comunidad sobre una resena.
@@ -133,7 +133,7 @@ export const reaccionResena = pgTable(
     uniqueIndex('reaccion_resena_uq').on(t.resenaId, t.usuarioId),
     index('reaccion_resena_resena_idx').on(t.resenaId),
   ],
-);
+).enableRLS();
 
 /**
  * Diagrama: RespuestaCocinero. Derecho a replica del cocinero, una por resena.
@@ -161,7 +161,7 @@ export const respuestaCocinero = pgTable(
     }),
   },
   (t) => [index('respuesta_cocinero_idx').on(t.cocineroId)],
-);
+).enableRLS();
 
 /**
  * Diagrama: ReporteResena. Denuncia de una resena para moderacion del
@@ -200,4 +200,4 @@ export const reporteResena = pgTable(
       .on(t.fechaReporte)
       .where(sql`${t.estadoReporte} = 'PENDIENTE'`),
   ],
-);
+).enableRLS();

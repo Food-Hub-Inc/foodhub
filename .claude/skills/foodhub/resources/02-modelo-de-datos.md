@@ -1,9 +1,9 @@
 # Capítulo 02 · Modelo de datos
 
-Fuente: `FoodHub - DG12082026_V4.drawio` (45 clases).
+Fuente: `FoodHub - DG12082026_V5.drawio` (43 clases).
 Implementación: `packages/db/src/schema/`.
 
-> El **V3 quedó obsoleto** al adoptar Supabase Auth. Usá siempre el V4.
+> El **V3 y el V4 quedaron obsoletos**. Usá siempre el V5.
 
 ---
 
@@ -12,8 +12,8 @@ Implementación: `packages/db/src/schema/`.
 Se aplica de forma uniforme en todo el schema:
 
 - **Clase en el diagrama → tabla.** Categoría, MotivoCancelación, TipoConsulta,
-  RolDestino, Ciudad, ZonaCobertura… son entidades que el administrador da de
-  alta y baja desde el panel, así que necesitan ABM.
+  RolDestino… son entidades que el administrador da de alta y baja desde el
+  panel, así que necesitan ABM.
 - **Valores enumerados dentro de un atributo → `ENUM` de PostgreSQL.** Por
   ejemplo `origenRechazo (CLIENTE / COCINERO / SISTEMA)`. Son valores fijos del
   dominio: agregar uno implica cambiar reglas de negocio y desplegar código, no
@@ -79,22 +79,28 @@ intentado.
 `Cliente` y `Administrador` **no tienen tabla**: no agregan ningún atributo
 sobre `Usuario`. Crearlas produciría tablas vacías.
 
-### Catálogo y parámetros — `schema/catalogo.ts`
+`usuario.ubicacion` es un punto PostGIS en **SRID 4326** (WGS-84, el sistema del
+GPS), con índice GiST parcial sobre las filas que la tienen declarada. Es lo que
+alimenta el feed por cercanía y el mapa de cocineros.
 
-`categoria` · `ciudad` · `zona_cobertura` · `rol_destino` · `tipo_consulta` ·
-`tipo_usuario_cancelacion` · `motivo_cancelacion` · `configuracion_sistema`
-
-`zona_cobertura.centro` y `usuario.ubicacion` son puntos PostGIS en **SRID
-4326** (WGS-84, el sistema del GPS), con índice GiST.
+La columna es nullable, pero el CHECK `usuario_cocinero_con_ubicacion` la exige
+cuando `tipo = 'COCINERO'`: un cocinero sin coordenadas no aparecería en ninguno
+de los tres mecanismos de descubrimiento. El cliente sí puede navegar sin
+compartir la suya.
 
 ⚠️ Para calcular distancias en **metros** hay que castear a `geography`:
 
 ```sql
-ST_DWithin(centro::geography, $punto::geography, $metros)
+ST_DWithin(ubicacion::geography, $punto::geography, $metros)
 ```
 
 Sin el cast, el radio se interpreta en grados y el resultado no corresponde a
 ninguna distancia real.
+
+### Catálogo y parámetros — `schema/catalogo.ts`
+
+`categoria` · `rol_destino` · `tipo_consulta` · `tipo_usuario_cancelacion` ·
+`motivo_cancelacion` · `configuracion_sistema`
 
 ### Publicaciones y carrito — `schema/publicaciones.ts`
 

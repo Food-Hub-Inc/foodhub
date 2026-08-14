@@ -7,7 +7,7 @@
  * importan desde aca, de modo que agregar un estado nuevo obliga a tocar un
  * solo archivo y el compilador senala todos los lugares que hay que ajustar.
  *
- * Trazabilidad: diagrama de clases FoodHub - DG12082026_V4.
+ * Trazabilidad: diagrama de clases FoodHub - DG12082026_V5.
  */
 
 /** Rol del usuario dentro de la plataforma. Diagrama: Usuario.tipo. */

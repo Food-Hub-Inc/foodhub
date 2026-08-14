@@ -86,7 +86,7 @@ export const publicacion = pgTable(
       .on(t.fechaCreacion.desc())
       .where(sql`${t.activo} = true`),
   ],
-);
+).enableRLS();
 
 /**
  * Diagrama: Favorito (abstracta) con FavoritoCocinero y FavoritoPublicacion.
@@ -113,7 +113,7 @@ export const favoritoCocinero = pgTable(
     uniqueIndex('favorito_cocinero_uq').on(t.clienteId, t.cocineroId),
     index('favorito_cocinero_cliente_idx').on(t.clienteId),
   ],
-);
+).enableRLS();
 
 export const favoritoPublicacion = pgTable(
   'favorito_publicacion',
@@ -133,7 +133,7 @@ export const favoritoPublicacion = pgTable(
     uniqueIndex('favorito_publicacion_uq').on(t.clienteId, t.publicacionId),
     index('favorito_publicacion_cliente_idx').on(t.clienteId),
   ],
-);
+).enableRLS();
 
 /**
  * Diagrama: Carrito. Un carrito por cliente y por cocinero.
@@ -164,7 +164,7 @@ export const carrito = pgTable(
   (t) => [
     uniqueIndex('carrito_cliente_cocinero_uq').on(t.clienteId, t.cocineroId),
   ],
-);
+).enableRLS();
 
 /**
  * Diagrama: ItemCarrito.
@@ -197,4 +197,4 @@ export const itemCarrito = pgTable(
     check('item_carrito_cantidad_positiva', sql`${t.cantidad} > 0`),
     uniqueIndex('item_carrito_uq').on(t.carritoId, t.publicacionId),
   ],
-);
+).enableRLS();

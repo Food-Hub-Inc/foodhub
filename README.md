@@ -89,7 +89,7 @@ Detalle completo en el punto 1.2.4 del documento de proyecto.
 La documentación funcional vive fuera del repositorio, en `../Docs/`:
 
 - `FoodHub - Documentación de Proyecto.md` — requisitos, historias de usuario, alcances
-- `FoodHub - DG12082026_V4.drawio` — diagrama de clases vigente
+- `FoodHub - DG12082026_V5.drawio` — diagrama de clases vigente
 - `FoodHub - Pantallas Mockup FoodHub.pdf` — maquetación y guía visual
 
 ## Equipo

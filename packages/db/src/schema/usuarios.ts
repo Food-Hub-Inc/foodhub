@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   boolean,
+  check,
   geometry,
   index,
   integer,
@@ -17,7 +18,6 @@ import {
   tipoEventoSeguridadEnum,
   tipoUsuarioEnum,
 } from './enums.js';
-import { zonaCobertura } from './catalogo.js';
 
 /**
  * Modulo transversal de usuarios, autenticacion y seguridad.
@@ -81,7 +81,10 @@ export const usuario = pgTable(
     /**
      * Ubicacion declarada por el usuario, en SRID 4326. Alimenta el feed por
      * proximidad y el mapa de cocineros cercanos (alcance 2.2.2.2.2).
-     * Es opcional: el cliente puede navegar sin compartir su ubicacion.
+     *
+     * La columna es nullable porque el cliente puede navegar sin compartir su
+     * ubicacion, pero el cocinero la declara al registrarse (US-AUT-02) y el
+     * CHECK de mas abajo lo garantiza.
      */
     ubicacion: geometry('ubicacion', {
       type: 'point',
@@ -114,26 +117,26 @@ export const usuario = pgTable(
     index('usuario_ubicacion_gix')
       .using('gist', t.ubicacion)
       .where(sql`${t.ubicacion} is not null`),
+    // El feed por cercania (RF014), el mapa (RF015) y el filtro por distancia
+    // (RF017) posicionan al cocinero a partir de este punto: sin el, la cuenta
+    // existe pero es invisible para los clientes.
+    check(
+      'usuario_cocinero_con_ubicacion',
+      sql`${t.tipo} <> 'COCINERO' or ${t.ubicacion} is not null`,
+    ),
   ],
-);
+).enableRLS();
 
 /**
  * Diagrama: Cocinero. Atributos exclusivos del rol, en relacion 1:1 con
  * usuario. Solo existe fila si `usuario.tipo = 'COCINERO'`.
  */
-export const cocinero = pgTable(
-  'cocinero',
-  {
-    usuarioId: uuid('usuario_id')
-      .primaryKey()
-      .references(() => usuario.id, { onDelete: 'cascade' }),
-    descripcionPublica: varchar('descripcion_publica', { length: 500 }),
-    zonaCoberturaId: uuid('zona_cobertura_id')
-      .notNull()
-      .references(() => zonaCobertura.id, { onDelete: 'restrict' }),
-  },
-  (t) => [index('cocinero_zona_idx').on(t.zonaCoberturaId)],
-);
+export const cocinero = pgTable('cocinero', {
+  usuarioId: uuid('usuario_id')
+    .primaryKey()
+    .references(() => usuario.id, { onDelete: 'cascade' }),
+  descripcionPublica: varchar('descripcion_publica', { length: 500 }),
+}).enableRLS();
 
 /**
  * Diagrama: VersionTerminos. Historial de versiones de los terminos y
@@ -161,7 +164,7 @@ export const versionTerminos = pgTable(
     index('version_terminos_estado_idx').on(t.estadoVersionTerminos),
     index('version_terminos_numero_idx').on(t.tipo, t.numeroVersion),
   ],
-);
+).enableRLS();
 
 /**
  * Diagrama V4: EventoSeguridad. Entidad nueva que reemplaza a
@@ -203,4 +206,4 @@ export const eventoSeguridad = pgTable(
     index('evento_seguridad_email_idx').on(t.emailIntentado),
     index('evento_seguridad_ip_idx').on(t.ipOrigen),
   ],
-);
+).enableRLS();

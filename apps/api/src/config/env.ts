@@ -1,5 +1,17 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
 import { z } from 'zod';
+
+/**
+ * dotenv resuelve las rutas contra el CWD, y `pnpm --filter @foodhub/api` corre
+ * el proceso parado en apps/api, donde no hay .env. El unico .env del monorepo
+ * vive en la raiz. Se listan las dos rutas para que la API arranque tanto desde
+ * el filtro de pnpm como ejecutada a mano desde la raiz.
+ *
+ * El orden importa: dotenv no pisa una variable ya definida, asi que un .env
+ * propio de apps/api (util para correr las pruebas contra otra base) gana sobre
+ * el de la raiz.
+ */
+config({ path: ['.env', '../../.env'] });
 
 /**
  * Validacion de la configuracion del proceso.

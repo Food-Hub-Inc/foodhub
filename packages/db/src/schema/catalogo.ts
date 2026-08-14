@@ -1,9 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   boolean,
-  geometry,
   index,
-  numeric,
   pgTable,
   text,
   timestamp,
@@ -43,65 +41,13 @@ export const categoria = pgTable(
       .on(t.nombre)
       .where(sql`${t.activo} = true`),
   ],
-);
-
-/** Diagrama: Ciudad. */
-export const ciudad = pgTable(
-  'ciudad',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    nombre: varchar('nombre', { length: 120 }).notNull(),
-    provincia: varchar('provincia', { length: 120 }).notNull(),
-    pais: varchar('pais', { length: 80 }).notNull().default('Argentina'),
-    activo: boolean('activo').notNull().default(true),
-  },
-  (t) => [uniqueIndex('ciudad_uq').on(t.nombre, t.provincia, t.pais)],
-);
-
-/**
- * Diagrama: ZonaCobertura. Area declarada por el cocinero al registrarse
- * (US-AUT-02) y usada por el buscador de proximidad.
- *
- * `centro` es un punto PostGIS en SRID 4326 (WGS-84, el sistema de coordenadas
- * del GPS), declarado con el tipo `geometry` que expone Drizzle.
- *
- * Para calcular distancias en METROS sobre la superficie terrestre hay que
- * castear a `geography` en la consulta:
- *
- *     ST_DWithin(centro::geography, $punto::geography, $metros)
- *
- * Sin ese cast, ST_DWithin interpreta el radio en grados de latitud/longitud y
- * el resultado no corresponde a ninguna distancia real.
- */
-export const zonaCobertura = pgTable(
-  'zona_cobertura',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    ciudadId: uuid('ciudad_id')
-      .notNull()
-      .references(() => ciudad.id, { onDelete: 'restrict' }),
-    nombre: varchar('nombre', { length: 120 }).notNull(),
-    centro: geometry('centro', {
-      type: 'point',
-      mode: 'xy',
-      srid: 4326,
-    }).notNull(),
-    radioKm: numeric('radio_km', { precision: 6, scale: 2 }).notNull(),
-    activo: boolean('activo').notNull().default(true),
-  },
-  (t) => [
-    // Indice GiST: sin el, cada busqueda por proximidad recorre la tabla
-    // completa calculando distancias una por una.
-    index('zona_cobertura_centro_gix').using('gist', t.centro),
-    index('zona_cobertura_ciudad_idx').on(t.ciudadId),
-  ],
-);
+).enableRLS();
 
 /** Diagrama: RolDestino. Segmenta el contenido de ayuda por rol de usuario. */
 export const rolDestino = pgTable('rol_destino', {
   id: uuid('id').primaryKey().defaultRandom(),
   nombre: varchar('nombre', { length: 60 }).notNull().unique(),
-});
+}).enableRLS();
 
 /** Diagrama: TipoConsulta. Clasifica los tickets de soporte. */
 export const tipoConsulta = pgTable('tipo_consulta', {
@@ -110,7 +56,7 @@ export const tipoConsulta = pgTable('tipo_consulta', {
     .notNull()
     .unique(),
   activo: boolean('activo').notNull().default(true),
-});
+}).enableRLS();
 
 /**
  * Diagrama: TipoUsuarioCancelacion. Determina que motivos de cancelacion ve
@@ -123,7 +69,7 @@ export const tipoUsuarioCancelacion = pgTable('tipo_usuario_cancelacion', {
   })
     .notNull()
     .unique(),
-});
+}).enableRLS();
 
 /** Diagrama: MotivoCancelacion. ABM del administrador (US-CFG-02). */
 export const motivoCancelacion = pgTable(
@@ -137,7 +83,7 @@ export const motivoCancelacion = pgTable(
     activo: boolean('activo').notNull().default(true),
   },
   (t) => [index('motivo_cancelacion_tipo_idx').on(t.tipoUsuarioCancelacionId)],
-);
+).enableRLS();
 
 /**
  * Diagrama: ConfiguracionSistema. Parametros operativos editables sin
@@ -161,4 +107,4 @@ export const configuracionSistema = pgTable('configuracion_sistema', {
   // Sin FK a usuario para evitar una dependencia circular entre modulos:
   // el administrador que modifico el parametro queda trazado en registro_auditoria.
   adminModificadorId: uuid('admin_modificador_id'),
-});
+}).enableRLS();

@@ -106,7 +106,7 @@ export const pedido = pgTable(
       .on(t.fechaCreacion)
       .where(sql`${t.estadoPedidoActual} = 'CREADO'`),
   ],
-);
+).enableRLS();
 
 /**
  * Diagrama: ItemPedido.
@@ -141,7 +141,7 @@ export const itemPedido = pgTable(
     check('item_pedido_precio_positivo', sql`${t.precioUnitarioSnapshot} > 0`),
     index('item_pedido_pedido_idx').on(t.pedidoId),
   ],
-);
+).enableRLS();
 
 /**
  * Diagrama: HistorialEstadoPedido. Registro append-only de cada transicion.
@@ -179,4 +179,4 @@ export const historialEstadoPedido = pgTable(
       sql`${t.estadoPedidoAnterior} is null or ${t.estadoPedidoAnterior} <> ${t.estadoPedidoActual}`,
     ),
   ],
-);
+).enableRLS();

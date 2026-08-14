@@ -31,7 +31,7 @@ export const capituloAyuda = pgTable(
     activo: boolean('activo').notNull().default(true),
   },
   (t) => [index('capitulo_ayuda_rol_idx').on(t.rolDestinoId, t.orden)],
-);
+).enableRLS();
 
 /** Diagrama: SeccionAyuda. Contenido concreto dentro de un capitulo. */
 export const seccionAyuda = pgTable(
@@ -50,7 +50,7 @@ export const seccionAyuda = pgTable(
     habilitado: boolean('habilitado').notNull().default(true),
   },
   (t) => [index('seccion_ayuda_capitulo_idx').on(t.capituloId, t.orden)],
-);
+).enableRLS();
 
 /**
  * Diagrama: FAQ. Preguntas frecuentes diferenciadas por rol.
@@ -72,7 +72,7 @@ export const faq = pgTable(
     activo: boolean('activo').notNull().default(true),
   },
   (t) => [index('faq_rol_idx').on(t.rolDestinoId)],
-);
+).enableRLS();
 
 /** Diagrama: TicketSoporte. Canal de contacto del usuario con el equipo. */
 export const ticketSoporte = pgTable(
@@ -102,7 +102,7 @@ export const ticketSoporte = pgTable(
       t.fechaCreacion.desc(),
     ),
   ],
-);
+).enableRLS();
 
 /** Diagrama: AdjuntoTicket. Capturas que el usuario sube junto al reclamo. */
 export const adjuntoTicket = pgTable(
@@ -118,4 +118,4 @@ export const adjuntoTicket = pgTable(
     tamanoBytes: integer('tamano_bytes').notNull(),
   },
   (t) => [index('adjunto_ticket_idx').on(t.ticketId)],
-);
+).enableRLS();

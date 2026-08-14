@@ -13,6 +13,17 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
 
+  /**
+   * Vite busca los .env en la raiz del proyecto (apps/admin), donde no hay
+   * ninguno: el unico .env del monorepo vive dos niveles mas arriba. Sin esto,
+   * `import.meta.env.VITE_SUPABASE_URL` llega undefined y el panel falla al
+   * crear el cliente de Supabase.
+   *
+   * Solo se exponen al bundle las variables con prefijo VITE_, asi que apuntar
+   * al .env compartido no filtra la SERVICE_ROLE_KEY ni la DATABASE_URL.
+   */
+  envDir: '../../',
+
   server: {
     port: 5173,
     strictPort: true, // si el puerto esta ocupado, falla en vez de mover el

@@ -5,6 +5,27 @@ packages:
   - "apps/*"
   - "packages/*"
 
+# --- Ajustes del instalador --------------------------------------------------
+# Van aca y no en .npmrc: desde pnpm 11 la configuracion del gestor se lee de
+# este archivo, y las claves equivalentes en .npmrc se ignoran en silencio.
+# Cuando estaban alla, `pnpm config get node-linker` devolvia undefined y el
+# arbol quedaba con el layout aislado de pnpm, que rompe a Metro.
+
+# React Native y Metro no resuelven los symlinks anidados que pnpm usa por
+# defecto. "hoisted" replica el layout plano de npm dentro de node_modules, que
+# es el unico soportado por Expo en monorepos con pnpm. Es ademas la premisa de
+# la que depende `disableHierarchicalLookup: true` en apps/mobile/metro.config.js:
+# con el arbol aislado, Metro no encuentra las dependencias transitivas y el
+# bundle falla con "Unable to resolve".
+nodeLinker: hoisted
+
+# Evita que un paquete use una dependencia que no declaro explicitamente.
+strictPeerDependencies: false
+
+# Expo y React Native publican rangos de peers muy amplios; sin esto pnpm
+# aborta la instalacion ante discrepancias menores que no afectan al runtime.
+autoInstallPeers: true
+
 allowBuilds:
   esbuild: true
 

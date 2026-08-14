@@ -49,7 +49,7 @@ por capítulos en `resources/`, que se leen bajo demanda:
 | -------- | ------------------------------------------------------------------------------------ |
 | 00       | índice de las 81 historias de usuario por módulo                                     |
 | 01       | visión, objetivos, los 13 módulos y qué queda fuera de alcance                       |
-| 02       | modelo de datos: 45 entidades y criterio de traducción a tablas                      |
+| 02       | modelo de datos: 43 entidades y criterio de traducción a tablas                      |
 | 03       | módulos transversales: auth, usuarios, seguridad, auditoría                          |
 | 04       | módulos funcionales: publicaciones, búsqueda, pedidos, reseñas, chat, notificaciones |
 | 05       | información y control: dashboard, panel admin, configuración, ayuda                  |

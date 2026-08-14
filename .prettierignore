@@ -11,6 +11,14 @@ reports
 packages/db/drizzle
 *.drawio
 
+# Declaraciones de tipos generadas: Expo reescribe expo-env.d.ts en cada
+# `expo start` y `expo export`, y Metro hace lo propio con uniwind-types.d.ts.
+# Sin esta exclusion, `pnpm format:check` falla para cualquiera que haya
+# levantado la app, y con el rompe el CI. Las declaraciones escritas a mano de
+# las variables de entorno viven en apps/mobile/env.d.ts, que si se formatea.
+apps/mobile/expo-env.d.ts
+apps/mobile/uniwind-types.d.ts
+
 # Skills de agente. Las importadas con `npx skills` son contenido de terceros:
 # reformatearlas generaria ruido en cada `npx skills update`. Se excluye el
 # directorio completo por coherencia con el ignore de eslint.config.mjs.

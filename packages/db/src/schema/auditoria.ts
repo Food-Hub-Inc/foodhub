@@ -68,4 +68,4 @@ export const registroAuditoria = pgTable(
     ),
     index('registro_auditoria_objeto_idx').on(t.tipoObjeto, t.objetoAfectadoId),
   ],
-);
+).enableRLS();

@@ -41,6 +41,28 @@ const nombreSchema = z
   .min(2, 'Debe tener al menos 2 caracteres.')
   .max(60, 'No puede superar los 60 caracteres.');
 
+/**
+ * Punto geografico en WGS-84 (SRID 4326), el sistema de coordenadas del GPS.
+ *
+ * Se expresa como latitud/longitud porque es lo que entrega el dispositivo y lo
+ * que el usuario ajusta sobre el mapa. Al persistirlo, `usuario.ubicacion` lo
+ * guarda como punto PostGIS, donde el orden es (x = lng, y = lat): invertirlos
+ * ubica al cocinero en otro continente sin que ninguna validacion lo detecte.
+ */
+export const ubicacionSchema = z.object(
+  {
+    lat: z
+      .number()
+      .min(-90, 'La latitud debe estar entre -90 y 90.')
+      .max(90, 'La latitud debe estar entre -90 y 90.'),
+    lng: z
+      .number()
+      .min(-180, 'La longitud debe estar entre -180 y 180.')
+      .max(180, 'La longitud debe estar entre -180 y 180.'),
+  },
+  { error: 'Seleccioná tu ubicación en el mapa.' },
+);
+
 /** Campos comunes a los dos formularios de registro (US-AUT-01 y US-AUT-02). */
 const registroBase = z.object({
   nombre: nombreSchema,
@@ -78,10 +100,15 @@ export const registroClienteSchema = registroBase.refine(
   errorNoCoinciden,
 );
 
-/** US-AUT-02 - Registro de cocinero: agrega zona y descripcion publica. */
+/** US-AUT-02 - Registro de cocinero: agrega ubicacion y descripcion publica. */
 export const registroCocineroSchema = registroBase
   .extend({
-    zonaCoberturaId: z.uuid('Seleccioná una zona de cobertura.'),
+    /**
+     * Obligatoria: el feed por cercania (RF014), el mapa (RF015) y el filtro
+     * por distancia (RF017) posicionan al cocinero a partir de este punto. Sin
+     * el, la cuenta se crea pero nadie la encuentra.
+     */
+    ubicacion: ubicacionSchema,
     descripcionPublica: z
       .string()
       .trim()
@@ -123,6 +150,7 @@ export const perfilUsuarioSchema = z.object({
   estadoCuenta: z.string(),
 });
 
+export type Ubicacion = z.infer<typeof ubicacionSchema>;
 export type RegistroClienteInput = z.infer<typeof registroClienteSchema>;
 export type RegistroCocineroInput = z.infer<typeof registroCocineroSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

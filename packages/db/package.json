@@ -2,7 +2,7 @@
   "name": "@foodhub/db",
   "version": "0.1.0",
   "private": true,
-  "description": "Modelo de persistencia de FoodHub: schema Drizzle derivado del diagrama de clases DG12082026_V4 y migraciones de PostgreSQL/PostGIS.",
+  "description": "Modelo de persistencia de FoodHub: schema Drizzle derivado del diagrama de clases DG12082026_V5 y migraciones de PostgreSQL/PostGIS.",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

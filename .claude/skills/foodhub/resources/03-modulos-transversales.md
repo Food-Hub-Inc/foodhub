@@ -37,9 +37,13 @@ perfil (JPG/PNG/WEBP, máx. 5 MB, opcional), checkbox de términos*.
 
 **US-AUT-02 · Registro de cocinero** — PAN-AUT-02
 
-Agrega **zona de cobertura** (obligatoria, desplegable de zonas activas) y
+Agrega **ubicación** (obligatoria, detectada por GPS y ajustable sobre el mapa) y
 **descripción del perfil** (opcional, máx. 500 caracteres, visible en el perfil
 público). Al completar, va a "Mis publicaciones" (PAN-PUB-01).
+
+La ubicación es obligatoria solo para el cocinero: es lo que lo posiciona en el
+feed por cercanía (US-EXP-01), en el mapa (US-EXP-02) y en el filtro por
+distancia (US-EXP-03). Lo garantiza el CHECK `usuario_cocinero_con_ubicacion`.
 
 Nota: el mensaje de correo duplicado es distinto al de US-AUT-01:
 `Ya existe una cuenta registrada con este correo electrónico.`

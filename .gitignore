@@ -26,6 +26,11 @@ apps/mobile/ios/
 *.key
 *.mobileprovision
 *.orig.*
+# Configuracion de Firebase Cloud Messaging. Se descarga de la consola de
+# Firebase y se usa solo para `expo prebuild` / `run:android` locales: las
+# builds de EAS la toman del secreto GOOGLE_SERVICES_JSON del proyecto.
+google-services.json
+GoogleService-Info.plist
 
 # --- Variables de entorno ---------------------------------------------------
 # NUNCA se versionan: contienen claves de Supabase, Railway, FCM y Google Maps.
@@ -53,3 +58,4 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+

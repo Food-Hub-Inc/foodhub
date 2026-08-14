@@ -53,7 +53,7 @@ export const notificacion = pgTable(
       .on(t.usuarioDestinoId)
       .where(sql`${t.leida} = false`),
   ],
-);
+).enableRLS();
 
 /**
  * Diagrama: PreferenciaNotificacion. Una fila por usuario y tipo de evento.
@@ -80,7 +80,7 @@ export const preferenciaNotificacion = pgTable(
       t.tipoNotificacion,
     ),
   ],
-);
+).enableRLS();
 
 /**
  * Token de notificacion push del dispositivo (Expo Push Token).
@@ -113,4 +113,4 @@ export const dispositivoPush = pgTable(
       .on(t.usuarioId)
       .where(sql`${t.activo} = true`),
   ],
-);
+).enableRLS();

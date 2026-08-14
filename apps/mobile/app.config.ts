@@ -17,6 +17,11 @@ const esProduccion = process.env.APP_ENV === 'production';
 const config: ExpoConfig = {
   name: esProduccion ? 'FoodHub' : 'FoodHub (dev)',
   slug: 'foodhub',
+
+  // Cuenta de Expo dueña del proyecto. `eas init` no la puede escribir solo
+  // porque este es un config dinámico (.ts), así que va a mano.
+  owner: 'food-hub-inc',
+
   version: '0.1.0',
   orientation: 'portrait',
   scheme: 'foodhub',
@@ -28,9 +33,32 @@ const config: ExpoConfig = {
   // (ver el arreglo `plugins`): desde SDK 55 dejó de ser una clave de
   // primer nivel de ExpoConfig.
 
+  /**
+   * EAS Update. El canal (`development`, `preview`, `production`) lo fija cada
+   * perfil de eas.json; esta URL es la misma para los tres.
+   *
+   * `eas build` exige estas claves porque los perfiles declaran `channel`, y no
+   * las puede escribir solo: este config es dinámico (.ts), no un app.json.
+   */
+  updates: {
+    url: 'https://u.expo.dev/ffc82f93-7f6f-4631-b82e-48c4a4a849d5',
+  },
+
+  /**
+   * Una actualización OTA solo se entrega a las builds con el mismo
+   * runtimeVersion. Con la política `appVersion` ese valor sale de `version`,
+   * así que subir la versión corta el flujo de updates hacia las builds viejas
+   * — que es justo lo que se quiere cuando cambia el código nativo.
+   */
+  runtimeVersion: {
+    policy: 'appVersion',
+  },
+
   android: {
     package: esProduccion ? 'ar.edu.utn.foodhub' : 'ar.edu.utn.foodhub.dev',
-    versionCode: 1,
+    // Sin `versionCode`: eas.json declara `appVersionSource: 'remote'`, asi que
+    // el numero lo lleva el servidor de EAS y lo autoincrementa el perfil de
+    // produccion. Un valor fijo aca lo ignora el build y solo confunde.
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#EC6829', // --color-primary
@@ -107,7 +135,7 @@ const config: ExpoConfig = {
     appEnv: process.env.APP_ENV ?? 'development',
     eas: {
       // Lo completa `eas init` con el ID del proyecto en la cuenta de Expo.
-      projectId: process.env.EAS_PROJECT_ID ?? '',
+      projectId: 'ffc82f93-7f6f-4631-b82e-48c4a4a849d5',
     },
   },
 };

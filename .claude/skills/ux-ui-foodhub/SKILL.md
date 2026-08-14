@@ -155,8 +155,8 @@ de 1.
 
 ### 6. Reconocer antes que recordar
 
-Las categorías se eligen de una lista de chips, no se escriben. La zona de
-cobertura es un desplegable.
+Las categorías se eligen de una lista de chips, no se escriben. Los filtros
+ofrecen sus opciones en desplegables.
 
 ### 7. Diseño estético y minimalista
 

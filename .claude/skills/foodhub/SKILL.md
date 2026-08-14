@@ -1,12 +1,12 @@
 ---
 name: foodhub
-description: 'Conocimiento del proyecto FoodHub: qué hace el sistema, sus 13 módulos, las 81 historias de usuario, el modelo de datos de 45 entidades, las 30+ pantallas y los entornos. Usar SIEMPRE al empezar cualquier tarea sobre este código para saber qué pide la documentación antes de implementar. Palabras clave: FoodHub, cocinero, cliente, publicación, plato, pedido, reseña, carrito, feed, chat, notificación, dashboard, panel de administración, historia de usuario, US-, RF, PAN-, alcance, requerimiento, módulo, entidad, diagrama de clases.'
+description: 'Conocimiento del proyecto FoodHub: qué hace el sistema, sus 13 módulos, las 81 historias de usuario, el modelo de datos de 43 entidades, las 30+ pantallas y los entornos. Usar SIEMPRE al empezar cualquier tarea sobre este código para saber qué pide la documentación antes de implementar. Palabras clave: FoodHub, cocinero, cliente, publicación, plato, pedido, reseña, carrito, feed, chat, notificación, dashboard, panel de administración, historia de usuario, US-, RF, PAN-, alcance, requerimiento, módulo, entidad, diagrama de clases.'
 metadata:
   proyecto: FoodHub - Proyecto Final 2026 - UTN FRM - Grupo 21
   version: '1.0.0'
   fuentes:
     - 'FoodHub - Documentación de Proyecto.md'
-    - 'FoodHub - DG12082026_V4.drawio'
+    - 'FoodHub - DG12082026_V5.drawio'
     - 'FoodHub - Pantallas Mockup FoodHub.pdf'
 ---
 
@@ -65,7 +65,7 @@ Auditoría (AUD)            Reseñas (RES)             Ayuda y soporte (AYU)
                            Notificaciones (NOT)
 ```
 
-**Escala:** 81 historias de usuario · 95 requisitos funcionales · 45 entidades ·
+**Escala:** 81 historias de usuario · 89 requisitos funcionales · 43 entidades ·
 30+ pantallas · 2 reportes.
 
 ---

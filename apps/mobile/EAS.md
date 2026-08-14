@@ -46,6 +46,28 @@ El paso 1 se repite solo cuando se agrega o actualiza una dependencia con
 código nativo. Los cambios de JavaScript y de estilos llegan por Metro sin
 reconstruir.
 
+## El `.env` va en `apps/mobile`, no en la raíz
+
+Expo carga los archivos `.env` **únicamente desde la raíz del proyecto de la
+app**, y no admite configurar otra ubicación. El `.env` compartido del monorepo
+no le llega: `apps/api` y `apps/admin` sí lo alcanzan (la API lista las dos
+rutas en `dotenv`, Vite usa `envDir`), pero la app móvil necesita su propio
+`apps/mobile/.env`.
+
+Sin ese archivo Metro arranca igual, pero la app muere en el primer import con
+`Faltan EXPO_PUBLIC_SUPABASE_URL o EXPO_PUBLIC_SUPABASE_ANON_KEY`.
+
+`EXPO_PUBLIC_API_URL` **no puede ser `localhost`**: desde el teléfono eso apunta
+al propio teléfono. Va la IP de la PC en la LAN (`http://192.168.x.x:3000`), o
+`http://10.0.2.2:3000` si se usa el emulador de Android Studio. Como el valor se
+inyecta al bundlear, después de cambiarlo hay que reiniciar Metro con `--clear`.
+
+Para verificar qué quedó resuelto sin levantar la app:
+
+```bash
+npx expo config --type public   # el valor aparece en extra.apiUrl
+```
+
 ## Secretos
 
 `GOOGLE_MAPS_ANDROID_API_KEY` y `google-services.json` **no se versionan**. Se
@@ -56,5 +78,72 @@ eas secret:create --scope project --name GOOGLE_MAPS_ANDROID_API_KEY --value "..
 eas secret:create --scope project --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json
 ```
 
+Ya están cargados en los tres entornos (`development`, `preview`, `production`).
+Se listan con `eas env:list --environment development`; el valor no se puede
+volver a leer, solo sobrescribir.
+
 El detalle de cómo obtener cada credencial está en el documento
 _FoodHub — Configuraciones manuales del entorno de desarrollo_.
+
+### `google-services.json` en local
+
+Las builds de EAS lo reciben del secreto, así que para el trabajo diario
+(`build:dev` + Metro) **no hace falta tenerlo en la PC**. Sí hace falta para
+correr `expo prebuild` o `expo run:android` localmente: sin el archivo el plugin
+de `expo-notifications` corta el prebuild.
+
+El secreto de EAS es de solo escritura y no se puede descargar. Hay que bajarlo
+de la consola de Firebase:
+
+**Firebase Console → proyecto `foodhub-dev` → ⚙ Configuración del proyecto →
+Tus apps → app Android `ar.edu.utn.foodhub.dev` → `google-services.json`**
+
+y dejarlo en `apps/mobile/google-services.json`. Está en el `.gitignore`, así que
+no se commitea.
+
+Si la app Android todavía no existe en ese proyecto de Firebase, hay que
+registrarla con el nombre de paquete `ar.edu.utn.foodhub.dev` (el de desarrollo)
+antes de poder descargar el archivo.
+
+## Cómo depurar un fallo de la fase Prebuild
+
+EAS reporta estos fallos como `Unknown error. See logs of the Prebuild build
+phase`, que no dice nada. El mensaje real se consigue corriendo la misma fase en
+local. Como el `google-services.json` no está en el repositorio, hay que
+apuntar la variable a una copia cualquiera para que el plugin no corte antes:
+
+```bash
+cd apps/mobile
+APP_ENV=development GOOGLE_SERVICES_JSON=/ruta/a/google-services.json \
+  npx expo prebuild --platform android --no-install
+rm -rf android   # el proyecto es CNG: el directorio nativo no se versiona
+```
+
+## Los PNG de `assets/` son provisorios
+
+`app.config.ts` referencia `adaptive-icon.png`, `splash.png` y
+`notification-icon.png`. Sin esos tres archivos el prebuild aborta con
+`ENOENT ... adaptive-icon.png` y la build falla en EAS.
+
+Los que están hoy en `assets/` son **marcadores de posición** generados con los
+colores de la guía visual (`#EC6829` y `#FAFAF7`), no la identidad definitiva.
+Hay que reemplazarlos por el arte real del PDF de maquetación **antes de armar
+la build de `production`**:
+
+| Archivo                 | Tamaño    | Requisito                                                    |
+| ----------------------- | --------- | ------------------------------------------------------------ |
+| `adaptive-icon.png`     | 1024×1024 | capa frontal; Android recorta al 66% central                 |
+| `splash.png`            | 1024×1024 | se dibuja sobre `#FAFAF7`, con `resizeMode: contain`         |
+| `notification-icon.png` | 96×96     | silueta blanca sobre transparente; Android descarta el color |
+
+## `userInterfaceStyle`
+
+`app.config.ts` declara `userInterfaceStyle: 'light'`. Para que Android respete
+esa declaración en vez de seguir al tema del sistema hace falta `expo-system-ui`,
+que **ya está instalado** (`~57.0.2`). Si el prebuild vuelve a avisar
+`userInterfaceStyle: Install expo-system-ui in your project to enable this
+feature`, es que el paquete se perdió de las dependencias:
+
+```bash
+pnpm --filter @foodhub/mobile exec npx expo install expo-system-ui
+```

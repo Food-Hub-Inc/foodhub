@@ -35,10 +35,11 @@ de codificar; no completes el hueco con una suposición razonable.
 | Archivo                                  | Para qué                                   |
 | ---------------------------------------- | ------------------------------------------ |
 | `FoodHub - Documentación de Proyecto.md` | historias de usuario, requisitos, alcances |
-| `FoodHub - DG12082026_V4.drawio`         | diagrama de clases **vigente** (45 clases) |
+| `FoodHub - DG12082026_V5.drawio`         | diagrama de clases **vigente** (43 clases) |
 | `FoodHub - Pantallas Mockup FoodHub.pdf` | 30+ pantallas y la guía visual del sistema |
 
-El `DG13072026_V3` quedó **obsoleto** al adoptar Supabase Auth. No lo uses.
+El `DG13072026_V3` quedó **obsoleto** al adoptar Supabase Auth y el
+`DG12082026_V4` fue reemplazado por el V5. No uses ninguno de los dos.
 
 **3. Trazabilidad en cada cambio.** Todo trabajo se ancla a una US o CU. El
 mensaje de commit lleva el módulo; el PR lleva la US y la pantalla.
@@ -70,7 +71,7 @@ No las revierta sin consultarlo con el equipo.
 | **TypeScript**         | Línea **6.0.x**, no 7.x. typescript-eslint declara `typescript <6.1.0` y TS 7 todavía no expone la API programática estable que necesita. |
 | **Análisis estático**  | ESLint 10 (flat config) + Prettier 3. Config única en la raíz.                                                                            |
 
-### Por qué el diagrama V4 no tiene Sesion ni SolicitudRecuperacionContrasena
+### Por qué el diagrama vigente no tiene Sesion ni SolicitudRecuperacionContrasena
 
 Porque las gestiona GoTrue. `IntentoLoginFallido` se fusionó en
 **`EventoSeguridad`**, que cubre los dos criterios de US-AUD-01: login fallido
@@ -153,7 +154,7 @@ importe de pedidos ya cerrados.
 
 ## Al tocar el modelo de datos
 
-1. Actualizá primero `../Docs/FoodHub - DG*_V4.drawio`.
+1. Actualizá primero `../Docs/FoodHub - DG*_V5.drawio`.
 2. Reflejá el cambio en `packages/db/src/schema/`.
 3. `pnpm db:generate` y revisá el SQL generado antes de commitearlo.
 4. Si el cambio afecta un contrato de API, actualizá también `packages/shared`.

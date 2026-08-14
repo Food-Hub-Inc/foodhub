@@ -8,7 +8,7 @@ metadata:
 
 # Flujo de trabajo
 
-Este proyecto tiene 81 historias de usuario, 95 requisitos funcionales, 30+
+Este proyecto tiene 81 historias de usuario, 89 requisitos funcionales, 30+
 pantallas y una cátedra que evalúa la trazabilidad entre todo eso. El método no
 es burocracia: es lo que evita que se programe algo que nadie pidió o que quede
 sin conectar con la documentación.
@@ -43,7 +43,7 @@ responder alguna, **preguntá; no supongas**.
 | ¿Qué historia de usuario cubre?          | skill `foodhub` → capítulo del módulo    |
 | ¿Cuáles son los criterios de aceptación? | la US los lista uno por uno              |
 | ¿Qué pantalla es?                        | `PAN-XXX-NN` en el PDF de maquetación    |
-| ¿Qué entidades toca?                     | diagrama `DG12082026_V4` y `packages/db` |
+| ¿Qué entidades toca?                     | diagrama `DG12082026_V5` y `packages/db` |
 
 ### Cuándo hay que preguntar y no decidir solo
 
