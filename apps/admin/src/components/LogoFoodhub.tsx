@@ -1,10 +1,10 @@
 import { clases } from '../lib/clases.js';
-import { IconoPin } from './iconos/index.js';
+import isotipoFoodhub from '../assets/isotipo-foodhub.png';
 
 /**
- * Marca de FoodHub tal como aparece en la maquetación: el pin naranja y el
- * wordmark partido en dos, "Food" en el color primario y "hub" en el color de
- * apoyo.
+ * Marca de FoodHub tal como aparece en la maquetación: el isotipo (pin
+ * naranja con casita y cubiertos) y el wordmark partido en dos, "Food" en el
+ * color primario y "hub" en el color de apoyo.
  *
  * El nombre completo va en un `aria-label` sobre un solo elemento: separado en
  * dos `<span>`, un lector de pantalla lo leería como "Food. hub".
@@ -16,7 +16,12 @@ export function LogoFoodhub({ className }: { className?: string | undefined }) {
       className={clases('inline-flex items-center gap-2', className)}
       role="img"
     >
-      <IconoPin className="size-6 text-primary" />
+      <img
+        alt=""
+        aria-hidden="true"
+        className="h-6 w-auto shrink-0"
+        src={isotipoFoodhub}
+      />
       <span
         aria-hidden="true"
         className="text-h2 font-extrabold tracking-tight"

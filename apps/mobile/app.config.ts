@@ -60,8 +60,11 @@ const config: ExpoConfig = {
     // el numero lo lleva el servidor de EAS y lo autoincrementa el perfil de
     // produccion. Un valor fijo aca lo ignora el build y solo confunde.
     adaptiveIcon: {
+      // El isotipo ya es un pin naranja: si el fondo también fuera naranja,
+      // se fundiría con la forma. El fondo va en --color-surface para que se
+      // vea igual que en el resto de la app (pin naranja sobre blanco).
       foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#EC6829', // --color-primary
+      backgroundColor: '#FFFFFF', // --color-surface
     },
     permissions: [
       // Búsqueda de cocineros por proximidad (alcance 2.2.2.2.2).
