@@ -61,6 +61,62 @@
   --radius-full: 9999px;
 }
 
+/* ==========================================================================
+   Puente entre las variables de HeroUI v3 y los tokens de FoodHub
+   --------------------------------------------------------------------------
+   HeroUI v3 pinta sus componentes con SUS propias variables (--accent,
+   --foreground, --danger, --field-background…), declaradas en @heroui/styles
+   con una paleta azul que no es la de FoodHub.
+
+   Acá NO se elige ningún color nuevo: cada variable de la librería se apunta
+   al token ya aprobado en la guía visual. Es la traducción de un vocabulario
+   al otro, no una decisión de diseño.
+
+   Se resuelve en un único lugar, y no con `className` en cada componente,
+   porque de la otra forma cualquier componente de HeroUI que se agregue más
+   adelante entra al panel con la paleta equivocada hasta que alguien se
+   acuerde de pisarla a mano.
+   ========================================================================== */
+@layer base {
+  :root {
+    /* --- Superficies y texto --------------------------------------------- */
+    --background: var(--color-background);
+    --foreground: var(--color-text-primary);
+    --surface: var(--color-surface);
+    --surface-foreground: var(--color-text-primary);
+    --overlay: var(--color-surface);
+    --overlay-foreground: var(--color-text-primary);
+    --muted: var(--color-text-secondary);
+    --default: var(--color-background);
+    --default-foreground: var(--color-text-primary);
+
+    /* --- Acento: el naranja de la marca ---------------------------------- */
+    --accent: var(--color-primary);
+    --accent-hover: var(--color-primary-dark);
+    --accent-foreground: var(--color-surface);
+    --focus: var(--color-primary);
+    --link: var(--color-primary);
+
+    /* --- Estados ---------------------------------------------------------- */
+    --danger: var(--color-error);
+    --danger-foreground: var(--color-surface);
+    --success: var(--color-success);
+    --success-foreground: var(--color-surface);
+    --warning: var(--color-warning);
+    --warning-foreground: var(--color-surface);
+
+    /* --- Bordes y campos de formulario ----------------------------------- */
+    --border: var(--color-border);
+    --separator: var(--color-border);
+    --field-background: var(--color-surface);
+    --field-foreground: var(--color-text-primary);
+    --field-placeholder: var(--color-text-disabled);
+    --field-border: var(--color-border);
+    --field-border-width: 1px;
+    --field-radius: var(--radius-sm);
+  }
+}
+
 @layer base {
   body {
     background-color: var(--color-background);
@@ -75,5 +131,55 @@
   :focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
+  }
+
+  /* Quien pidió menos movimiento en su sistema operativo lo pidió en serio:
+     puede tratarse de sensibilidad vestibular, no de una preferencia estética.
+     Se neutralizan todas las transiciones y animaciones del panel, incluidas
+     las que trae HeroUI. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   Animaciones propias del panel
+   --------------------------------------------------------------------------
+   Sobrias y cortas (≤ 200 ms, según el criterio de la guía de UX): acompañan
+   un cambio de contenido para que no aparezca de golpe, y nada más. Se
+   declaran como utilidades para poder aplicarlas con una clase.
+   ========================================================================== */
+@utility aparece {
+  animation: foodhub-aparece 180ms var(--ease-out-cubic, ease-out) both;
+}
+
+@utility aparece-fila {
+  animation: foodhub-aparece-fila 160ms var(--ease-out-cubic, ease-out) both;
+}
+
+@keyframes foodhub-aparece {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes foodhub-aparece-fila {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

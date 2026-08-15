@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { App } from './App.js';
 import { ProveedorDeRuteo } from './providers/ProveedorDeRuteo.js';
+import { ProveedorDeSesion } from './providers/ProveedorDeSesion.js';
 import './styles/global.css';
 
 /**
@@ -52,7 +53,12 @@ createRoot(contenedor).render(
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <ProveedorDeRuteo>
-            <App />
+            {/* Va dentro del router porque el guardia de ruta consume su
+                estado, y por encima de <App /> para que el perfil se consulte
+                una sola vez y no en cada cambio de pantalla. */}
+            <ProveedorDeSesion>
+              <App />
+            </ProveedorDeSesion>
           </ProveedorDeRuteo>
         </BrowserRouter>
       </QueryClientProvider>
