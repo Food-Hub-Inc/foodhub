@@ -1,20 +1,9 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
-import {
-  Alert,
-  Button,
-  FieldError,
-  Input,
-  Label,
-  Spinner,
-  TextField,
-} from '@heroui/react';
-import {
-  IconoAlerta,
-  IconoCandado,
-  IconoCorreo,
-  IconoOcultar,
-  IconoVer,
-} from '../../components/iconos/index.js';
+import type { FormEvent } from 'react';
+import { Alert, FieldError, Input, Label, TextField } from '@heroui/react';
+import { BotonDeEnvio } from '../../components/BotonDeEnvio.js';
+import { CampoConIcono } from '../../components/CampoConIcono.js';
+import { CampoDeContrasena } from '../../components/CampoDeContrasena.js';
+import { IconoAlerta, IconoCorreo } from '../../components/iconos/index.js';
 import { TEXTOS_LOGIN } from '../../lib/textos.js';
 
 /** Errores por campo del formulario de ingreso. */
@@ -76,102 +65,32 @@ export function FormularioDeIngreso({
         value={correo}
       >
         <Label>{TEXTOS_LOGIN.correo}</Label>
-        <ConAdorno adorno={<IconoCorreo className="size-4.5" />}>
+        <CampoConIcono icono={<IconoCorreo className="size-4.5" />}>
           <Input
             className="w-full pl-10"
             placeholder={TEXTOS_LOGIN.correoPlaceholder}
           />
-        </ConAdorno>
+        </CampoConIcono>
         <FieldError>{errores.email}</FieldError>
       </TextField>
 
       <CampoDeContrasena
         alCambiar={alCambiarContrasena}
+        autoComplete="current-password"
         error={errores.password}
+        etiqueta={TEXTOS_LOGIN.contrasena}
+        nombre="password"
+        placeholder={TEXTOS_LOGIN.contrasenaPlaceholder}
         valor={contrasena}
       />
 
-      <Button fullWidth isDisabled={enviando} type="submit">
-        {enviando ? <Spinner className="size-4" /> : null}
-        {enviando ? TEXTOS_LOGIN.ingresando : TEXTOS_LOGIN.ingresar}
-      </Button>
+      <BotonDeEnvio enviando={enviando} textoEnviando={TEXTOS_LOGIN.ingresando}>
+        {TEXTOS_LOGIN.ingresar}
+      </BotonDeEnvio>
 
       <p className="text-center text-caption text-text-secondary">
         {TEXTOS_LOGIN.soloAdministradores}
       </p>
     </form>
-  );
-}
-
-function CampoDeContrasena({
-  valor,
-  error,
-  alCambiar,
-}: {
-  valor: string;
-  error: string | undefined;
-  alCambiar: (valor: string) => void;
-}) {
-  const [visible, setVisible] = useState(false);
-
-  return (
-    <TextField
-      autoComplete="current-password"
-      isInvalid={Boolean(error)}
-      name="password"
-      onChange={alCambiar}
-      // Cambiar el `type` es lo que muestra u oculta el valor. Se hace acá y no
-      // con un CSS de por medio para que el gestor de contraseñas del navegador
-      // siga reconociendo el campo.
-      type={visible ? 'text' : 'password'}
-      value={valor}
-    >
-      <Label>{TEXTOS_LOGIN.contrasena}</Label>
-      <ConAdorno adorno={<IconoCandado className="size-4.5" />}>
-        <Input
-          className="w-full pr-11 pl-10"
-          placeholder={TEXTOS_LOGIN.contrasenaPlaceholder}
-        />
-        <Button
-          aria-label={
-            visible
-              ? TEXTOS_LOGIN.ocultarContrasena
-              : TEXTOS_LOGIN.mostrarContrasena
-          }
-          className="absolute top-1/2 right-1.5 size-8 -translate-y-1/2 text-text-secondary"
-          isIconOnly
-          onPress={() => {
-            setVisible((estaVisible) => !estaVisible);
-          }}
-          size="sm"
-          variant="ghost"
-        >
-          {visible ? (
-            <IconoOcultar className="size-4.5" />
-          ) : (
-            <IconoVer className="size-4.5" />
-          )}
-        </Button>
-      </ConAdorno>
-      <FieldError>{error}</FieldError>
-    </TextField>
-  );
-}
-
-/** Input con un ícono decorativo a la izquierda, como muestra la maquetación. */
-function ConAdorno({
-  adorno,
-  children,
-}: {
-  adorno: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <div className="relative">
-      <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-disabled">
-        {adorno}
-      </span>
-      {children}
-    </div>
   );
 }

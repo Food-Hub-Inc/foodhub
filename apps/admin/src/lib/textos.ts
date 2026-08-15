@@ -47,6 +47,46 @@ export const TEXTOS_LOGIN = {
     'El acceso al panel está reservado a las cuentas con rol de administrador.',
 } as const;
 
+/**
+ * Definición de contraseña de un administrador invitado (US-GURP-06).
+ *
+ * La maquetación de la Etapa 5 no tiene esta pantalla: PAN-AUT-04.1 resuelve el
+ * caso en la app móvil, que es adonde va el enlace cuando el invitado es un
+ * CLIENTE. Para un ADMINISTRADOR no había destino, y obligarlo a instalar la
+ * app solo para definir su contraseña no tenía sentido, así que la API lo manda
+ * acá. Todos los textos son [PROPIO]: no hay criterio de aceptación que los
+ * fije, salvo los de validación, que salen de `restablecerPasswordSchema`.
+ */
+export const TEXTOS_NUEVA_PASSWORD = {
+  titulo: 'Definí tu contraseña',
+  descripcion:
+    'Elegí la contraseña con la que vas a entrar al panel de administración.',
+  nueva: 'Nueva contraseña',
+  nuevaPlaceholder: 'Ingresá tu nueva contraseña',
+  confirmar: 'Confirmar contraseña',
+  confirmarPlaceholder: 'Repetí la contraseña',
+  guardar: 'Guardar contraseña',
+  guardando: 'Guardando…',
+
+  /** Estado de éxito, antes de volver al ingreso. */
+  exitoTitulo: 'Listo',
+  exitoDescripcion:
+    'Ya podés entrar al panel con tu correo y la contraseña que acabás de definir.',
+  irAlIngreso: 'Ir a iniciar sesión',
+
+  /**
+   * Estado de enlace inválido: alguien escribió la dirección a mano o el enlace
+   * del correo ya venció. Se explica sin tecnicismos y con una salida.
+   */
+  sinInvitacionTitulo: 'Este enlace ya no es válido',
+  sinInvitacionDescripcion:
+    'El enlace de invitación vence a las pocas horas y solo se puede usar una vez. Pedile al administrador que te invitó que te envíe uno nuevo.',
+  volverAlIngreso: 'Volver al inicio de sesión',
+
+  /** Verificación del enlace, antes de saber si hay invitación válida. */
+  verificandoEnlace: 'Verificando el enlace…',
+} as const;
+
 /** Rótulos genéricos de formulario, comunes a todos los diálogos. */
 export const TEXTOS_FORMULARIO = {
   cancelar: 'Cancelar',

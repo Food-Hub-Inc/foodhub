@@ -9,9 +9,10 @@ import {
 } from '@foodhub/shared';
 import { consultaPerfil } from '../api/perfil.js';
 import { reportarLoginFallido } from '../api/seguridad.js';
-import { LogoFoodhub } from '../components/LogoFoodhub.js';
+import { MarcoDeAcceso } from '../components/MarcoDeAcceso.js';
 import { useSesion } from '../hooks/useSesion.js';
 import { ErrorApi, mensajeDeError } from '../lib/api.js';
+import { RUTAS } from '../lib/rutas.js';
 import { supabase } from '../lib/supabase.js';
 import { TEXTOS_LOGIN } from '../lib/textos.js';
 import {
@@ -75,7 +76,7 @@ export function Login() {
       }
 
       await verificarQueSeaAdministrador(clienteDeConsultas);
-      void navegar('/', { replace: true });
+      void navegar(RUTAS.inicio, { replace: true });
     } catch (error) {
       // Cualquier rechazo posterior al login deja la sesión abierta pero
       // inservible: se cierra para que el próximo intento arranque limpio.
@@ -89,36 +90,25 @@ export function Login() {
   // Quien ya está autenticado como administrador no tiene por qué ver el
   // formulario: entra derecho al panel.
   if (sesion.perfil?.tipo === 'ADMINISTRADOR') {
-    return <Navigate replace to="/" />;
+    return <Navigate replace to={RUTAS.inicio} />;
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <div className="aparece w-full max-w-[420px]">
-        <div className="mb-8 flex flex-col items-center gap-4 text-center">
-          <LogoFoodhub />
-          <div>
-            <h1 className="text-h1 font-extrabold text-text-primary">
-              {TEXTOS_LOGIN.titulo}
-            </h1>
-            <p className="mt-1 text-body text-text-secondary">
-              {TEXTOS_LOGIN.subtitulo}
-            </p>
-          </div>
-        </div>
-
-        <FormularioDeIngreso
-          alCambiarContrasena={setPassword}
-          alCambiarCorreo={setEmail}
-          alEnviar={(evento) => void ingresar(evento)}
-          contrasena={password}
-          correo={email}
-          enviando={enviando}
-          errorGeneral={errorGeneral}
-          errores={erroresDeCampo}
-        />
-      </div>
-    </main>
+    <MarcoDeAcceso
+      descripcion={TEXTOS_LOGIN.subtitulo}
+      titulo={TEXTOS_LOGIN.titulo}
+    >
+      <FormularioDeIngreso
+        alCambiarContrasena={setPassword}
+        alCambiarCorreo={setEmail}
+        alEnviar={(evento) => void ingresar(evento)}
+        contrasena={password}
+        correo={email}
+        enviando={enviando}
+        errorGeneral={errorGeneral}
+        errores={erroresDeCampo}
+      />
+    </MarcoDeAcceso>
   );
 }
 

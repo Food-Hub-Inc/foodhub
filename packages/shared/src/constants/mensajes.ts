@@ -147,6 +147,18 @@ export const MENSAJES_USUARIO = {
   /** PROPIO - US-GURP-08, tercer criterio: motivo obligatorio al suspender. */
   motivoSuspensionObligatorio: 'Indicá el motivo de la suspensión.',
 
+  /**
+   * PROPIO - US-GURP-06, quinto criterio: la cuenta se crea y aparece en el
+   * listado. El alta es por invitacion, asi que el mensaje tiene que decir que
+   * la cuenta todavia no esta operativa: el administrador no puede quedarse
+   * esperando que la persona ingrese sin haber recibido el correo.
+   */
+  usuarioCreado:
+    'Creamos la cuenta y le enviamos un correo para que defina su contraseña.',
+
+  /** PROPIO - US-GURP-07, confirmacion de la edicion desde el panel. */
+  usuarioActualizado: 'Guardamos los cambios de la cuenta.',
+
   /** PROPIO - US-GURP-08, confirmacion de la suspension. */
   usuarioSuspendido: 'La cuenta quedó suspendida.',
 

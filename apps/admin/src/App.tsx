@@ -1,32 +1,38 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { RutaProtegida } from './components/RutaProtegida.js';
 import { LayoutPanel } from './components/layout/LayoutPanel.js';
+import { RUTAS } from './lib/rutas.js';
 import { Auditoria } from './pages/auditoria/Auditoria.js';
 import { Login } from './pages/Login.js';
+import { NuevaPassword } from './pages/NuevaPassword.js';
 import { Proximamente } from './pages/Proximamente.js';
 import { Usuarios } from './pages/usuarios/Usuarios.js';
 
 /**
  * Ruteo del panel de administración.
  *
- * `/login` es la única ruta pública. Todo el resto vive detrás de
- * `RutaProtegida`, que exige sesión iniciada Y rol `ADMINISTRADOR`
- * (US-GURP-10): el panel completo es una herramienta de administración.
+ * Hay exactamente dos rutas públicas, y las dos por el mismo motivo: quien las
+ * abre todavía no puede acreditar que es administrador. `/login` porque no tiene
+ * sesión, y `/nueva-password` porque llega desde el correo de invitación con una
+ * sesión pero sin contraseña propia. Todo el resto vive detrás de
+ * `RutaProtegida`, que exige sesión iniciada Y rol `ADMINISTRADOR` (US-GURP-10).
  *
  * Estado de la Etapa 6:
  *
- *   /login          PAN-AUT-03 · ingreso del administrador       implementada
- *   /usuarios       PAN-ADM-01 · gestión de cuentas              implementada
- *   /auditoria      PAN-AUD-01 · auditoría y seguridad           implementada
- *   /               inicio del panel                             por codificar
- *   /moderacion     PAN-ADM-02 · moderación de contenido         por codificar
- *   /metricas       PAN-ADM-03 · métricas generales              por codificar
- *   /configuracion  PAN-ADM-04 · configuración del sistema       por codificar
+ *   /login           PAN-AUT-03 · ingreso del administrador       implementada
+ *   /nueva-password  definición de contraseña del invitado        implementada
+ *   /usuarios        PAN-ADM-01 · gestión de cuentas              implementada
+ *   /auditoria       PAN-AUD-01 · auditoría y seguridad           implementada
+ *   /                inicio del panel                             por codificar
+ *   /moderacion      PAN-ADM-02 · moderación de contenido         por codificar
+ *   /metricas        PAN-ADM-03 · métricas generales              por codificar
+ *   /configuracion   PAN-ADM-04 · configuración del sistema       por codificar
  */
 export function App() {
   return (
     <Routes>
-      <Route element={<Login />} path="/login" />
+      <Route element={<Login />} path={RUTAS.login} />
+      <Route element={<NuevaPassword />} path={RUTAS.nuevaPassword} />
 
       <Route
         element={
@@ -45,7 +51,7 @@ export function App() {
 
       {/* Una dirección inventada no muestra un error: lleva al inicio del
           panel, que es de donde el administrador puede seguir trabajando. */}
-      <Route element={<Navigate replace to="/" />} path="*" />
+      <Route element={<Navigate replace to={RUTAS.inicio} />} path="*" />
     </Routes>
   );
 }
