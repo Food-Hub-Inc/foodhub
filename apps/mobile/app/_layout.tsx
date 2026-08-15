@@ -13,6 +13,7 @@ import {
   PlusJakartaSans_800ExtraBold,
   useFonts,
 } from '@expo-google-fonts/plus-jakarta-sans';
+import { GateDeSesion } from '../src/components/GateDeSesion';
 import '../global.css';
 
 /**
@@ -65,7 +66,12 @@ export default function LayoutRaiz() {
       <HeroUINativeProvider>
         <QueryClientProvider client={queryClient}>
           <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false }} />
+          {/* El gate va DENTRO del proveedor de consultas y por encima del
+              Stack: necesita React Query para preguntar el perfil, y tiene que
+              poder redirigir antes de que se dibuje ninguna pantalla. */}
+          <GateDeSesion>
+            <Stack screenOptions={{ headerShown: false }} />
+          </GateDeSesion>
         </QueryClientProvider>
       </HeroUINativeProvider>
     </GestureHandlerRootView>
