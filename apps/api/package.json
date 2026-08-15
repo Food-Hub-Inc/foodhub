@@ -10,6 +10,7 @@
     "build": "tsc --project tsconfig.build.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
+    "crear-admin": "tsx src/scripts/crear-administrador.ts",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest"
   },
