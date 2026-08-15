@@ -8,7 +8,6 @@ import { PieDeRegistro } from '../../src/components/registro/PieDeRegistro';
 import { AreaTexto } from '../../src/components/ui/AreaTexto';
 import { Aviso } from '../../src/components/ui/Aviso';
 import { EncabezadoPantalla } from '../../src/components/ui/EncabezadoPantalla';
-import { Etiqueta } from '../../src/components/ui/Etiqueta';
 import type { FotoElegida } from '../../src/components/ui/SelectorDeFoto';
 import { SelectorDeUbicacion } from '../../src/components/ui/SelectorDeUbicacion';
 import { useFormulario } from '../../src/hooks/useFormulario';
@@ -53,8 +52,13 @@ export default function RegistroCocinero() {
   );
 
   function enviar() {
+    // Con la cuenta ya creada el botón cambió de sentido: solo queda entrar.
+    if (registro.cuentaCreada) {
+      void registro.continuar();
+      return;
+    }
     formulario.revelarErrores();
-    if (formulario.datos) void registro.enviar(formulario.datos);
+    if (formulario.datos) void registro.enviar(formulario.datos, foto);
   }
 
   return (
@@ -68,7 +72,10 @@ export default function RegistroCocinero() {
         contentContainerClassName="px-6 pt-4 pb-10"
         keyboardShouldPersistTaps="handled"
       >
-        <Avisos errorGeneral={registro.errorGeneral} />
+        <Avisos
+          avisoDeFoto={registro.avisoDeFoto}
+          errorGeneral={registro.errorGeneral}
+        />
 
         <CamposDeRegistro
           control={{
@@ -94,6 +101,7 @@ export default function RegistroCocinero() {
         />
 
         <PieDeRegistro
+          cuentaCreada={registro.cuentaCreada}
           enviando={registro.enviando}
           errorTerminos={formulario.mensajeDe('terminosAceptados')}
           foto={foto}
@@ -116,8 +124,17 @@ export default function RegistroCocinero() {
  * El informativo es parte del encabezado que dibuja la maquetación de
  * PAN-AUT-02 y por eso esta pantalla no repite la bajada del registro de
  * cliente: ese aviso ocupa su lugar.
+ *
+ * El de la foto va en tono informativo y no de error: la foto es opcional en
+ * US-AUT-02, así que su fallo no invalida el registro que acaba de salir bien.
  */
-function Avisos({ errorGeneral }: { errorGeneral: string | null }) {
+function Avisos({
+  errorGeneral,
+  avisoDeFoto,
+}: {
+  errorGeneral: string | null;
+  avisoDeFoto: string | null;
+}) {
   return (
     <>
       <Aviso
@@ -127,6 +144,9 @@ function Avisos({ errorGeneral }: { errorGeneral: string | null }) {
       />
       {errorGeneral === null ? null : (
         <Aviso className="mb-5" mensaje={errorGeneral} tono="error" />
+      )}
+      {avisoDeFoto === null ? null : (
+        <Aviso className="mb-5" mensaje={avisoDeFoto} tono="informativo" />
       )}
     </>
   );
@@ -168,9 +188,6 @@ function CamposDeCocinero({
       />
 
       <View className="mt-5">
-        <Etiqueta idCampo="ubicacion" obligatorio>
-          {TEXTOS_REGISTRO.ubicacion}
-        </Etiqueta>
         <SelectorDeUbicacion
           error={errorUbicacion}
           onCambiar={onUbicacion}

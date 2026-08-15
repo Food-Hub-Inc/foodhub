@@ -1,9 +1,9 @@
 # Contrato de la API · Módulos transversales
 
 Superficie HTTP de los tres módulos transversales: autenticación (AUT), gestión
-de usuarios (GURP) y auditoría (AUD). Es el contrato al que se atienen la API,
-la app móvil y el panel de administración; si cambia algo acá, cambia en los
-tres a la vez.
+de usuarios (GURP) y auditoría (AUD), más el almacenamiento de imágenes que los
+tres comparten. Es el contrato al que se atienen la API, la app móvil y el panel
+de administración; si cambia algo acá, cambia en los tres a la vez.
 
 Prefijo: `/api/v1`. Todos los schemas citados viven en `@foodhub/shared`.
 
@@ -150,6 +150,92 @@ que quede al menos un `ADMINISTRADOR` con `estado_cuenta = ACTIVA`. Si no,
 `409 ULTIMO_ADMINISTRADOR` con `MENSAJES_USUARIO.ultimoAdministrador`.
 Comprobarlo fuera de la transacción deja una ventana en la que dos
 administradores se dan de baja mutuamente al mismo tiempo.
+
+---
+
+## Almacenamiento · `/almacenamiento`
+
+### `POST /almacenamiento/foto-perfil` — US-AUT-01 · US-AUT-02 · US-GURP-02
+
+Requiere sesión. Body: `solicitarUrlDeCargaSchema` (`{ mimeType, tamano }`).
+Responde `201` con `urlDeCargaSchema`.
+
+**El archivo no pasa por la API.** La respuesta es un permiso de escritura
+acotado; el dispositivo sube contra él directamente a Supabase Storage. Es la
+decisión de arquitectura del punto de factibilidad técnica del documento de
+proyecto, y el motivo por el que el body de la API está limitado a 1 MB.
+
+```
+{ url, token, ruta, urlPublica }
+```
+
+| Campo        | Para qué                                                       |
+| ------------ | -------------------------------------------------------------- |
+| `url`        | destino del `PUT`; vence a los pocos segundos                  |
+| `token`      | credencial de un solo uso que acompaña al `PUT`                |
+| `ruta`       | ruta dentro del bucket, para diagnosticar una subida fallida   |
+| `urlPublica` | URL definitiva que el cliente manda en el `PATCH /usuarios/yo` |
+
+**La ruta la arma el servidor** con `req.usuario.id` (`<id>/<timestamp>.<ext>`).
+Nunca viene del cliente: si viniera, un usuario podría escribir en la carpeta de
+otro cambiando una cadena en el body.
+
+| Resultado                         | Respuesta                                                 |
+| --------------------------------- | --------------------------------------------------------- |
+| firmada                           | `201` con `urlDeCargaSchema`                              |
+| formato o tamaño fuera del límite | `400 IMAGEN_INVALIDA` · `MENSAJES_USUARIO.imagenInvalida` |
+
+El tope se valida dos veces a propósito: `solicitarUrlDeCargaSchema` corre
+también en el teléfono para dar el error sin ida y vuelta a la red, y el
+servicio lo vuelve a comprobar contra `STORAGE_MAX_FILE_SIZE_MB` porque una
+validación que el cliente puede saltear no es un control de acceso.
+
+### Por qué el registro no manda la foto en el alta
+
+`registroClienteSchema` y `registroCocineroSchema` aceptan `fotoPerfilUrl`, pero
+la app **no lo usa**: cuando el usuario toca "Registrarme" todavía no hay cuenta
+ni token, y este endpoint exige sesión. El flujo real de PAN-AUT-01 y PAN-AUT-02
+es de cuatro pasos:
+
+```
+1. POST /auth/registro/{cliente|cocinero}   → 201, cuenta creada sin foto
+2. signInWithPassword                       → JWT
+3. POST /almacenamiento/foto-perfil  [JWT]  → sube el archivo a Storage
+4. PATCH /usuarios/yo { fotoPerfilUrl }     → el perfil queda con la foto
+```
+
+La alternativa —un endpoint público que firme la URL antes del alta— se
+descartó: dejaría escribir en el bucket a cualquiera sin cuenta.
+
+### El bucket `perfiles` es de lectura pública
+
+Decisión del equipo. `usuario.foto_perfil_url` guarda una URL permanente, y la
+foto ya es información pública: se muestra en el perfil público del cocinero
+(RF), en las tarjetas del mapa, en el encabezado del chat y en el panel de
+administración. Con un bucket privado cada lectura necesitaría una URL firmada
+con vencimiento, lo que obligaría a guardar la ruta en lugar de la URL y a
+cambiar `perfilUsuarioSchema`, `usuarioListadoSchema` y todas las pantallas que
+hoy consumen `fotoPerfilUrl`.
+
+La **escritura** sigue cerrada: solo se puede subir con la URL firmada que emite
+este endpoint.
+
+> **Configuración manual.** El bucket tiene que existir en los dos proyectos de
+> Supabase con el nombre de `STORAGE_BUCKET_PERFILES` y marcado como público;
+> la API no lo crea. En `foodhub-dev` ya está creado (`perfiles` y
+> `publicaciones`, los dos públicos). Verificar lo mismo en `foodhub-prod`
+> antes del primer despliegue: sin el bucket, el registro crea la cuenta
+> igual y la foto falla, que es el modo de falla silencioso de este flujo.
+
+### Reemplazo de la foto
+
+Cada subida usa un nombre nuevo. Después de que `PATCH /usuarios/yo` guarda la
+URL, el servicio borra los archivos anteriores de la carpeta del usuario. Es
+"fire and forget": un fallo del borrado se loguea y no altera la respuesta.
+
+Un nombre fijo por usuario habría evitado el borrado, pero la URL no cambiaría
+al reemplazar la foto y el CDN de Storage —y la caché de `expo-image` en el
+dispositivo— seguirían sirviendo la anterior.
 
 ---
 

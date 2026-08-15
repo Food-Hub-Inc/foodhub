@@ -6,6 +6,8 @@ import { BotonDeNotificaciones } from '../../components/ui/BotonDeNotificaciones
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
+import { HojaDeOrigenDeFoto } from '../../components/ui/HojaDeOrigenDeFoto';
+import { useCambiarFotoDePerfil } from '../../hooks/useCambiarFotoDePerfil';
 import { usePerfil } from '../../hooks/usePerfil';
 import { TEXTOS_PERFIL } from '../../lib/textos';
 import { AccionesDeCuenta } from './AccionesDeCuenta';
@@ -28,6 +30,7 @@ import { TarjetaDeIdentidad } from './TarjetaDeIdentidad';
  */
 export function MiPerfil() {
   const perfil = usePerfil();
+  const foto = useCambiarFotoDePerfil();
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -60,17 +63,22 @@ export function MiPerfil() {
           keyboardShouldPersistTaps="handled"
         >
           <TarjetaDeIdentidad
-            onCambiarFoto={() => {
-              // La subida va del dispositivo directo a Supabase Storage por URL
-              // firmada (punto 1.3.1.11) y ese flujo se codifica junto con el
-              // módulo de Publicaciones, que es el que lo estrena.
-            }}
+            errorDeFoto={foto.error}
+            onCambiarFoto={foto.abrir}
             perfil={perfil.data}
+            subiendoFoto={foto.subiendo}
           />
           <FormularioDePerfil perfil={perfil.data} />
           <AccionesDeCuenta />
         </ScrollView>
       ) : null}
+
+      <HojaDeOrigenDeFoto
+        abierta={foto.abierta}
+        onCancelar={foto.cerrar}
+        onElegirDeGaleria={foto.elegirDeGaleria}
+        onTomarFoto={foto.tomarFoto}
+      />
     </SafeAreaView>
   );
 }

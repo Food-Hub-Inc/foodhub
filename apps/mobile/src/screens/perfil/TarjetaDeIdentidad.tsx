@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import type { PerfilUsuario } from '@foodhub/shared';
 import {
@@ -7,7 +7,9 @@ import {
   IconoUsuario,
 } from '../../components/iconos';
 import { FondoTenue } from '../../components/ui/FondoTenue';
+import { MensajeDeCampo } from '../../components/ui/MensajeDeCampo';
 import { TEXTOS_PERFIL } from '../../lib/textos';
+import { useColorDeToken } from '../../lib/tokens';
 
 /**
  * Cabecera de PAN-GURP-01: quién sos.
@@ -19,13 +21,20 @@ import { TEXTOS_PERFIL } from '../../lib/textos';
  * Sin foto cargada se dibuja el marcador con la silueta, como pide el tercer
  * criterio de aceptación de US-GURP-01: la ausencia de imagen no puede romper
  * la pantalla ni dejar un hueco.
+ *
+ * El cambio de foto (US-GURP-02) se avisa sobre el avatar y no con un cartel
+ * aparte: es donde el usuario está mirando cuando toca el botón de cámara.
  */
 export function TarjetaDeIdentidad({
   perfil,
   onCambiarFoto,
+  subiendoFoto = false,
+  errorDeFoto,
 }: {
   perfil: PerfilUsuario;
   onCambiarFoto: () => void;
+  subiendoFoto?: boolean;
+  errorDeFoto?: string | undefined;
 }) {
   return (
     <View className="items-center rounded-md border border-border bg-surface p-6">
@@ -41,9 +50,11 @@ export function TarjetaDeIdentidad({
               style={{ width: '100%', height: '100%' }}
             />
           )}
+
+          {subiendoFoto ? <VeloDeSubida /> : null}
         </View>
 
-        <BotonDeCamara onPress={onCambiarFoto} />
+        <BotonDeCamara deshabilitado={subiendoFoto} onPress={onCambiarFoto} />
       </View>
 
       <Text className="mt-4 text-h2 font-bold text-text-primary">
@@ -52,6 +63,26 @@ export function TarjetaDeIdentidad({
       <Text className="mt-1 text-body text-text-secondary">{perfil.email}</Text>
 
       {perfil.tipo === 'COCINERO' ? <DistintivoDeCocinero /> : null}
+
+      {/* Cubre los dos motivos de rechazo de US-GURP-02: la imagen no cumple
+          formato o tamaño, o la subida a Storage falló. */}
+      <MensajeDeCampo idCampo="foto-perfil" mensaje={errorDeFoto} />
+    </View>
+  );
+}
+
+/**
+ * Velo con indicador mientras la foto viaja a Storage.
+ *
+ * Va ENCIMA del avatar y no reemplazándolo: el usuario tiene que seguir viendo
+ * cuál era su foto anterior mientras se reemplaza, para entender qué cambia.
+ */
+function VeloDeSubida() {
+  const color = useColorDeToken('text-surface');
+
+  return (
+    <View className="absolute inset-0 items-center justify-center bg-text-primary/40">
+      <ActivityIndicator color={color} size="small" />
     </View>
   );
 }
@@ -61,12 +92,20 @@ export function TarjetaDeIdentidad({
  * área de toque se extiende con `hitSlop` hasta los 44 px que exige la guía:
  * agrandar el círculo lo desalinearía del avatar.
  */
-function BotonDeCamara({ onPress }: { onPress: () => void }) {
+function BotonDeCamara({
+  onPress,
+  deshabilitado,
+}: {
+  onPress: () => void;
+  deshabilitado: boolean;
+}) {
   return (
     <Pressable
       accessibilityLabel={TEXTOS_PERFIL.cambiarFoto}
       accessibilityRole="button"
-      className="absolute right-0 bottom-0 h-9 w-9 items-center justify-center rounded-full bg-primary"
+      accessibilityState={{ disabled: deshabilitado }}
+      className={`absolute right-0 bottom-0 h-9 w-9 items-center justify-center rounded-full bg-primary ${deshabilitado ? 'opacity-50' : ''}`}
+      disabled={deshabilitado}
       hitSlop={6}
       onPress={onPress}
     >

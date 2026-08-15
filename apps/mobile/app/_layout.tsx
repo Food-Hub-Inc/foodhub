@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { HeroUINativeProvider } from 'heroui-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
@@ -23,6 +24,12 @@ import '../global.css';
  * GestureHandlerRootView tiene que envolver a HeroUINativeProvider, porque los
  * componentes de HeroUI que usan gestos (bottom sheet, swipe) dependen de ese
  * contexto y fallan en silencio si no está por encima.
+ *
+ * BottomSheetModalProvider monta el portal donde aterriza cualquier
+ * `HojaInferior` de la app (ver `src/components/ui/HojaInferior.tsx`), sin
+ * importar qué tan anidada esté dentro de un ScrollView. Tiene que estar por
+ * encima de `GateDeSesion` y del `Stack`: cualquier pantalla, en cualquier
+ * ruta, puede abrir una hoja.
  */
 
 // Mantiene el splash visible hasta que las fuentes estén listas: sin esto la
@@ -63,17 +70,19 @@ export default function LayoutRaiz() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <HeroUINativeProvider>
-        <QueryClientProvider client={queryClient}>
-          <StatusBar style="dark" />
-          {/* El gate va DENTRO del proveedor de consultas y por encima del
-              Stack: necesita React Query para preguntar el perfil, y tiene que
-              poder redirigir antes de que se dibuje ninguna pantalla. */}
-          <GateDeSesion>
-            <Stack screenOptions={{ headerShown: false }} />
-          </GateDeSesion>
-        </QueryClientProvider>
-      </HeroUINativeProvider>
+      <BottomSheetModalProvider>
+        <HeroUINativeProvider>
+          <QueryClientProvider client={queryClient}>
+            <StatusBar style="dark" />
+            {/* El gate va DENTRO del proveedor de consultas y por encima del
+                Stack: necesita React Query para preguntar el perfil, y tiene que
+                poder redirigir antes de que se dibuje ninguna pantalla. */}
+            <GateDeSesion>
+              <Stack screenOptions={{ headerShown: false }} />
+            </GateDeSesion>
+          </QueryClientProvider>
+        </HeroUINativeProvider>
+      </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );
 }

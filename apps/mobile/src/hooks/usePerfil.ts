@@ -50,7 +50,10 @@ export function useEditarPerfil(): UseMutationResult<
   const cliente = useQueryClient();
 
   return useMutation({
-    mutationFn: editarMiPerfil,
+    // Envuelto y no pasado directo: `editarMiPerfil` acepta un segundo
+    // parámetro opcional (el token del registro) y react-query no debe llenarlo
+    // con lo que sea que pase como segundo argumento en una versión futura.
+    mutationFn: (datos: EditarPerfilInput) => editarMiPerfil(datos),
     onSuccess: (perfil) => {
       // La API devuelve el perfil ya actualizado: escribirlo en la cache evita
       // un GET redundante y deja la pantalla consistente en el mismo tick.

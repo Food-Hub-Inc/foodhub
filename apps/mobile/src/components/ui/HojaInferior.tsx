@@ -1,20 +1,39 @@
-import { useCallback, useEffect, useRef, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type ComponentRef,
+  type ReactNode,
+} from 'react';
 import { View } from 'react-native';
-import BottomSheet, {
+import {
   BottomSheetBackdrop,
+  BottomSheetModal,
   BottomSheetView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import { useResolveClassNames } from 'uniwind';
 
 /**
- * Hoja inferior del sistema. La usa PAN-AUT-05 (cerrar sesión).
+ * Hoja inferior del sistema. La usa PAN-AUT-05 (cerrar sesión) y el selector
+ * de origen de foto de PAN-AUT-01/PAN-AUT-02.
  *
  * POR QUÉ HOJA Y NO MODAL CENTRADO
  * ---------------------------------------------------------------------------
  * Así lo dibuja la maquetación, y la razón es ergonómica: en un teléfono el
  * pulgar llega cómodo a la mitad inferior de la pantalla. Un diálogo centrado
  * pone la acción justo donde la mano no llega sin recolocar el aparato.
+ *
+ * `BottomSheetModal` Y NO `BottomSheet`
+ * ---------------------------------------------------------------------------
+ * `BottomSheet` a secas se posiciona de forma absoluta respecto de su
+ * contenedor más cercano. Cuando este componente se invoca desde adentro de
+ * un `ScrollView` —como el registro, que hace scroll de varios campos— la hoja
+ * queda encerrada en el lugar del formulario donde vive el campo, en vez de
+ * cubrir la pantalla entera desde el borde inferior. `BottomSheetModal` monta
+ * la hoja en el portal que arma `BottomSheetModalProvider` en la raíz de la
+ * app (`app/_layout.tsx`), así que siempre se superpone a toda la pantalla sin
+ * importar cuán anidado esté el componente que la abre.
  *
  * `enableDynamicSizing` deja que la hoja mida lo que mide su contenido. Fijar
  * una altura obliga a elegir un número que se rompe con el cuerpo de texto
@@ -31,14 +50,38 @@ export function HojaInferior({
   children: ReactNode;
   etiquetaAccesible: string;
 }) {
-  const referencia = useRef<BottomSheet>(null);
+  const referencia = useRef<ComponentRef<typeof BottomSheetModal>>(null);
+  // `BottomSheetModal` queda montado siempre (a diferencia de `BottomSheet`),
+  // así que este componente existe desde antes de que se abra la primera vez.
+  // Sin esta bandera, el efecto de abajo dispara un `dismiss()` en el montaje
+  // inicial —cuando `abierta` arranca en `false`— y la librería deja el estado
+  // interno trabado en "cerrándose": el `present()` de la primera apertura real
+  // no hace nada porque nunca hubo una apertura previa que cerrar.
+  const presentada = useRef(false);
+  // Distingue un cierre que la propia hoja ya ejecutó (deslizar hacia abajo,
+  // tocar el fondo) de uno que hay que ordenarle desde afuera (un botón interno
+  // que pone `abierta` en `false`, como "Elegir de la galería"). Sin esto, este
+  // efecto vuelve a llamar `dismiss()` sobre una hoja que ya se estaba cerrando
+  // sola: la librería queda con el estado interno trabado y la apertura
+  // siguiente no hace nada.
+  const cerradaPorGesto = useRef(false);
   const estiloBorde = useResolveClassNames('bg-border');
   const estiloSuperficie = useResolveClassNames('bg-surface');
 
   useEffect(() => {
-    if (abierta) referencia.current?.expand();
-    else referencia.current?.close();
+    if (abierta) {
+      presentada.current = true;
+      referencia.current?.present();
+    } else if (presentada.current && !cerradaPorGesto.current) {
+      referencia.current?.dismiss();
+    }
+    cerradaPorGesto.current = false;
   }, [abierta]);
+
+  const manejarCierre = useCallback(() => {
+    cerradaPorGesto.current = true;
+    onCerrar();
+  }, [onCerrar]);
 
   const fondo = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -53,15 +96,11 @@ export function HojaInferior({
     [],
   );
 
-  if (!abierta) return null;
-
   return (
-    <BottomSheet
+    <BottomSheetModal
       ref={referencia}
-      index={0}
-      enablePanDownToClose
       enableDynamicSizing
-      onClose={onCerrar}
+      onDismiss={manejarCierre}
       backdropComponent={fondo}
       backgroundStyle={estiloSuperficie}
       handleIndicatorStyle={estiloBorde}
@@ -70,6 +109,6 @@ export function HojaInferior({
       <BottomSheetView>
         <View className="px-6 pb-10 pt-2">{children}</View>
       </BottomSheetView>
-    </BottomSheet>
+    </BottomSheetModal>
   );
 }

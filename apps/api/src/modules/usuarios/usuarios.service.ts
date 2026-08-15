@@ -31,6 +31,7 @@ import {
   supabaseAdmin,
 } from '../../lib/supabase.js';
 import { AppError, noEncontrado } from '../../middleware/error.middleware.js';
+import { limpiarFotosDePerfilAnteriores } from '../almacenamiento/almacenamiento.service.js';
 import { registrarOperacion } from '../auditoria/auditoria.service.js';
 
 /**
@@ -178,6 +179,15 @@ export async function editarPerfil(entrada: {
         });
     }
   });
+
+  /**
+   * La foto anterior se borra DESPUES de que la URL nueva quedo guardada, y
+   * solo si el campo participo de esta edicion. Con `null` —el usuario quito su
+   * foto— la carpeta queda vacia, que es justamente lo que corresponde.
+   */
+  if (datos.fotoPerfilUrl !== undefined) {
+    void limpiarFotosDePerfilAnteriores(usuarioId, datos.fotoPerfilUrl ?? '');
+  }
 
   void registrarOperacion({
     usuarioId,
