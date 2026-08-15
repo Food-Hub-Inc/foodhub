@@ -301,22 +301,3 @@ export function IconoChevronDerecha({ className }: PropsIcono) {
     </Trazo>
   );
 }
-
-/**
- * Pin del logo. Es el único ícono con relleno: en la marca es una forma
- * sólida, no un contorno.
- */
-export function IconoPin({ className }: PropsIcono) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={clases('size-5 shrink-0', className)}
-      fill="currentColor"
-      focusable="false"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M12 2.5a7.25 7.25 0 0 0-7.25 7.25c0 5.16 6.3 11.28 6.57 11.54a.97.97 0 0 0 1.36 0c.27-.26 6.57-6.38 6.57-11.54A7.25 7.25 0 0 0 12 2.5m0 10a2.75 2.75 0 1 1 0-5.5 2.75 2.75 0 0 1 0 5.5" />
-    </svg>
-  );
-}
