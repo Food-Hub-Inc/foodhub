@@ -27,3 +27,13 @@ declare namespace NodeJS {
     readonly APP_ENV?: 'development' | 'production';
   }
 }
+
+/**
+ * Metro resuelve `import x from './imagen.png'` a un asset id (`number`) o,
+ * con `expo-image`, a un módulo con `default`. Sin esta declaración TS no
+ * conoce la extensión y el import rompe la compilación (TS2307).
+ */
+declare module '*.png' {
+  const valor: number;
+  export default valor;
+}

@@ -125,16 +125,25 @@ rm -rf android   # el proyecto es CNG: el directorio nativo no se versiona
 `notification-icon.png`. Sin esos tres archivos el prebuild aborta con
 `ENOENT ... adaptive-icon.png` y la build falla en EAS.
 
-Los que están hoy en `assets/` son **marcadores de posición** generados con los
-colores de la guía visual (`#EC6829` y `#FAFAF7`), no la identidad definitiva.
-Hay que reemplazarlos por el arte real del PDF de maquetación **antes de armar
-la build de `production`**:
+`adaptive-icon.png` ya es el isotipo real (`IsotipoFoodHub.png` del PDF de
+maquetación), centrado en la zona segura del 66% sobre fondo
+`--color-surface`. `splash.png` y `notification-icon.png` siguen siendo
+**marcadores de posición** generados con los colores de la guía visual
+(`#EC6829` y `#FAFAF7`), no la identidad definitiva. Hay que reemplazarlos por
+el arte real **antes de armar la build de `production`**:
 
-| Archivo                 | Tamaño    | Requisito                                                    |
-| ----------------------- | --------- | ------------------------------------------------------------ |
-| `adaptive-icon.png`     | 1024×1024 | capa frontal; Android recorta al 66% central                 |
-| `splash.png`            | 1024×1024 | se dibuja sobre `#FAFAF7`, con `resizeMode: contain`         |
-| `notification-icon.png` | 96×96     | silueta blanca sobre transparente; Android descarta el color |
+| Archivo                 | Tamaño    | Requisito                                                    | Estado       |
+| ----------------------- | --------- | ------------------------------------------------------------ | ------------ |
+| `adaptive-icon.png`     | 1024×1024 | capa frontal; Android recorta al 66% central                 | isotipo real |
+| `splash.png`            | 1024×1024 | se dibuja sobre `#FAFAF7`, con `resizeMode: contain`         | placeholder  |
+| `notification-icon.png` | 96×96     | silueta blanca sobre transparente; Android descarta el color | placeholder  |
+
+Un cambio en `adaptive-icon.png` (o en `adaptiveIcon.backgroundColor` de
+`app.config.ts`) no se ve con Metro/hot reload: es un recurso nativo que se
+empaqueta en el `prebuild`. Para verlo en el teléfono hace falta una build
+nueva (`pnpm --filter @foodhub/mobile run build:dev`) e instalarla; como
+`development` conserva el mismo `applicationId`, instalar el APK nuevo
+reemplaza al anterior sin desinstalar a mano.
 
 ## `userInterfaceStyle`
 
