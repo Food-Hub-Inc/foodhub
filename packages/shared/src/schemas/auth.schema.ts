@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { TIPO_USUARIO } from '../constants/enums.js';
+import { ESTADO_CUENTA, TIPO_USUARIO } from '../constants/enums.js';
+import { MENSAJES_AUTH, MENSAJES_VALIDACION } from '../constants/mensajes.js';
 
 /**
  * Contratos de entrada del modulo de Autenticacion y Control de Acceso.
@@ -23,7 +24,7 @@ import { TIPO_USUARIO } from '../constants/enums.js';
  */
 export const passwordSchema = z
   .string()
-  .min(8, 'La contraseña debe tener al menos 8 caracteres.')
+  .min(8, MENSAJES_VALIDACION.contrasenaCorta)
   .max(72, 'La contraseña no puede superar los 72 caracteres.')
   .regex(/[a-z]/, 'La contraseña debe incluir al menos una letra minúscula.')
   .regex(/[A-Z]/, 'La contraseña debe incluir al menos una letra mayúscula.')
@@ -33,7 +34,7 @@ export const emailSchema = z
   .string()
   .trim()
   .toLowerCase()
-  .email('Ingresá un correo electrónico válido.');
+  .email(MENSAJES_VALIDACION.correoInvalido);
 
 const nombreSchema = z
   .string()
@@ -72,7 +73,7 @@ const registroBase = z.object({
   confirmPassword: z.string(),
   fotoPerfilUrl: z.url().optional(),
   terminosAceptados: z.literal(true, {
-    message: 'Debés aceptar los términos para continuar.',
+    message: MENSAJES_VALIDACION.terminosSinAceptar,
   }),
 });
 
@@ -90,7 +91,7 @@ const passwordsCoinciden = (datos: {
 
 // Sin `as const`: zod espera un `PropertyKey[]` mutable en `path`.
 const errorNoCoinciden = {
-  message: 'Las contraseñas no coinciden.',
+  message: MENSAJES_AUTH.contrasenasNoCoinciden,
   path: ['confirmPassword'],
 };
 
@@ -139,7 +140,14 @@ export const restablecerPasswordSchema = z
   })
   .refine(passwordsCoinciden, errorNoCoinciden);
 
-/** Perfil devuelto por la API una vez autenticado el usuario. */
+/**
+ * Perfil devuelto por la API una vez autenticado el usuario.
+ *
+ * US-GURP-01 exige mostrar nombre, apellido, correo, rol, estado de cuenta y
+ * foto; y, si es cocinero, tambien la descripcion publica y la ubicacion. Esos
+ * dos ultimos campos son opcionales aca porque solo existen para ese rol: el
+ * cliente y el administrador no tienen fila en `cocinero`.
+ */
 export const perfilUsuarioSchema = z.object({
   id: z.uuid(),
   nombre: z.string(),
@@ -147,7 +155,10 @@ export const perfilUsuarioSchema = z.object({
   email: z.email(),
   tipo: z.enum(TIPO_USUARIO),
   fotoPerfilUrl: z.url().nullable(),
-  estadoCuenta: z.string(),
+  estadoCuenta: z.enum(ESTADO_CUENTA),
+  fechaRegistro: z.iso.datetime(),
+  descripcionPublica: z.string().nullable().optional(),
+  ubicacion: ubicacionSchema.nullable().optional(),
 });
 
 export type Ubicacion = z.infer<typeof ubicacionSchema>;
