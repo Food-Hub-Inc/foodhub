@@ -109,7 +109,6 @@ export const TEXTOS_USUARIOS = {
   filtroEstado: 'Estado',
   todos: 'Todos',
   masFiltros: 'Más filtros',
-  exportar: 'Exportar CSV',
   nuevo: 'Nuevo usuario',
   sinAcciones: 'Sin acciones',
 
@@ -160,14 +159,6 @@ export const TEXTOS_USUARIOS = {
   vacioConFiltros: 'No se encontraron usuarios con los filtros seleccionados.',
   limpiarFiltros: 'Limpiar filtros',
 
-  /**
-   * [PROPIO] `docs/API-TRANSVERSALES.md` no define un endpoint de exportación
-   * para el listado de usuarios; solo el módulo de auditoría tiene
-   * `/auditoria/exportar`. El botón queda visible como en la maquetación pero
-   * inactivo, en vez de inventar una ruta que la API no expone.
-   */
-  exportarNoDisponible:
-    'La exportación del listado de usuarios todavía no está disponible.',
   /**
    * [PROPIO] `filtrosUsuarioSchema` define exactamente tres filtros (búsqueda,
    * rol y estado) y los tres ya están en la barra. No hay filtros adicionales

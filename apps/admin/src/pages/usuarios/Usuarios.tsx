@@ -13,16 +13,11 @@ import {
   listarUsuarios,
   type FiltrosListado,
 } from '../../api/usuarios.js';
-import { BotonNoDisponible } from '../../components/BotonNoDisponible.js';
 import { EncabezadoPantalla } from '../../components/layout/EncabezadoPantalla.js';
 import { EsqueletoDeTabla } from '../../components/estados/EsqueletoDeTabla.js';
 import { EstadoError } from '../../components/estados/EstadoError.js';
 import { EstadoVacio } from '../../components/estados/EstadoVacio.js';
-import {
-  IconoAgregar,
-  IconoDescargar,
-  IconoUsuarios,
-} from '../../components/iconos/index.js';
+import { IconoAgregar, IconoUsuarios } from '../../components/iconos/index.js';
 import { useValorDebounced } from '../../hooks/useValorDebounced.js';
 import { formatearNumero } from '../../lib/formato.js';
 import { TEXTOS_USUARIOS } from '../../lib/textos.js';
@@ -135,19 +130,19 @@ export function Usuarios() {
   );
 }
 
+/**
+ * El mockup de PAN-ADM-01 dibuja además un botón «Exportar CSV», que acá NO
+ * está. Ningún requisito funcional ni criterio de aceptación de US-GURP-05 a
+ * US-GURP-09 pide exportar el padrón de usuarios, y el contrato de la API solo
+ * define exportación para auditoría. Decisión del equipo: antes que dejar un
+ * control muerto en pantalla, se saca hasta que exista el requisito.
+ */
 function AccionesDelEncabezado({ alCrear }: { alCrear: () => void }) {
   return (
-    <>
-      <BotonNoDisponible motivo={TEXTOS_USUARIOS.exportarNoDisponible}>
-        <IconoDescargar className="size-4" />
-        {TEXTOS_USUARIOS.exportar}
-      </BotonNoDisponible>
-
-      <Button onPress={alCrear}>
-        <IconoAgregar className="size-4" />
-        {TEXTOS_USUARIOS.nuevo}
-      </Button>
-    </>
+    <Button onPress={alCrear}>
+      <IconoAgregar className="size-4" />
+      {TEXTOS_USUARIOS.nuevo}
+    </Button>
   );
 }
 
