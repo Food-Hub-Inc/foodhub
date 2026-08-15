@@ -1,8 +1,8 @@
 {
+  // `rootDir` y `outDir` viven en tsconfig.build.json y no aca: son opciones
+  // de emision, y este archivo tambien tiene que cubrir lo que NO se compila
+  // (las pruebas y vitest.config.ts). Sin eso, typescript-eslint no encuentra
+  // esos archivos en ningun proyecto y falla al analizarlos.
   "extends": "../../packages/config/tsconfig.node.json",
-  "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src"
-  },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "vitest.config.ts"]
 }

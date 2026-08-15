@@ -2,9 +2,10 @@ import type { NextFunction, Request, Response } from 'express';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { eq } from 'drizzle-orm';
 import { usuario } from '@foodhub/db';
-import type { TipoUsuario } from '@foodhub/shared';
+import { MENSAJES_AUTH, type TipoUsuario } from '@foodhub/shared';
 import { env } from '../config/env.js';
 import { db } from '../lib/db.js';
+import { extraerToken } from '../lib/request.js';
 import { AppError } from './error.middleware.js';
 
 /**
@@ -61,12 +62,6 @@ declare module 'express-serve-static-core' {
   }
 }
 
-function extraerToken(req: Request): string | null {
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) return null;
-  return header.slice('Bearer '.length).trim() || null;
-}
-
 /**
  * Exige un usuario autenticado y con la cuenta habilitada.
  *
@@ -85,7 +80,7 @@ export async function requiereAutenticacion(
   try {
     const token = extraerToken(req);
     if (!token) {
-      throw new AppError(401, 'Iniciá sesión para continuar.', 'SIN_TOKEN');
+      throw new AppError(401, MENSAJES_AUTH.sesionRequerida, 'SIN_TOKEN');
     }
 
     const { payload } = await jwtVerify(token, jwks, {
@@ -94,7 +89,7 @@ export async function requiereAutenticacion(
     });
 
     if (!payload.sub) {
-      throw new AppError(401, 'Sesión inválida.', 'TOKEN_INVALIDO');
+      throw new AppError(401, MENSAJES_AUTH.sesionExpirada, 'TOKEN_INVALIDO');
     }
 
     const [perfil] = await db
@@ -112,7 +107,7 @@ export async function requiereAutenticacion(
       // El token es valido pero no hay perfil: el registro quedo a medias.
       throw new AppError(
         401,
-        'Tu cuenta no está completa.',
+        MENSAJES_AUTH.perfilIncompleto,
         'PERFIL_INEXISTENTE',
       );
     }
@@ -120,7 +115,7 @@ export async function requiereAutenticacion(
     if (perfil.estadoCuenta === 'SUSPENDIDA') {
       throw new AppError(
         403,
-        'Tu cuenta se encuentra suspendida. Contactá al soporte.',
+        MENSAJES_AUTH.cuentaSuspendida,
         'CUENTA_SUSPENDIDA',
       );
     }
@@ -128,7 +123,7 @@ export async function requiereAutenticacion(
     if (perfil.estadoCuenta === 'ELIMINADA') {
       throw new AppError(
         403,
-        'Esta cuenta fue dada de baja.',
+        MENSAJES_AUTH.cuentaEliminada,
         'CUENTA_ELIMINADA',
       );
     }
@@ -142,7 +137,7 @@ export async function requiereAutenticacion(
     }
     // Firma invalida, token expirado o JWKS inaccesible: se responde igual en
     // todos los casos para no dar pistas sobre el motivo del rechazo.
-    next(new AppError(401, 'Sesión inválida o expirada.', 'TOKEN_INVALIDO'));
+    next(new AppError(401, MENSAJES_AUTH.sesionExpirada, 'TOKEN_INVALIDO'));
   }
 }
 

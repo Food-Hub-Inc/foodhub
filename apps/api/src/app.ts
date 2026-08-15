@@ -12,6 +12,17 @@ import {
   rutaNoEncontrada,
 } from './middleware/error.middleware.js';
 import { saludRouter } from './modules/salud/salud.router.js';
+import { authRouter } from './modules/auth/auth.router.js';
+import { auditoriaRouter } from './modules/auditoria/auditoria.router.js';
+import { seguridadRouter } from './modules/seguridad/seguridad.router.js';
+import { usuariosRouter } from './modules/usuarios/usuarios.router.js';
+
+/**
+ * Prefijo de todas las rutas de negocio. Versionar desde el principio permite
+ * publicar una v2 sin romper las apps ya instaladas en los telefonos, que no se
+ * actualizan al mismo tiempo que el servidor.
+ */
+const PREFIJO_API = '/api/v1';
 
 /**
  * Construccion de la aplicacion Express.
@@ -97,10 +108,15 @@ export function crearApp(): Express {
   // --- 6. Rutas ---------------------------------------------------------------
   app.use(saludRouter);
 
+  // Modulos transversales (Etapa 6): autenticacion, usuarios y auditoria.
+  app.use(`${PREFIJO_API}/auth`, authRouter);
+  app.use(`${PREFIJO_API}/usuarios`, usuariosRouter);
+  app.use(`${PREFIJO_API}/auditoria`, auditoriaRouter);
+  app.use(`${PREFIJO_API}/seguridad`, seguridadRouter);
+
   // A medida que avance la Etapa 6 se montan aca los routers de cada modulo:
-  //   app.use('/api/v1/auth', authRouter);
-  //   app.use('/api/v1/publicaciones', publicacionesRouter);
-  //   app.use('/api/v1/pedidos', pedidosRouter);
+  //   app.use(`${PREFIJO_API}/publicaciones`, publicacionesRouter);
+  //   app.use(`${PREFIJO_API}/pedidos`, pedidosRouter);
   //   ...
 
   // --- 7. Errores (siempre al final) -----------------------------------------

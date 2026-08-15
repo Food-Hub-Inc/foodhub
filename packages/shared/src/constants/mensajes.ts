@@ -65,6 +65,16 @@ export const MENSAJES_AUTH = {
 
   /** PROPIO - no hay token en una pantalla protegida. */
   sesionRequerida: 'Iniciá sesión para continuar.',
+
+  /**
+   * PROPIO - el JWT es valido pero no hay fila en `usuario`.
+   *
+   * Solo puede pasar si el alta se corto entre la creacion de la cuenta en
+   * GoTrue y la del perfil. El registro compensa ese caso borrando la cuenta,
+   * asi que llegar aca indica una interrupcion que ni siquiera la compensacion
+   * alcanzo a manejar.
+   */
+  perfilIncompleto: 'Tu cuenta no está completa.',
 } as const;
 
 /** Validaciones de formulario comunes a varios modulos. */

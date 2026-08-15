@@ -1,8 +1,13 @@
 import type { NextFunction, Request, Response } from 'express';
 import { eventoSeguridad } from '@foodhub/db';
-import type { TipoUsuario } from '@foodhub/shared';
+import {
+  MENSAJES_AUTH,
+  MENSAJES_USUARIO,
+  type TipoUsuario,
+} from '@foodhub/shared';
 import { db } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
+import { obtenerIp } from '../lib/request.js';
 import { AppError } from './error.middleware.js';
 
 /**
@@ -34,7 +39,7 @@ import { AppError } from './error.middleware.js';
 export function requiereRol(...rolesPermitidos: TipoUsuario[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.usuario) {
-      next(new AppError(401, 'Iniciá sesión para continuar.', 'SIN_SESION'));
+      next(new AppError(401, MENSAJES_AUTH.sesionRequerida, 'SIN_SESION'));
       return;
     }
 
@@ -47,7 +52,7 @@ export function requiereRol(...rolesPermitidos: TipoUsuario[]) {
     next(
       new AppError(
         403,
-        'No tenés permiso para realizar esta acción.',
+        MENSAJES_USUARIO.accesoNoAutorizado,
         'ROL_INSUFICIENTE',
       ),
     );
@@ -81,16 +86,4 @@ async function registrarAccesoDenegado(
   } catch (error) {
     logger.error({ err: error }, 'no se pudo registrar el acceso denegado');
   }
-}
-
-/**
- * IP real del cliente.
- *
- * Detras del proxy de Railway, `req.ip` devuelve la IP del propio proxy salvo
- * que Express confie en el encabezado X-Forwarded-For. Por eso `app.set('trust
- * proxy', 1)` en app.ts: sin eso, todos los eventos de seguridad quedarian
- * registrados con la misma IP y el dato seria inutil.
- */
-function obtenerIp(req: Request): string | null {
-  return req.ip ?? req.socket.remoteAddress ?? null;
 }
