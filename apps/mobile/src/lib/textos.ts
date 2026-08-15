@@ -65,6 +65,22 @@ export const TEXTOS_REGISTRO = {
   registrarse: 'Registrarse',
   /** [PROPIO] Estado del botón mientras se crea la cuenta. */
   registrando: 'Creando tu cuenta…',
+  /**
+   * [PROPIO] La cuenta ya se creó y solo falta entrar. Reemplaza a
+   * "Registrarse" cuando la foto de perfil no se pudo subir: el alta no se
+   * puede reintentar —chocaría contra su propio correo duplicado— y dejar el
+   * botón original invitaría justamente a eso.
+   */
+  continuar: 'Continuar',
+  /** [PROPIO] Estado del botón "Continuar": la cuenta ya existe, solo falta entrar. */
+  entrando: 'Entrando…',
+  /**
+   * [PROPIO] La foto es OPCIONAL en US-AUT-01 y US-AUT-02, así que su fallo no
+   * invalida el registro. El aviso dice las tres cosas que el usuario necesita
+   * saber: que la cuenta existe, que la foto no quedó y dónde cargarla después.
+   */
+  fotoNoSubida:
+    'Creamos tu cuenta, pero no pudimos subir tu foto. Podés cargarla más tarde desde Mi perfil.',
   yaTenesCuenta: '¿Ya tenés cuenta? ',
   iniciarSesion: 'Iniciar sesión',
 } as const;
@@ -210,7 +226,19 @@ export const TEXTOS_FOTO = {
   /** [PROPIO] El usuario negó el acceso a la galería. */
   permisoDenegado:
     'Necesitamos acceso a tus fotos para que puedas elegir una imagen de perfil.',
+  /** [PROPIO] El usuario negó el acceso a la cámara. */
+  permisoCamaraDenegado:
+    'Necesitamos acceso a tu cámara para que puedas tomar la foto de perfil.',
   vistaPrevia: 'Vista previa de la foto de perfil',
+  /**
+   * [PROPIO] Elección de origen de la imagen. El criterio de aceptación de
+   * US-AUT-01 y US-AUT-02 no define el mecanismo, así que se reutiliza el texto
+   * literal que sí fija US-MSG-04 para el mismo dilema (adjuntar imagen en el
+   * chat): "Tomar foto" / "Elegir de la galería".
+   */
+  elegirOrigen: 'Elegir origen de la foto',
+  tomarFoto: 'Tomar foto',
+  elegirDeGaleria: 'Elegir de la galería',
 } as const;
 
 /**

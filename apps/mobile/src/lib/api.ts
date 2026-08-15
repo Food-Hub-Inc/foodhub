@@ -109,9 +109,17 @@ const CODIGOS_SESION_MUERTA = new Set([
   'PERFIL_INEXISTENTE',
 ]);
 
-async function encabezados(): Promise<Headers> {
+/**
+ * Token con el que firmar la request.
+ *
+ * Se puede pasar uno explícito, y no siempre el de la sesión guardada, por un
+ * único caso: el registro sube la foto de perfil ANTES de abrir la sesión en la
+ * app (ver `useRegistro`). En ese momento hay un token válido pero todavía no
+ * hay sesión en el cliente de Supabase, así que `obtenerToken` devolvería null.
+ */
+async function encabezados(tokenExplicito?: string): Promise<Headers> {
   const cabeceras = new Headers({ Accept: 'application/json' });
-  const token = await obtenerToken();
+  const token = tokenExplicito ?? (await obtenerToken());
   if (token) cabeceras.set('Authorization', `Bearer ${token}`);
   return cabeceras;
 }
@@ -123,7 +131,10 @@ function mensajePorDefecto(estado: number): string {
   return MENSAJES_ERROR.interno;
 }
 
-async function aError(respuesta: Response): Promise<ErrorApi> {
+async function aError(
+  respuesta: Response,
+  tokenExplicito?: string,
+): Promise<ErrorApi> {
   let cuerpo: CuerpoError = {};
   try {
     cuerpo = (await respuesta.json()) as CuerpoError;
@@ -138,8 +149,16 @@ async function aError(respuesta: Response): Promise<ErrorApi> {
    * Con el token muerto la app queda en un estado engañoso: la sesión sigue en
    * el Keystore, la interfaz se ve iniciada y todas las consultas fallan. Se
    * cierra acá para que el gate del layout raíz mande al login en el mismo tick.
+   *
+   * No aplica cuando la request llevaba un token explícito: ese token no es la
+   * sesión de la app —todavía no hay ninguna— y cerrar la que hubiera expulsaría
+   * a un usuario que no tiene nada que ver con el fallo.
    */
-  if (respuesta.status === 401 && CODIGOS_SESION_MUERTA.has(codigo)) {
+  if (
+    tokenExplicito === undefined &&
+    respuesta.status === 401 &&
+    CODIGOS_SESION_MUERTA.has(codigo)
+  ) {
     await supabase.auth.signOut();
   }
 
@@ -180,8 +199,9 @@ async function conCuerpo<T>(
   metodo: 'POST' | 'PATCH' | 'DELETE',
   ruta: string,
   datos?: unknown,
+  token?: string,
 ): Promise<T> {
-  const cabeceras = await encabezados();
+  const cabeceras = await encabezados(token);
   if (datos !== undefined) cabeceras.set('Content-Type', 'application/json');
 
   const respuesta = await pedir(`${BASE}${ruta}`, {
@@ -190,7 +210,7 @@ async function conCuerpo<T>(
     ...(datos === undefined ? {} : { body: JSON.stringify(datos) }),
   });
 
-  if (!respuesta.ok) throw await aError(respuesta);
+  if (!respuesta.ok) throw await aError(respuesta, token);
   return (await leerCuerpo(respuesta)) as T;
 }
 
@@ -204,12 +224,12 @@ export const api = {
     return (await leerCuerpo(respuesta)) as T;
   },
 
-  enviar<T>(ruta: string, datos?: unknown): Promise<T> {
-    return conCuerpo<T>('POST', ruta, datos);
+  enviar<T>(ruta: string, datos?: unknown, token?: string): Promise<T> {
+    return conCuerpo<T>('POST', ruta, datos, token);
   },
 
-  modificar<T>(ruta: string, datos: unknown): Promise<T> {
-    return conCuerpo<T>('PATCH', ruta, datos);
+  modificar<T>(ruta: string, datos: unknown, token?: string): Promise<T> {
+    return conCuerpo<T>('PATCH', ruta, datos, token);
   },
 
   eliminar<T>(ruta: string, datos?: unknown): Promise<T> {

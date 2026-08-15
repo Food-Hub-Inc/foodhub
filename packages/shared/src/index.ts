@@ -8,6 +8,7 @@
 
 export * from './constants/enums.js';
 export * from './constants/mensajes.js';
+export * from './schemas/almacenamiento.schema.js';
 export * from './schemas/auth.schema.js';
 export * from './schemas/auditoria.schema.js';
 export * from './schemas/pedido.schema.js';

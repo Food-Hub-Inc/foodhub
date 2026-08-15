@@ -2,7 +2,6 @@ import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Boton, BotonDeTexto } from '../ui/Boton';
 import { Casilla } from '../ui/Casilla';
-import { Etiqueta } from '../ui/Etiqueta';
 import { SelectorDeFoto, type FotoElegida } from '../ui/SelectorDeFoto';
 import { TEXTOS_REGISTRO } from '../../lib/textos';
 
@@ -16,6 +15,11 @@ import { TEXTOS_REGISTRO } from '../../lib/textos';
  *
  * La foto de perfil es opcional en las dos historias. No participa de la
  * validación ni bloquea el envío.
+ *
+ * CON `cuentaCreada` EL PIE CAMBIA DE SENTIDO. Pasa a true cuando el alta
+ * terminó bien pero la foto no se pudo subir: el formulario ya no se puede
+ * reenviar —el correo chocaría contra su propia cuenta— así que el selector se
+ * bloquea y el botón deja de decir "Registrarse" para ofrecer entrar.
  */
 export function PieDeRegistro({
   foto,
@@ -26,6 +30,7 @@ export function PieDeRegistro({
   puedeEnviar,
   enviando,
   onEnviar,
+  cuentaCreada = false,
 }: {
   foto: FotoElegida | null;
   onFoto: (foto: FotoElegida | null) => void;
@@ -35,14 +40,19 @@ export function PieDeRegistro({
   puedeEnviar: boolean;
   enviando: boolean;
   onEnviar: () => void;
+  cuentaCreada?: boolean;
 }) {
   return (
     <View>
       <View className="mt-5">
-        <Etiqueta idCampo="foto" sufijo={TEXTOS_REGISTRO.opcional}>
-          {TEXTOS_REGISTRO.fotoPerfil}
-        </Etiqueta>
-        <SelectorDeFoto foto={foto} onElegir={onFoto} />
+        {/* Con la cuenta ya creada el selector no tiene a dónde subir: el
+            reintento de la foto vive en PAN-GURP-01. Deshabilitarlo es mejor
+            que dejarlo tocable y que no pase nada. */}
+        <SelectorDeFoto
+          deshabilitado={cuentaCreada}
+          foto={foto}
+          onElegir={onFoto}
+        />
       </View>
 
       <View className="mt-5">
@@ -64,11 +74,13 @@ export function PieDeRegistro({
       <Boton
         cargando={enviando}
         className="mt-6"
-        deshabilitado={!puedeEnviar}
+        deshabilitado={!puedeEnviar && !cuentaCreada}
         onPress={onEnviar}
-        textoCargando={TEXTOS_REGISTRO.registrando}
+        textoCargando={
+          cuentaCreada ? TEXTOS_REGISTRO.entrando : TEXTOS_REGISTRO.registrando
+        }
       >
-        {TEXTOS_REGISTRO.registrarse}
+        {cuentaCreada ? TEXTOS_REGISTRO.continuar : TEXTOS_REGISTRO.registrarse}
       </Boton>
 
       <View className="mt-6 flex-row justify-center">

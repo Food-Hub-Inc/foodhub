@@ -41,8 +41,13 @@ export default function RegistroCliente() {
   );
 
   function enviar() {
+    // Con la cuenta ya creada el botón cambió de sentido: solo queda entrar.
+    if (registro.cuentaCreada) {
+      void registro.continuar();
+      return;
+    }
     formulario.revelarErrores();
-    if (formulario.datos) void registro.enviar(formulario.datos);
+    if (formulario.datos) void registro.enviar(formulario.datos, foto);
   }
 
   return (
@@ -68,6 +73,16 @@ export default function RegistroCliente() {
           />
         )}
 
+        {/* La foto es opcional: que no se haya podido subir no invalida el
+            registro, así que se informa y se deja continuar. */}
+        {registro.avisoDeFoto === null ? null : (
+          <Aviso
+            className="mb-5"
+            mensaje={registro.avisoDeFoto}
+            tono="informativo"
+          />
+        )}
+
         <CamposDeRegistro
           control={{
             valores: formulario.valores,
@@ -79,6 +94,7 @@ export default function RegistroCliente() {
         />
 
         <PieDeRegistro
+          cuentaCreada={registro.cuentaCreada}
           enviando={registro.enviando}
           errorTerminos={formulario.mensajeDe('terminosAceptados')}
           foto={foto}
