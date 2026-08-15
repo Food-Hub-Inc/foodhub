@@ -6,6 +6,7 @@ import {
   type RegistroClienteInput,
   type RegistroCocineroInput,
 } from '@foodhub/shared';
+import { env } from '../../config/env.js';
 import { db } from '../../lib/db.js';
 import { logger } from '../../lib/logger.js';
 import {
@@ -224,7 +225,14 @@ export async function solicitarRecuperacion(entrada: {
   }
 
   const cliente = crearClienteAnonimo();
-  const { error } = await cliente.auth.resetPasswordForEmail(entrada.email);
+  /**
+   * Sin `redirectTo`, GoTrue manda el enlace a la Site URL del proyecto y el
+   * correo termina en una pagina web generica: el usuario nunca llega a
+   * PAN-AUT-04.1 y el ultimo criterio de US-AUT-04 queda sin cumplir.
+   */
+  const { error } = await cliente.auth.resetPasswordForEmail(entrada.email, {
+    redirectTo: env.URL_RECUPERACION_PASSWORD,
+  });
   if (error) throw error;
 
   // Se registra el id y la IP, nunca el correo: los logs se conservan mas

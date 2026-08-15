@@ -67,6 +67,37 @@ const envSchema = z.object({
   // caliente lo sobrescribe configuracion_sistema, editable desde el panel.
   PEDIDO_EXPIRACION_MINUTOS: z.coerce.number().int().positive().default(15),
 
+  /**
+   * Destino del enlace del correo de recuperacion (US-AUT-04, PAN-AUT-04.1).
+   *
+   * Es un deep link al scheme de la app movil, no una URL http: la
+   * recuperacion la piden el cliente y el cocinero desde el telefono, y el
+   * formulario de contrasena nueva vive dentro de la app.
+   *
+   * GoTrue exige que el valor este declarado en la lista blanca de Redirect
+   * URLs del proyecto de Supabase. Si no lo esta, lo descarta EN SILENCIO y
+   * usa la Site URL: el correo se envia igual y el enlace no abre la app, que
+   * es el modo de falla mas dificil de diagnosticar de todo este flujo.
+   */
+  URL_RECUPERACION_PASSWORD: z
+    .string()
+    .min(1)
+    .default('foodhub://nueva-password'),
+
+  /**
+   * Destino del enlace de invitacion cuando el alta del panel crea un
+   * ADMINISTRADOR (US-GURP-06).
+   *
+   * Es una URL http y no un deep link porque el administrador trabaja en el
+   * panel web: mandarlo a la app movil lo obligaria a instalarla solo para
+   * definir su contrasena. El alta de un CLIENTE si usa el deep link, que es
+   * la unica interfaz que ese rol tiene.
+   */
+  URL_INVITACION_PANEL: z
+    .string()
+    .min(1)
+    .default('http://localhost:5173/nueva-password'),
+
   // --- Almacenamiento -------------------------------------------------------
   STORAGE_BUCKET_PERFILES: z.string().default('perfiles'),
   STORAGE_BUCKET_PUBLICACIONES: z.string().default('publicaciones'),

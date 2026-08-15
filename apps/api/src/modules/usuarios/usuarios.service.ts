@@ -21,6 +21,7 @@ import {
   type PerfilUsuario,
   type Ubicacion,
 } from '@foodhub/shared';
+import { env } from '../../config/env.js';
 import { db } from '../../lib/db.js';
 import {
   conCompensacionDeCuenta,
@@ -358,7 +359,18 @@ export async function listarUsuarios(
  * enlace para definir la suya. El administrador nunca conoce una credencial
  * ajena, que es justamente lo que evita que el alta desde el panel se convierta
  * en una via para suplantar a alguien.
+ *
+ * El enlace lleva a lugares distintos segun el rol, y no puede ser uno solo:
+ * el administrador define su contrasena en el panel web, que es donde va a
+ * trabajar, y el cliente en la app movil, que es la unica interfaz que tiene.
+ * Mandar a los dos al mismo destino deja a uno de los dos sin poder terminar
+ * el alta.
  */
+const DESTINO_INVITACION: Record<CrearUsuarioPanelInput['tipo'], string> = {
+  ADMINISTRADOR: env.URL_INVITACION_PANEL,
+  CLIENTE: env.URL_RECUPERACION_PASSWORD,
+};
+
 export async function crearUsuarioPanel(entrada: {
   datos: CrearUsuarioPanelInput;
   administradorId: string;
@@ -367,6 +379,7 @@ export async function crearUsuarioPanel(entrada: {
   const { datos } = entrada;
   const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(
     datos.email,
+    { redirectTo: DESTINO_INVITACION[datos.tipo] },
   );
 
   if (error) {
