@@ -196,6 +196,47 @@ export const MENSAJES_AUDITORIA = {
     'No se encontraron eventos de seguridad con los filtros seleccionados.',
 } as const;
 
+/** Modulo de Configuracion y parametros (US-CFG-01 a US-CFG-06). */
+export const MENSAJES_CONFIGURACION = {
+  /** LITERAL - US-CFG-01, campo obligatorio del formulario de categoria. */
+  campoObligatorio: 'Este campo es obligatorio',
+
+  /** LITERAL - US-CFG-01, alta exitosa de una categoria. */
+  categoriaCreada: 'Categoría creada con éxito',
+
+  /** LITERAL - US-CFG-01, nombre de categoria ya usado (por otra activa). */
+  nombreCategoriaDuplicado: 'Ya existe una categoría con ese nombre',
+
+  /**
+   * LITERAL - US-CFG-01, texto de la ventana de confirmacion al deshabilitar.
+   * `nombre` se interpola porque el criterio de aceptacion pide el nombre
+   * concreto de la categoria en el titulo: "¿Deshabilitar la categoría
+   * '[Nombre]'?".
+   */
+  confirmarDeshabilitarCategoria: (nombre: string) =>
+    `¿Deshabilitar la categoría '${nombre}'?`,
+  advertenciaDeshabilitarCategoria:
+    'Los cocineros no podrán asignar esta categoría a nuevas publicaciones. Las publicaciones existentes con esta categoría no se verán afectadas.',
+
+  /** LITERAL - US-CFG-01, borrado bloqueado por publicaciones asociadas. */
+  categoriaConPublicacionesAsociadas:
+    'No se puede eliminar una categoría con publicaciones asociadas. Puede deshabilitarla para que no esté disponible en nuevas publicaciones.',
+
+  /** PROPIO - US-CFG-01, imagen de categoria fuera de formato o tamano (RF054: 2 MB). */
+  imagenCategoriaInvalida:
+    'La imagen debe ser un archivo JPG, PNG o WEBP de hasta 2 MB.',
+
+  /** PROPIO - US-CFG-01, confirmacion de la edicion de una categoria. */
+  categoriaActualizada: 'Guardamos los cambios de la categoría.',
+
+  /** PROPIO - US-CFG-01, confirmacion de habilitar/deshabilitar. */
+  categoriaHabilitada: 'La categoría vuelve a estar disponible.',
+  categoriaDeshabilitada: 'La categoría quedó deshabilitada.',
+
+  /** PROPIO - US-CFG-01, confirmacion de la eliminación física. */
+  categoriaEliminada: 'Eliminamos la categoría.',
+} as const;
+
 /** Errores tecnicos, sin detalle del stack (requisito del modulo de seguridad). */
 export const MENSAJES_ERROR = {
   interno: 'Ocurrió un error inesperado. Intentá nuevamente en unos minutos.',

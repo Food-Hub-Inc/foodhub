@@ -104,3 +104,16 @@ export function InsigniaEventoSeguridad({
     </Insignia>
   );
 }
+
+/**
+ * HABILITACIÓN — categorías de platos (US-CFG-01, PAN-ADM-04): "indicador
+ * visual de color" del estado de habilitación. Verde disponible, gris fuera
+ * de uso, misma escala que `InsigniaEstadoCuenta`.
+ */
+export function InsigniaHabilitacion({ activo }: { activo: boolean }) {
+  return (
+    <Insignia tono={activo ? 'verde' : 'neutro'}>
+      {activo ? 'Habilitada' : 'Deshabilitada'}
+    </Insignia>
+  );
+}

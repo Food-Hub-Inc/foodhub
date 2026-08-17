@@ -112,6 +112,7 @@ const envSchema = z.object({
   // --- Almacenamiento -------------------------------------------------------
   STORAGE_BUCKET_PERFILES: z.string().default('perfiles'),
   STORAGE_BUCKET_PUBLICACIONES: z.string().default('publicaciones'),
+  STORAGE_BUCKET_CONFIGURACION: z.string().default('configuracion'),
   STORAGE_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(5),
 });
 

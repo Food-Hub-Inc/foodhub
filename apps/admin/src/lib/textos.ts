@@ -256,6 +256,77 @@ export const TEXTOS_AUDITORIA = {
   rangoInvalido: 'La fecha de inicio no puede ser posterior a la de fin.',
 } as const;
 
+/** PAN-ADM-04 · Configuración del sistema, marco de pestañas. */
+export const TEXTOS_CONFIGURACION = {
+  titulo: 'Configuración del sistema',
+  /** [PROPIO] El módulo cubre cuatro áreas administrables sin desplegar código. */
+  subtitulo:
+    'Categorías, motivos de cancelación, parámetros generales y términos y condiciones.',
+  solapaCategorias: 'Categorías de platos',
+  solapaMotivos: 'Motivos de cancelación',
+  solapaParametros: 'Parámetros generales',
+  solapaTerminos: 'Términos y condiciones',
+} as const;
+
+/** PAN-ADM-04 · Categorías de platos — US-CFG-01. */
+export const TEXTOS_CATEGORIAS = {
+  /** LITERAL - US-CFG-01, título de la vista. */
+  titulo: 'Categorías de platos',
+  /** LITERAL - US-CFG-01, botón que abre el alta. */
+  nuevo: 'Crear',
+  /** [PROPIO] Placeholder de la barra de búsqueda por nombre. */
+  buscar: 'Buscar por nombre de categoría...',
+  buscarEtiqueta: 'Buscar categorías',
+  filtroEstado: 'Estado',
+  /** LITERAL - US-CFG-01, opción del filtro de estado que no filtra. */
+  todas: 'Todas',
+  /** LITERAL - US-CFG-01, opciones del filtro de estado de habilitación. */
+  habilitadas: 'Habilitadas',
+  deshabilitadas: 'Deshabilitadas',
+
+  columnaNombre: 'NOMBRE',
+  columnaDescripcion: 'DESCRIPCIÓN',
+  columnaPublicaciones: 'PUBLICACIONES ACTIVAS',
+  columnaEstado: 'ESTADO',
+  columnaAcciones: 'ACCIONES',
+
+  accionEditar: 'Editar categoría',
+  accionHabilitar: 'Habilitar categoría',
+  accionDeshabilitar: 'Deshabilitar categoría',
+  accionEliminar: 'Eliminar categoría',
+
+  /** [PROPIO] Título del diálogo de alta; el botón que lo abre dice "Crear". */
+  dialogoAltaTitulo: 'Crear categoría',
+  dialogoEdicionTitulo: 'Editar categoría',
+  dialogoHabilitacionTitulo: 'Habilitar categoría',
+  dialogoEliminacionTitulo: 'Eliminar categoría',
+
+  /** LITERAL - US-CFG-01, botón que confirma el alta (no es "Guardar cambios"). */
+  guardarAlta: 'Guardar',
+
+  campoNombre: 'Nombre',
+  campoDescripcion: 'Descripción',
+  campoImagen: 'Imagen representativa',
+  imagenAyuda: 'JPG, PNG o WEBP de hasta 2 MB.',
+  imagenQuitar: 'Quitar imagen',
+  imagenSubiendo: 'Subiendo imagen…',
+  imagenSeleccionar: 'Elegir imagen',
+
+  /** [PROPIO] Confirmación de habilitar, sin advertencia previa (US-CFG-01: "sin solicitar confirmación"). */
+  confirmarHabilitar:
+    'La categoría vuelve a estar disponible para que los cocineros la asignen a nuevas publicaciones.',
+  /** [PROPIO] Advertencia de la eliminación física, sin criterio de aceptación que la fije. */
+  confirmarEliminar:
+    'Esta acción no se puede deshacer. La categoría se elimina de forma permanente.',
+
+  /** [PROPIO] Estado vacío del listado sin filtros aplicados. */
+  vacioSinFiltros: 'Todavía no hay categorías cargadas.',
+  /** [PROPIO] Estado vacío del listado con filtros aplicados. */
+  vacioConFiltros:
+    'No se encontraron categorías con los filtros seleccionados.',
+  limpiarFiltros: 'Limpiar filtros',
+} as const;
+
 /** Estados transversales de cualquier pantalla con datos. */
 export const TEXTOS_ESTADO = {
   reintentar: 'Reintentar',
