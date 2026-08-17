@@ -290,6 +290,26 @@ export const TEXTOS_PUBLICACIONES = {
     `Página ${String(actual)} de ${String(total)}`,
   paginaAnterior: 'Página anterior',
   paginaSiguiente: 'Página siguiente',
+
+  /**
+   * Formulario de alta/edición de un plato (US-PUB-01, PAN-PUB-02). Los
+   * rótulos de "Descripción", "Categoría" y "Tiempo estimado de preparación"
+   * reusan las claves homónimas que ya existen más arriba en este mismo
+   * bloque -son, letra por letra, la misma etiqueta que ya usan el detalle y
+   * la hoja de filtros- así que no se repiten acá.
+   */
+  publicar: 'Publicar',
+  cancelar: 'Cancelar',
+  campoNombre: 'Nombre del plato',
+  campoPrecio: 'Precio',
+  campoImagen: 'Imagen del plato',
+  /** [PROPIO] Placeholder del desplegable de categoría sin selección. */
+  categoriaPlaceholder: 'Seleccioná una categoría',
+  /** [PROPIO] Reusados también por `SelectorDeFoto` en la foto del plato. */
+  agregarFoto: 'Agregar foto',
+  cambiarFoto: 'Cambiar foto',
+  /** [PROPIO] Botón único de `DialogoExito`. */
+  aceptar: 'Aceptar',
 } as const;
 
 /**
@@ -341,13 +361,6 @@ export const PANTALLAS_PENDIENTES = {
     titulo: 'Mensajes',
     descripcion:
       'Tus conversaciones con la otra parte de cada pedido, con el último mensaje y los no leídos.',
-  },
-  nuevaPublicacion: {
-    codigo: 'PAN-PUB-02',
-    modulo: 'Publicaciones',
-    titulo: 'Nueva publicación',
-    descripcion:
-      'El formulario para publicar un plato nuevo: nombre, descripción, precio, categoría, imagen y tiempo estimado de preparación.',
   },
   editarPublicacion: {
     codigo: 'PAN-PUB-03',

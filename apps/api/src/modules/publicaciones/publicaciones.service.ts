@@ -15,6 +15,7 @@ import {
 import { categoria, itemPedido, pedido, publicacion } from '@foodhub/db';
 import {
   PUBLICACIONES_POR_PAGINA,
+  type CrearPublicacionInput,
   type EstadoPublicacion,
   type FiltrosPublicacion,
   type OrdenPublicacion,
@@ -292,4 +293,62 @@ export async function obtenerPublicacionPropia(
 
   if (!fila) throw noEncontrado('la publicación');
   return aPublicacionDetalle(fila);
+}
+
+// ---------------------------------------------------------------------------
+// Alta (US-PUB-01)
+// ---------------------------------------------------------------------------
+
+/**
+ * Traduce el contrato de alta validado a las columnas del INSERT. Es una
+ * funcion PURA -sin acceso a `db`- a proposito: asi la regla de negocio mas
+ * importante del alta (no fija `estadoPublicacion`, los opcionales ausentes
+ * quedan en `null` y no en `undefined`) se puede probar sin mockear la base,
+ * con el mismo criterio que ya usa `armarFiltroPublicaciones` en este archivo.
+ */
+export function valoresDeAltaPublicacion(
+  cocineroId: string,
+  datos: CrearPublicacionInput,
+): typeof publicacion.$inferInsert {
+  return {
+    cocineroId,
+    categoriaId: datos.categoriaId,
+    nombre: datos.nombre,
+    descripcion: datos.descripcion,
+    precio: datos.precio,
+    imagenUrl: datos.imagenUrl ?? null,
+    tiempoEstimadoPreparacion: datos.tiempoEstimadoPreparacion ?? null,
+    // `estadoPublicacion` NO se fija aca: nace 'DISPONIBLE' por el default de
+    // la columna (US-PUB-04, ultimo criterio de aceptacion) y
+    // `crearPublicacionSchema` ni siquiera acepta el campo en el contrato de
+    // alta (ver el comentario de ese schema en packages/shared).
+  };
+}
+
+/**
+ * US-PUB-01 - Alta de una publicacion.
+ *
+ * Sin validacion extra de categoria: la FK `publicacion.categoria_id` ya
+ * restringe contra una categoria inexistente o dada de baja a nivel de base.
+ *
+ * Sin notificacion push a los clientes favoritos: el modulo de Notificaciones
+ * (US-NOT-06) no existe todavia en la API -sin FCM, sin endpoint, sin el valor
+ * de enum correspondiente-, asi que queda totalmente fuera de alcance de este
+ * modulo.
+ */
+export async function crearPublicacion(entrada: {
+  cocineroId: string;
+  datos: CrearPublicacionInput;
+}): Promise<PublicacionDetalle> {
+  const [creada] = await db
+    .insert(publicacion)
+    .values(valoresDeAltaPublicacion(entrada.cocineroId, entrada.datos))
+    .returning({ id: publicacion.id });
+
+  // Un INSERT sin WHERE siempre devuelve la fila recien creada, salvo que la
+  // propia sentencia ya haya lanzado (constraint, FK). Si no hay fila aca,
+  // algo exploto antes de llegar a esta linea.
+  if (!creada) throw new Error('No se pudo crear la publicación.');
+
+  return obtenerPublicacionPropia(entrada.cocineroId, creada.id);
 }

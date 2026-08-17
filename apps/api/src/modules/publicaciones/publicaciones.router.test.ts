@@ -25,6 +25,7 @@ const ID_CUALQUIERA = '3f6d1a3e-0e2a-4f5f-9f2b-2c1d5e6a7b8c';
 const rutasProtegidas = [
   ['get', '/api/v1/publicaciones'],
   ['get', `/api/v1/publicaciones/${ID_CUALQUIERA}`],
+  ['post', '/api/v1/publicaciones'],
 ] as const;
 
 describe('acceso al módulo de publicaciones', () => {

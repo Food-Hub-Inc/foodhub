@@ -1,4 +1,5 @@
 import type {
+  CrearPublicacionInput,
   FiltrosPublicacion,
   PaginaPublicaciones,
   PublicacionDetalle,
@@ -52,4 +53,11 @@ export function listarMisPublicaciones(
 /** US-PUB-05. Detalle de una publicación propia. */
 export function obtenerMiPublicacion(id: string): Promise<PublicacionDetalle> {
   return api.obtener<PublicacionDetalle>(`/publicaciones/${id}`);
+}
+
+/** US-PUB-01. Alta de una publicación. */
+export function crearPublicacion(
+  datos: CrearPublicacionInput,
+): Promise<PublicacionDetalle> {
+  return api.enviar<PublicacionDetalle>('/publicaciones', datos);
 }

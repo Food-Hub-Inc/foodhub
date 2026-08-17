@@ -16,6 +16,14 @@ import { FondoTenue } from './FondoTenue';
  *
  * El botón destructivo NO es el que queda bajo el pulgar por defecto ni tiene
  * foco automático: la salida cómoda es cancelar.
+ *
+ * `mensaje` es OPCIONAL: la mayoría de los usos (baja de cuenta, US-PUB-01
+ * "¿Confirmás la publicación del plato?") llevan título Y mensaje, pero el
+ * criterio de aceptación de "Cancelar" en US-PUB-01 define una única línea de
+ * texto sin encabezado propio ("¿Está seguro de que desea volver? Los
+ * cambios no se guardarán"). Para ese caso ese texto se pasa como `titulo`
+ * -es lo único que hay para mostrar, y merece el tratamiento prominente- y se
+ * omite `mensaje`.
  */
 export function DialogoSevero({
   abierto,
@@ -29,7 +37,7 @@ export function DialogoSevero({
 }: {
   abierto: boolean;
   titulo: string;
-  mensaje: string;
+  mensaje?: string;
   textoConfirmar: string;
   textoCancelar: string;
   onConfirmar: () => void;
@@ -69,9 +77,11 @@ export function DialogoSevero({
           >
             {titulo}
           </Text>
-          <Text className="mt-2 text-center text-body text-text-secondary">
-            {mensaje}
-          </Text>
+          {mensaje === undefined ? null : (
+            <Text className="mt-2 text-center text-body text-text-secondary">
+              {mensaje}
+            </Text>
+          )}
 
           <Boton
             variante="destructivo"

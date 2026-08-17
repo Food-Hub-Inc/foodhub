@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { SQL } from 'drizzle-orm';
-import type { FiltrosPublicacion } from '@foodhub/shared';
-import { armarFiltroPublicaciones } from './publicaciones.service.js';
+import type {
+  CrearPublicacionInput,
+  FiltrosPublicacion,
+} from '@foodhub/shared';
+import {
+  armarFiltroPublicaciones,
+  valoresDeAltaPublicacion,
+} from './publicaciones.service.js';
 
 /**
  * US-PUB-05 - `armarFiltroPublicaciones`.
@@ -102,5 +108,52 @@ describe('armarFiltroPublicaciones', () => {
 
     expect(sql).not.toContain('categoria_id');
     expect(sql).not.toContain('estado_publicacion');
+  });
+});
+
+/**
+ * US-PUB-01 - `valoresDeAltaPublicacion`.
+ *
+ * Es tambien una funcion pura (arma el objeto del INSERT, no ejecuta nada),
+ * asi que se prueba sin mockear `db`, igual que `armarFiltroPublicaciones`.
+ */
+describe('valoresDeAltaPublicacion', () => {
+  const CATEGORIA_ID = '22222222-2222-2222-2222-222222222222';
+
+  const datosBase: CrearPublicacionInput = {
+    nombre: 'Milanesa napolitana',
+    descripcion: 'Con papas fritas',
+    precio: '3500.00',
+    categoriaId: CATEGORIA_ID,
+  };
+
+  it('no fija estadoPublicacion: la columna nace en su default', () => {
+    const valores = valoresDeAltaPublicacion(COCINERO_ID, datosBase);
+
+    expect(valores).not.toHaveProperty('estadoPublicacion');
+    expect(valores.cocineroId).toBe(COCINERO_ID);
+    expect(valores.categoriaId).toBe(CATEGORIA_ID);
+    expect(valores.nombre).toBe(datosBase.nombre);
+    expect(valores.precio).toBe(datosBase.precio);
+  });
+
+  it('guarda los opcionales ausentes como null, no como undefined', () => {
+    const valores = valoresDeAltaPublicacion(COCINERO_ID, datosBase);
+
+    expect(valores.imagenUrl).toBeNull();
+    expect(valores.tiempoEstimadoPreparacion).toBeNull();
+  });
+
+  it('conserva los opcionales cuando el cocinero los completa', () => {
+    const valores = valoresDeAltaPublicacion(COCINERO_ID, {
+      ...datosBase,
+      imagenUrl: 'https://storage.test/publicaciones/foto.jpg',
+      tiempoEstimadoPreparacion: 30,
+    });
+
+    expect(valores.imagenUrl).toBe(
+      'https://storage.test/publicaciones/foto.jpg',
+    );
+    expect(valores.tiempoEstimadoPreparacion).toBe(30);
   });
 });

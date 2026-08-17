@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { filtrosPublicacionSchema } from '@foodhub/shared';
+import {
+  crearPublicacionSchema,
+  filtrosPublicacionSchema,
+} from '@foodhub/shared';
 import { sesionDe } from '../../lib/request.js';
 import { requiereAutenticacion } from '../../middleware/auth.middleware.js';
 import { requiereRol } from '../../middleware/rbac.middleware.js';
@@ -43,4 +46,13 @@ publicacionesRouter.get('/:id', async (req, res) => {
     idPublicacionSchema.parse(req.params.id),
   );
   res.json(detalle);
+});
+
+/** US-PUB-01 - Alta de una publicación. */
+publicacionesRouter.post('/', async (req, res) => {
+  const detalle = await publicacionesService.crearPublicacion({
+    cocineroId: sesionDe(req).id,
+    datos: crearPublicacionSchema.parse(req.body),
+  });
+  res.status(201).json(detalle);
 });
