@@ -20,11 +20,18 @@ export function obtenerMiPerfil(): Promise<PerfilUsuario> {
   return api.obtener<PerfilUsuario>('/usuarios/yo');
 }
 
-/** US-GURP-02. Edición parcial: solo viajan los campos que el usuario tocó. */
+/**
+ * US-GURP-02. Edición parcial: solo viajan los campos que el usuario tocó.
+ *
+ * `token` lo usa únicamente el registro, que guarda la foto de perfil con una
+ * sesión que todavía no está abierta en la app (ver `useRegistro`). Desde
+ * PAN-GURP-01 se omite y vale la sesión del Keystore.
+ */
 export function editarMiPerfil(
   datos: EditarPerfilInput,
+  token?: string,
 ): Promise<PerfilUsuario> {
-  return api.modificar<PerfilUsuario>('/usuarios/yo', datos);
+  return api.modificar<PerfilUsuario>('/usuarios/yo', datos, token);
 }
 
 /**

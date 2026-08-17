@@ -208,6 +208,7 @@ function CuerpoDelSelector({
         onRegionChangeComplete={onRegionCambiada}
         showsUserLocation
         toolbarEnabled={false}
+        userInterfaceStyle="light"
       />
       {/* El pin no es un Marker: está pegado al centro de la vista, no al mapa. */}
       <View className="absolute inset-0 items-center justify-center">
