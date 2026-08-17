@@ -57,4 +57,32 @@ describe('acceso al módulo de almacenamiento', () => {
     expect(respuesta.status).toBe(401);
     expect((respuesta.body as RespuestaError).error.codigo).toBe('SIN_TOKEN');
   });
+
+  /**
+   * Mismas verificaciones que `/foto-perfil`, para la foto de plato
+   * (US-PUB-01). El rechazo por rol COCINERO exige un usuario real y se prueba
+   * en la Etapa 6; acá solo se cubre lo que no depende de datos.
+   */
+  it('responde 401 SIN_TOKEN sin sesión en /foto-plato', async () => {
+    const respuesta = await request(app)
+      .post('/api/v1/almacenamiento/foto-plato')
+      .send({ mimeType: 'image/jpeg', tamano: 1024 });
+
+    expect(respuesta.status).toBe(401);
+    const cuerpo = respuesta.body as RespuestaError;
+    expect(cuerpo.error.codigo).toBe('SIN_TOKEN');
+    expect(cuerpo.error.mensaje).toBe(MENSAJES_AUTH.sesionRequerida);
+  });
+
+  it('rechaza en /foto-plato un token que no verifica contra el JWKS', async () => {
+    const respuesta = await request(app)
+      .post('/api/v1/almacenamiento/foto-plato')
+      .set('Authorization', 'Bearer token-fabricado')
+      .send({ mimeType: 'image/jpeg', tamano: 1024 });
+
+    expect(respuesta.status).toBe(401);
+    expect((respuesta.body as RespuestaError).error.codigo).toBe(
+      'TOKEN_INVALIDO',
+    );
+  });
 });

@@ -15,6 +15,8 @@ import { saludRouter } from './modules/salud/salud.router.js';
 import { almacenamientoRouter } from './modules/almacenamiento/almacenamiento.router.js';
 import { authRouter } from './modules/auth/auth.router.js';
 import { auditoriaRouter } from './modules/auditoria/auditoria.router.js';
+import { catalogoRouter } from './modules/catalogo/catalogo.router.js';
+import { publicacionesRouter } from './modules/publicaciones/publicaciones.router.js';
 import { seguridadRouter } from './modules/seguridad/seguridad.router.js';
 import { usuariosRouter } from './modules/usuarios/usuarios.router.js';
 
@@ -115,9 +117,10 @@ export function crearApp(): Express {
   app.use(`${PREFIJO_API}/auditoria`, auditoriaRouter);
   app.use(`${PREFIJO_API}/seguridad`, seguridadRouter);
   app.use(`${PREFIJO_API}/almacenamiento`, almacenamientoRouter);
+  app.use(`${PREFIJO_API}/catalogo`, catalogoRouter);
+  app.use(`${PREFIJO_API}/publicaciones`, publicacionesRouter);
 
   // A medida que avance la Etapa 6 se montan aca los routers de cada modulo:
-  //   app.use(`${PREFIJO_API}/publicaciones`, publicacionesRouter);
   //   app.use(`${PREFIJO_API}/pedidos`, pedidosRouter);
   //   ...
 

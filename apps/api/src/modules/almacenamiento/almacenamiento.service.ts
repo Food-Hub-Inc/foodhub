@@ -1,7 +1,9 @@
 import {
+  MENSAJES_PUBLICACION,
   MENSAJES_USUARIO,
   type FormatoImagenPerfil,
   type SolicitarUrlDeCargaInput,
+  type SolicitarUrlDeCargaPlatoInput,
   type UrlDeCarga,
 } from '@foodhub/shared';
 import { env } from '../../config/env.js';
@@ -110,6 +112,105 @@ export async function limpiarFotosDePerfilAnteriores(
     logger.error(
       { err: error, usuarioId },
       'quedaron fotos de perfil huérfanas en Storage',
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Foto de plato (US-PUB-01 y US-PUB-02)
+// ---------------------------------------------------------------------------
+
+/** Carpeta del bucket de publicaciones donde caen las fotos de un cocinero. */
+function carpetaDePlatosDe(cocineroId: string): string {
+  return `${cocineroId}/`;
+}
+
+/**
+ * US-PUB-01 - Permiso para subir la foto de un plato.
+ *
+ * Mismo mecanismo que `crearUrlDeCargaDeFotoPerfil` (URL firmada, nombre con
+ * marca de tiempo para invalidar la cache de imagen del dispositivo), pero
+ * contra `STORAGE_BUCKET_PUBLICACIONES` y con la carpeta nombrada por
+ * `cocineroId`, no por el id de la publicación: la foto se sube ANTES de
+ * crear la fila (el flujo de alta encadena la subida y recién después el
+ * `POST /publicaciones`), así que todavía no existe un id de publicación al
+ * que asociar la carpeta.
+ *
+ * Reutiliza `EXTENSION`: los formatos admitidos de plato y de perfil son hoy
+ * el mismo conjunto de tres, y la tabla de extensiones no es una regla de
+ * negocio (a diferencia de `FORMATOS_IMAGEN_PLATO` / `MAXIMO_IMAGEN_PLATO_BYTES`,
+ * que sí son constantes propias): es un detalle técnico de cómo se nombra el
+ * archivo.
+ */
+export async function crearUrlDeCargaDeFotoPlato(entrada: {
+  cocineroId: string;
+  datos: SolicitarUrlDeCargaPlatoInput;
+}): Promise<UrlDeCarga> {
+  const topeBytes = env.STORAGE_MAX_FILE_SIZE_MB * 1024 * 1024;
+  if (entrada.datos.tamano > topeBytes) {
+    throw new AppError(
+      400,
+      MENSAJES_PUBLICACION.imagenInvalida,
+      'IMAGEN_INVALIDA',
+    );
+  }
+
+  const extension = EXTENSION[entrada.datos.mimeType];
+  const ruta = `${carpetaDePlatosDe(entrada.cocineroId)}${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_PUBLICACIONES);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
+}
+
+/**
+ * US-PUB-02 - Borra la foto ANTERIOR de un plato puntual tras editarlo.
+ *
+ * NO ES el mismo patrón que `limpiarFotosDePerfilAnteriores` a pesar de lo que
+ * describía el plan original: esa función lista TODA la carpeta del usuario y
+ * borra todo lo que no coincide con la URL vigente, lo cual es correcto para
+ * un perfil (una persona, una sola foto activa) pero destructivo para un
+ * plato. Un cocinero tiene varias publicaciones a la vez y todas sus fotos
+ * conviven en la misma carpeta `${cocineroId}/` del bucket (no hay una
+ * subcarpeta por publicación posible: la foto se sube antes de que la
+ * publicación tenga id, ver `crearUrlDeCargaDeFotoPlato`). Vaciar la carpeta
+ * al editar UN plato borraría también las fotos de los OTROS platos vigentes
+ * del mismo cocinero. Por eso esta función recibe la URL anterior puntual del
+ * plato que se está editando y borra únicamente ese objeto, dejando intacto
+ * el resto de la carpeta.
+ *
+ * Se invoca solo cuando `imagenUrl` participó de la edición (mismo criterio
+ * que `editarPerfil` con `fotoPerfilUrl`), con la URL que tenía la fila ANTES
+ * del `UPDATE` y la que quedó guardada después.
+ */
+export async function limpiarFotoDePlatoAnterior(entrada: {
+  cocineroId: string;
+  urlAnterior: string | null;
+  urlNueva: string | null;
+}): Promise<void> {
+  const { cocineroId, urlAnterior, urlNueva } = entrada;
+  if (!urlAnterior || urlAnterior === urlNueva) return;
+
+  try {
+    const nombreArchivo = urlAnterior.split('/').pop();
+    if (!nombreArchivo) return;
+
+    const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_PUBLICACIONES);
+    const { error } = await bucket.remove([
+      `${carpetaDePlatosDe(cocineroId)}${nombreArchivo}`,
+    ]);
+    if (error) throw error;
+  } catch (error) {
+    logger.error(
+      { err: error, cocineroId },
+      'quedó una foto de plato huérfana en Storage',
     );
   }
 }

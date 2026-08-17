@@ -165,8 +165,25 @@ function calcularDestino({
   if (!perfil) return null;
   if (perfil.tipo === 'ADMINISTRADOR') return null;
 
-  const grupoPropio = perfil.tipo === 'CLIENTE' ? '(cliente)' : '(cocinero)';
-  if (grupo === grupoPropio) return null;
+  /**
+   * NO todas las pantallas de un rol viven anidadas bajo su grupo de rutas:
+   * `/publicaciones/nueva`, `/publicaciones/[id]` y `/notificaciones` son
+   * rutas de nivel superior a las que se llega empujando la pila desde
+   * adentro de `(cocinero)`/`(cliente)`, así que `segmentos[0]` deja de ser
+   * el grupo propio en cuanto el cocinero abre una de ellas. Redirigir a
+   * "casa" en ese momento (como hacía antes esta función, comparando
+   * `grupo === grupoPropio`) expulsaba al usuario de la pantalla recién
+   * abierta a los pocos milisegundos.
+   *
+   * Lo único que este guardián tiene que decidir es sacar al usuario de
+   * donde NO puede estar: sin sesión (ya resuelto arriba), en las pantallas
+   * de `(auth)` estando logueado, o en el grupo del OTRO rol. Cualquier otro
+   * segmento -el propio grupo o una ruta compartida de nivel superior- se
+   * deja en paz.
+   */
+  const grupoAjeno = perfil.tipo === 'CLIENTE' ? '(cocinero)' : '(cliente)';
+  const debeIrACasa =
+    grupo === undefined || grupo === '(auth)' || grupo === grupoAjeno;
 
-  return INICIO_POR_ROL[perfil.tipo];
+  return debeIrACasa ? INICIO_POR_ROL[perfil.tipo] : null;
 }
