@@ -68,11 +68,16 @@ const envSchema = z.object({
   PEDIDO_EXPIRACION_MINUTOS: z.coerce.number().int().positive().default(15),
 
   /**
-   * Destino del enlace del correo de recuperacion (US-AUT-04, PAN-AUT-04.1).
+   * Destino del enlace del correo cuando quien lo recibe usa la app movil:
+   * recuperacion de contrasena de un CLIENTE o un COCINERO (US-AUT-04,
+   * PAN-AUT-04.1) e invitacion de un CLIENTE dada de alta desde el panel.
    *
-   * Es un deep link al scheme de la app movil, no una URL http: la
-   * recuperacion la piden el cliente y el cocinero desde el telefono, y el
-   * formulario de contrasena nueva vive dentro de la app.
+   * Es un deep link al scheme de la app y no una URL http porque esos dos roles
+   * no tienen interfaz web: el formulario de contrasena vive dentro de la app.
+   * En consecuencia, ABIERTO EN UNA COMPUTADORA ESTE ENLACE NO HACE NADA —
+   * ningun navegador de escritorio tiene registrado el esquema `foodhub://`— y
+   * eso es esperado, no un defecto. El correo tiene que decirlo (ver
+   * `docs/CORREOS-AUTH.md`).
    *
    * GoTrue exige que el valor este declarado en la lista blanca de Redirect
    * URLs del proyecto de Supabase. Si no lo esta, lo descarta EN SILENCIO y
@@ -85,13 +90,19 @@ const envSchema = z.object({
     .default('foodhub://nueva-password'),
 
   /**
-   * Destino del enlace de invitacion cuando el alta del panel crea un
-   * ADMINISTRADOR (US-GURP-06).
+   * Destino del enlace del correo cuando quien lo recibe es un ADMINISTRADOR:
+   * su invitacion (US-GURP-06) y tambien su recuperacion de contrasena
+   * (ver `DESTINO_RECUPERACION` en auth.service.ts).
    *
    * Es una URL http y no un deep link porque el administrador trabaja en el
    * panel web: mandarlo a la app movil lo obligaria a instalarla solo para
-   * definir su contrasena. El alta de un CLIENTE si usa el deep link, que es
-   * la unica interfaz que ese rol tiene.
+   * definir su contrasena. Las dos rutas terminan en la misma pantalla del
+   * panel, `/nueva-password`, porque el caso es el mismo: llega con sesion
+   * abierta por GoTrue y sin contrasena propia.
+   *
+   * Vale la misma advertencia de la lista blanca de Redirect URLs. En
+   * produccion tiene que apuntar al dominio del panel desplegado, no a
+   * localhost.
    */
   URL_INVITACION_PANEL: z
     .string()

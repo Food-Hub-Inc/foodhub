@@ -5,6 +5,7 @@ import {
   type PerfilUsuario,
   type RegistroClienteInput,
   type RegistroCocineroInput,
+  type TipoUsuario,
 } from '@foodhub/shared';
 import { env } from '../../config/env.js';
 import { db } from '../../lib/db.js';
@@ -196,6 +197,29 @@ export async function registrarCocinero(entrada: {
 }
 
 /**
+ * A donde lleva el enlace del correo de recuperacion, segun quien lo pidio.
+ *
+ * Es el mismo criterio que ya usa `DESTINO_INVITACION` en usuarios.service.ts y
+ * por el mismo motivo: cada rol tiene una sola interfaz y el enlace tiene que
+ * caer en la que esa persona realmente usa. El cliente y el cocinero solo tienen
+ * la app movil (alcance: "una aplicacion movil como plataforma principal, junto
+ * a un panel web destinado exclusivamente a las tareas de administracion"). El
+ * administrador solo tiene el panel: mandarle un deep link `foodhub://` lo
+ * obligaria a instalar una app que no usa, y en una computadora ese enlace no
+ * abre nada porque ningun navegador tiene registrado ese esquema.
+ *
+ * El destino del administrador es la misma pantalla que ya recibe su invitacion
+ * (`/nueva-password` del panel): en los dos casos llega con una sesion abierta
+ * por GoTrue y sin contrasena propia, que es exactamente lo que esa pantalla
+ * resuelve.
+ */
+const DESTINO_RECUPERACION: Record<TipoUsuario, string> = {
+  CLIENTE: env.URL_RECUPERACION_PASSWORD,
+  COCINERO: env.URL_RECUPERACION_PASSWORD,
+  ADMINISTRADOR: env.URL_INVITACION_PANEL,
+};
+
+/**
  * US-AUT-04 - Solicitud del enlace de recuperacion. PAN-AUT-04.
  *
  * DECISION CONSCIENTE DEL EQUIPO: este endpoint revela si un correo tiene
@@ -211,7 +235,7 @@ export async function solicitarRecuperacion(entrada: {
   ipOrigen: string | null;
 }): Promise<{ mensaje: string }> {
   const [cuenta] = await db
-    .select({ id: usuario.id })
+    .select({ id: usuario.id, tipo: usuario.tipo })
     .from(usuario)
     .where(eq(usuario.email, entrada.email))
     .limit(1);
@@ -231,7 +255,7 @@ export async function solicitarRecuperacion(entrada: {
    * PAN-AUT-04.1 y el ultimo criterio de US-AUT-04 queda sin cumplir.
    */
   const { error } = await cliente.auth.resetPasswordForEmail(entrada.email, {
-    redirectTo: env.URL_RECUPERACION_PASSWORD,
+    redirectTo: DESTINO_RECUPERACION[cuenta.tipo],
   });
   if (error) throw error;
 
