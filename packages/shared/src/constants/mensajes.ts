@@ -265,6 +265,25 @@ export const MENSAJES_CONFIGURACION = {
   motivoHabilitado:
     'El motivo vuelve a estar disponible en los flujos de cancelación.',
   motivoDeshabilitado: 'El motivo quedó deshabilitado.',
+
+  // --- US-CFG-03 · Parámetros generales del sistema -----------------------
+
+  /**
+   * LITERAL - US-CFG-03, ventana de confirmación al guardar cualquier
+   * sección de parámetros.
+   */
+  confirmarGuardarParametros:
+    'Los nuevos parámetros se aplicarán de forma inmediata a toda la plataforma. ¿Confirma los cambios?',
+
+  /** PROPIO - US-CFG-03: la documentación no fija el texto de esta confirmación. */
+  confirmarRestaurarParametros:
+    'Los parámetros de esta sección volverán a sus valores predefinidos de fábrica. ¿Confirma la acción?',
+
+  /** PROPIO - US-CFG-03, confirmación del guardado. */
+  parametrosActualizados: 'Guardamos los nuevos parámetros.',
+
+  /** PROPIO - US-CFG-03, confirmación de la restauración. */
+  parametrosRestaurados: 'Restauramos los valores predefinidos de fábrica.',
 } as const;
 
 /** Errores tecnicos, sin detalle del stack (requisito del modulo de seguridad). */

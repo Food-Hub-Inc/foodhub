@@ -29,6 +29,13 @@
       "when": 1787002254371,
       "tag": "0003_sembrar_tipos_usuario_cancelacion",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787004464035,
+      "tag": "0004_sembrar_configuracion_sistema",
+      "breakpoints": true
     }
   ]
 }

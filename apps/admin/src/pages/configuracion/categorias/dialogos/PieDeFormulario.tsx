@@ -7,11 +7,14 @@ import { TEXTOS_FORMULARIO } from '../../../../lib/textos.js';
  */
 export function PieDeFormulario({
   etiquetaConfirmar,
+  etiquetaCancelar = TEXTOS_FORMULARIO.cancelar,
   enProceso,
   alCancelar,
   destructivo = false,
 }: {
   etiquetaConfirmar: string;
+  /** Literal cuando el criterio de aceptación fija el texto (ej. "No, volver"). */
+  etiquetaCancelar?: string | undefined;
   enProceso: boolean;
   alCancelar: () => void;
   destructivo?: boolean;
@@ -24,7 +27,7 @@ export function PieDeFormulario({
         type="button"
         variant="tertiary"
       >
-        {TEXTOS_FORMULARIO.cancelar}
+        {etiquetaCancelar}
       </Button>
 
       <Button

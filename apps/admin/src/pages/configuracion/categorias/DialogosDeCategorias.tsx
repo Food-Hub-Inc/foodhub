@@ -7,7 +7,7 @@ import {
   errorGeneralDe,
   useOperacionDeCategoria,
 } from '../../../hooks/useOperacionDeCategoria.js';
-import { TEXTOS_CATEGORIAS } from '../../../lib/textos.js';
+import { TEXTOS_CATEGORIAS, TEXTOS_FORMULARIO } from '../../../lib/textos.js';
 import { DialogoDeAlta } from './dialogos/DialogoDeAlta.js';
 import { DialogoDeConfirmacion } from './dialogos/DialogoDeConfirmacion.js';
 import { DialogoDeEdicion } from './dialogos/DialogoDeEdicion.js';
@@ -67,7 +67,8 @@ export function DialogosDeCategorias({
           destructivo
           enProceso={deshabilitacion.isPending}
           error={errorGeneralDe(deshabilitacion.error)}
-          etiquetaConfirmar={TEXTOS_CATEGORIAS.accionDeshabilitar}
+          etiquetaCancelar={TEXTOS_FORMULARIO.noVolver}
+          etiquetaConfirmar={TEXTOS_CATEGORIAS.confirmarDeshabilitarSi}
           key={dialogos.deshabilitacion.id}
           titulo={MENSAJES_CONFIGURACION.confirmarDeshabilitarCategoria(
             dialogos.deshabilitacion.nombre,

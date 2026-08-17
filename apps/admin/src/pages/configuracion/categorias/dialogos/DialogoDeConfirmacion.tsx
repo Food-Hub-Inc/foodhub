@@ -13,6 +13,7 @@ export function DialogoDeConfirmacion({
   titulo,
   advertencia,
   etiquetaConfirmar,
+  etiquetaCancelar,
   destructivo = false,
   enProceso,
   error,
@@ -23,6 +24,7 @@ export function DialogoDeConfirmacion({
   titulo: string;
   advertencia: string;
   etiquetaConfirmar: string;
+  etiquetaCancelar?: string | undefined;
   destructivo?: boolean;
   enProceso: boolean;
   error: string | null;
@@ -47,6 +49,7 @@ export function DialogoDeConfirmacion({
           alCancelar={alCerrar}
           destructivo={destructivo}
           enProceso={enProceso}
+          etiquetaCancelar={etiquetaCancelar}
           etiquetaConfirmar={etiquetaConfirmar}
         />
       }

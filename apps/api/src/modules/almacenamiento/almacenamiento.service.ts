@@ -79,18 +79,6 @@ export async function crearUrlDeCargaDeFotoPerfil(entrada: {
 }
 
 /**
- * Borra las fotos anteriores del usuario y deja solo la vigente.
- *
- * Se invoca DESPUES de que la URL nueva quedo guardada en `usuario`, nunca
- * antes: si se borrara primero y la escritura fallara, el perfil quedaria
- * apuntando a un archivo inexistente.
- *
- * Es "fire and forget" como la auditoria. El plan gratuito de Supabase da 1 GB
- * de Storage y sin esta limpieza cada cambio de foto deja un huerfano, pero un
- * fallo del borrado no puede convertir un guardado exitoso en un error para el
- * usuario: la foto nueva ya esta.
- */
-/**
  * US-CFG-01 - Permiso para subir la imagen representativa de una categoria.
  *
  * Exclusivo del administrador (lo exige el router con `soloAdministrador`), a
@@ -120,6 +108,42 @@ export async function crearUrlDeCargaDeImagenCategoria(entrada: {
   };
 }
 
+/**
+ * US-CFG-03 - Permiso para subir el logo de la plataforma (Información
+ * institucional). Reusa el mismo contrato que la imagen de categoría
+ * (`SolicitarUrlDeCargaCategoriaInput`): RF057 fija el mismo tope de 2 MB, y
+ * son dos imágenes administradas por el mismo módulo.
+ */
+export async function crearUrlDeCargaDeLogoPlataforma(
+  datos: SolicitarUrlDeCargaCategoriaInput,
+): Promise<UrlDeCarga> {
+  const extension = EXTENSION[datos.mimeType];
+  const ruta = `plataforma/${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_CONFIGURACION);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
+}
+
+/**
+ * Borra las fotos anteriores del usuario y deja solo la vigente.
+ *
+ * Se invoca DESPUES de que la URL nueva quedo guardada en `usuario`, nunca
+ * antes: si se borrara primero y la escritura fallara, el perfil quedaria
+ * apuntando a un archivo inexistente.
+ *
+ * Es "fire and forget" como la auditoria. El plan gratuito de Supabase da 1 GB
+ * de Storage y sin esta limpieza cada cambio de foto deja un huerfano, pero un
+ * fallo del borrado no puede convertir un guardado exitoso en un error para el
+ * usuario: la foto nueva ya esta.
+ */
 export async function limpiarFotosDePerfilAnteriores(
   usuarioId: string,
   urlVigente: string,

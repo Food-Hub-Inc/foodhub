@@ -133,6 +133,13 @@ export const TEXTOS_FORMULARIO = {
   apellido: 'Apellido',
   correo: 'Correo electrónico',
   rol: 'Rol',
+  /**
+   * LITERAL - cancelar de una ventana de confirmación "Sí, X" / "No, volver"
+   * (US-CFG-01 al deshabilitar una categoría, US-CFG-03 al guardar
+   * parámetros). Es distinto de `cancelar`: ese cierra un formulario, este
+   * responde a una pregunta de sí/no.
+   */
+  noVolver: 'No, volver',
 } as const;
 
 /** PAN-ADM-01 · Gestión de usuarios. */
@@ -295,6 +302,13 @@ export const TEXTOS_CATEGORIAS = {
   accionDeshabilitar: 'Deshabilitar categoría',
   accionEliminar: 'Eliminar categoría',
 
+  /**
+   * LITERAL - US-CFG-01: "Botones: 'Sí, deshabilitar' y 'No, volver'." Es
+   * distinto de `accionDeshabilitar`, que rotula el botón de la fila
+   * (aria-label), no el de este diálogo.
+   */
+  confirmarDeshabilitarSi: 'Sí, deshabilitar',
+
   /** [PROPIO] Título del diálogo de alta; el botón que lo abre dice "Crear". */
   dialogoAltaTitulo: 'Crear categoría',
   dialogoEdicionTitulo: 'Editar categoría',
@@ -364,6 +378,60 @@ export const TEXTOS_MOTIVOS = {
   /** [PROPIO] Estado vacío del listado con filtros aplicados. */
   vacioConFiltros: 'No se encontraron motivos con los filtros seleccionados.',
   limpiarFiltros: 'Limpiar filtros',
+} as const;
+
+/** PAN-ADM-04 · Parámetros generales del sistema — US-CFG-03. */
+export const TEXTOS_PARAMETROS = {
+  /** LITERAL - US-CFG-03: "presiono sobre 'Configuración general'". */
+  titulo: 'Configuración general',
+  solapaBusqueda: 'Parámetros de búsqueda',
+  solapaPedidos: 'Parámetros de pedidos',
+  solapaResenas: 'Parámetros de reseñas',
+  solapaInstitucional: 'Información institucional',
+
+  campoRadioBusqueda: 'Radio de búsqueda por defecto (km)',
+  ayudaRadioBusqueda:
+    'Radio, en kilómetros, que usa el feed y el mapa para mostrar cocineros cercanos por defecto.',
+  campoDistanciaMaxima: 'Distancia máxima en filtros (km)',
+  ayudaDistanciaMaxima:
+    'Distancia máxima que un cliente puede seleccionar en el filtro de búsqueda.',
+  campoPublicacionesPorPagina: 'Publicaciones por página en el feed',
+  ayudaPublicacionesPorPagina:
+    'Cantidad de publicaciones que se cargan por página en el feed.',
+
+  campoTiempoCancelacion: 'Tiempo máximo para cancelar (minutos)',
+  ayudaTiempoCancelacion:
+    'Minutos que tiene el cliente para cancelar un pedido en estado "Creado".',
+  campoTiempoExpiracion: 'Tiempo de respuesta del cocinero (minutos)',
+  ayudaTiempoExpiracion:
+    'Minutos que tiene el cocinero para aceptar o rechazar un pedido antes de que expire automáticamente.',
+
+  campoMinimoResenas: 'Mínimo de reseñas para mostrar el promedio',
+  ayudaMinimoResenas:
+    'Cantidad mínima de reseñas que necesita un cocinero para mostrar su valoración promedio pública.',
+  campoLimiteDiasResena: 'Tiempo límite para reseñar (días)',
+  ayudaLimiteDiasResena:
+    'Días, tras completar un pedido, que tiene el cliente para dejar una reseña.',
+
+  campoNombrePlataforma: 'Nombre de la plataforma',
+  campoLogo: 'Logo de la plataforma',
+  logoAyuda: 'JPG, PNG o WEBP de hasta 2 MB.',
+  logoQuitar: 'Quitar logo',
+  logoSubiendo: 'Subiendo logo…',
+  logoSeleccionar: 'Elegir logo',
+  campoCorreoSoporte: 'Correo de contacto de soporte',
+
+  /** LITERAL - US-CFG-03, botón que abre la restauración de la sección. */
+  restaurar: 'Restaurar valores por defecto',
+
+  /** [PROPIO] Título corto del diálogo; el mensaje completo es el literal de RF057. */
+  dialogoGuardarTitulo: 'Guardar cambios',
+  /** LITERAL - US-CFG-03: "Botones 'Sí, guardar' y 'No, volver'". */
+  confirmarGuardarSi: 'Sí, guardar',
+
+  /** [PROPIO] La documentación no fija el texto de esta confirmación (a diferencia de la de guardar). */
+  dialogoRestaurarTitulo: 'Restaurar valores por defecto',
+  confirmarRestaurarSi: 'Restaurar',
 } as const;
 
 /** Estados transversales de cualquier pantalla con datos. */

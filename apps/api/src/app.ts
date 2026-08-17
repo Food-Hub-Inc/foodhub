@@ -18,6 +18,7 @@ import { auditoriaRouter } from './modules/auditoria/auditoria.router.js';
 import { catalogoRouter } from './modules/catalogo/catalogo.router.js';
 import { categoriasRouter } from './modules/configuracion/categorias.router.js';
 import { motivosCancelacionRouter } from './modules/configuracion/motivosCancelacion.router.js';
+import { parametrosSistemaRouter } from './modules/configuracion/parametrosSistema.router.js';
 import { seguridadRouter } from './modules/seguridad/seguridad.router.js';
 import { usuariosRouter } from './modules/usuarios/usuarios.router.js';
 
@@ -126,6 +127,7 @@ export function crearApp(): Express {
     `${PREFIJO_API}/configuracion/motivos-cancelacion`,
     motivosCancelacionRouter,
   );
+  app.use(`${PREFIJO_API}/configuracion/parametros`, parametrosSistemaRouter);
 
   // A medida que avance la Etapa 6 se montan aca los routers de cada modulo:
   //   app.use(`${PREFIJO_API}/publicaciones`, publicacionesRouter);

@@ -68,3 +68,16 @@ almacenamientoRouter.post(
     res.status(201).json(urlDeCarga);
   },
 );
+
+/** US-CFG-03 - Logo de la plataforma (Información institucional). */
+almacenamientoRouter.post(
+  '/logo-plataforma',
+  soloAdministrador,
+  async (req, res) => {
+    const urlDeCarga =
+      await almacenamientoService.crearUrlDeCargaDeLogoPlataforma(
+        solicitarUrlDeCargaCategoriaSchema.parse(req.body),
+      );
+    res.status(201).json(urlDeCarga);
+  },
+);

@@ -27,3 +27,10 @@ export function solicitarUrlDeCargaDeImagenCategoriaExistente(
     datos,
   );
 }
+
+/** US-CFG-03 - Logo de la plataforma (Información institucional). */
+export function solicitarUrlDeCargaDeLogoPlataforma(
+  datos: SolicitarUrlDeCargaCategoriaInput,
+): Promise<UrlDeCarga> {
+  return api.enviar<UrlDeCarga>('/almacenamiento/logo-plataforma', datos);
+}
