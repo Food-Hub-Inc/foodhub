@@ -262,105 +262,6 @@ export const TEXTOS_FOTO = {
 } as const;
 
 /**
- * PAN-PUB-01 · Mis publicaciones (US-PUB-05).
- *
- * Los mensajes de validación, los modales de confirmación y los estados
- * vacíos del listado son literales de los criterios de aceptación y viven en
- * `MENSAJES_PUBLICACION` (`@foodhub/shared`), no acá. Lo que sigue es el resto
- * de la copia de la pantalla: título, rótulos de filtro y opciones del
- * desplegable "Ordenar por", todos transcritos de la tabla de criterios de
- * `MOD_PUBLICACIONES.md`.
- */
-export const TEXTOS_PUBLICACIONES = {
-  titulo: 'Mis publicaciones',
-  nuevaPublicacion: 'Nueva publicación',
-  /** [PROPIO] La documentación no fija el texto del placeholder de búsqueda. */
-  buscarPlaceholder: 'Buscar en tus publicaciones',
-  /** [PROPIO] Título de la hoja de filtros y etiqueta accesible de su ícono. */
-  filtros: 'Filtros',
-  categoria: 'Categoría',
-  disponibilidad: 'Estado de disponibilidad',
-  estadoDisponible: 'Disponible',
-  estadoUltimasUnidades: 'Últimas unidades',
-  estadoNoDisponible: 'No disponible',
-  /**
-   * [PROPIO] US-PUB-04, último criterio de "No disponible": la tarjeta debe
-   * llevar, además del selector, "una etiqueta de 'Sin unidades' o
-   * 'Agotado'". El propio criterio ofrece las dos opciones sin fijar una; se
-   * elige "Sin unidades" por ser la más consistente con el resto de las
-   * etiquetas del módulo (no dramatiza la ausencia de stock).
-   */
-  sinUnidades: 'Sin unidades',
-  rangoDePrecio: 'Rango de precio',
-  /** [PROPIO] Etiquetas de los dos campos del rango de precio. */
-  precioMinimo: 'Mínimo',
-  precioMaximo: 'Máximo',
-  aplicarFiltros: 'Aplicar filtros',
-  ordenarPor: 'Ordenar por',
-  ordenRecientes: 'Más recientes',
-  ordenNombre: 'Nombre (A-Z)',
-  ordenPrecioAsc: 'Precio (ascendente)',
-  ordenPrecioDesc: 'Precio (descendente)',
-  ordenMasPedidos: 'Más pedidos',
-  /** [PROPIO] Cantidad de pedidos completados de la tarjeta y el detalle. */
-  pedidosRecibidos: (cantidad: number) =>
-    `${String(cantidad)} pedido${cantidad === 1 ? '' : 's'}`,
-  editar: 'Editar',
-  eliminar: 'Eliminar',
-  /** [PROPIO] Sección de datos del detalle. */
-  descripcion: 'Descripción',
-  tiempoEstimado: 'Tiempo estimado de preparación',
-  tiempoEstimadoMinutos: (minutos: number) => `${String(minutos)} min`,
-  publicadoEl: (fecha: string) => `Publicado el ${fecha}`,
-  editadoEl: (fecha: string) => `Editado el ${fecha}`,
-  /** [PROPIO] Paginación del listado (RNF002). */
-  pagina: (actual: number, total: number) =>
-    `Página ${String(actual)} de ${String(total)}`,
-  paginaAnterior: 'Página anterior',
-  paginaSiguiente: 'Página siguiente',
-
-  /**
-   * Formulario de alta/edición de un plato (US-PUB-01, PAN-PUB-02). Los
-   * rótulos de "Descripción", "Categoría" y "Tiempo estimado de preparación"
-   * reusan las claves homónimas que ya existen más arriba en este mismo
-   * bloque -son, letra por letra, la misma etiqueta que ya usan el detalle y
-   * la hoja de filtros- así que no se repiten acá.
-   */
-  publicar: 'Publicar',
-  cancelar: 'Cancelar',
-  campoNombre: 'Nombre del plato',
-  campoPrecio: 'Precio',
-  campoImagen: 'Imagen del plato',
-  /** [PROPIO] Placeholder del desplegable de categoría sin selección. */
-  categoriaPlaceholder: 'Seleccioná una categoría',
-  /**
-   * [PROPIO] La categoría es obligatoria y no hay forma de publicar sin
-   * elegir una. Sin categorías cargadas el desplegable queda sin opciones y
-   * el botón "Publicar" permanece deshabilitado (falta un campo obligatorio),
-   * pero eso solo, sin este aviso, es indistinguible de un formulario recién
-   * abierto: el cocinero no tiene forma de saber por qué no puede avanzar.
-   */
-  sinCategorias:
-    'Todavía no hay categorías cargadas. Contactá al soporte para poder publicar un plato.',
-  /** [PROPIO] Reusados también por `SelectorDeFoto` en la foto del plato. */
-  agregarFoto: 'Agregar foto',
-  cambiarFoto: 'Cambiar foto',
-  /** [PROPIO] Botón único de `DialogoExito`. */
-  aceptar: 'Aceptar',
-
-  /**
-   * Edición de un plato (US-PUB-02, PAN-PUB-03). El título de la pantalla no
-   * está fijado por un criterio de aceptación -se redacta análogo a
-   * `nuevaPublicacion`, más arriba-; el resto es la copia transcrita del
-   * criterio de aceptación (botón "Guardar cambios" y botón "Quitar imagen").
-   */
-  /** [PROPIO] Título de la pantalla de edición. */
-  editarPublicacion: 'Editar publicación',
-  guardarCambios: 'Guardar cambios',
-  quitarImagen: 'Quitar imagen',
-} as const;
-
-/**
  * Pantallas todavía no codificadas.
  *
  * Cada una anuncia su código PAN, su módulo y qué va a hacer: un placeholder
@@ -409,6 +310,13 @@ export const PANTALLAS_PENDIENTES = {
     titulo: 'Mensajes',
     descripcion:
       'Tus conversaciones con la otra parte de cada pedido, con el último mensaje y los no leídos.',
+  },
+  platos: {
+    codigo: 'PAN-PUB-01',
+    modulo: 'Publicaciones',
+    titulo: 'Mis platos',
+    descripcion:
+      'Tus publicaciones, su disponibilidad y el alta, edición y baja de cada plato.',
   },
   pedidosCocinero: {
     codigo: 'PAN-PED-04',
