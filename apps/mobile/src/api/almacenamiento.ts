@@ -1,8 +1,4 @@
-import type {
-  SolicitarUrlDeCargaInput,
-  SolicitarUrlDeCargaPlatoInput,
-  UrlDeCarga,
-} from '@foodhub/shared';
+import type { SolicitarUrlDeCargaInput, UrlDeCarga } from '@foodhub/shared';
 import { api } from '../lib/api';
 
 /**
@@ -17,17 +13,4 @@ export function solicitarUrlDeCargaDeFotoPerfil(
   token?: string,
 ): Promise<UrlDeCarga> {
   return api.enviar<UrlDeCarga>('/almacenamiento/foto-perfil', datos, token);
-}
-
-/**
- * US-PUB-01 - Permiso de escritura para la foto de un plato.
- *
- * Sin `token` explícito: a diferencia de la foto de perfil, la foto de un
- * plato solo se sube con el cocinero ya con sesión abierta en la app (no hay
- * un flujo de alta previo a la sesión, como el registro).
- */
-export function solicitarUrlDeCargaDeFotoPlato(
-  datos: SolicitarUrlDeCargaPlatoInput,
-): Promise<UrlDeCarga> {
-  return api.enviar<UrlDeCarga>('/almacenamiento/foto-plato', datos);
 }
