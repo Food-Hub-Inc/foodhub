@@ -242,6 +242,57 @@ export const TEXTOS_FOTO = {
 } as const;
 
 /**
+ * PAN-PUB-01 · Mis publicaciones (US-PUB-05).
+ *
+ * Los mensajes de validación, los modales de confirmación y los estados
+ * vacíos del listado son literales de los criterios de aceptación y viven en
+ * `MENSAJES_PUBLICACION` (`@foodhub/shared`), no acá. Lo que sigue es el resto
+ * de la copia de la pantalla: título, rótulos de filtro y opciones del
+ * desplegable "Ordenar por", todos transcritos de la tabla de criterios de
+ * `MOD_PUBLICACIONES.md`.
+ */
+export const TEXTOS_PUBLICACIONES = {
+  titulo: 'Mis publicaciones',
+  nuevaPublicacion: 'Nueva publicación',
+  /** [PROPIO] La documentación no fija el texto del placeholder de búsqueda. */
+  buscarPlaceholder: 'Buscar en tus publicaciones',
+  /** [PROPIO] Título de la hoja de filtros y etiqueta accesible de su ícono. */
+  filtros: 'Filtros',
+  categoria: 'Categoría',
+  disponibilidad: 'Estado de disponibilidad',
+  estadoDisponible: 'Disponible',
+  estadoUltimasUnidades: 'Últimas unidades',
+  estadoNoDisponible: 'No disponible',
+  rangoDePrecio: 'Rango de precio',
+  /** [PROPIO] Etiquetas de los dos campos del rango de precio. */
+  precioMinimo: 'Mínimo',
+  precioMaximo: 'Máximo',
+  aplicarFiltros: 'Aplicar filtros',
+  ordenarPor: 'Ordenar por',
+  ordenRecientes: 'Más recientes',
+  ordenNombre: 'Nombre (A-Z)',
+  ordenPrecioAsc: 'Precio (ascendente)',
+  ordenPrecioDesc: 'Precio (descendente)',
+  ordenMasPedidos: 'Más pedidos',
+  /** [PROPIO] Cantidad de pedidos completados de la tarjeta y el detalle. */
+  pedidosRecibidos: (cantidad: number) =>
+    `${String(cantidad)} pedido${cantidad === 1 ? '' : 's'}`,
+  editar: 'Editar',
+  eliminar: 'Eliminar',
+  /** [PROPIO] Sección de datos del detalle. */
+  descripcion: 'Descripción',
+  tiempoEstimado: 'Tiempo estimado de preparación',
+  tiempoEstimadoMinutos: (minutos: number) => `${String(minutos)} min`,
+  publicadoEl: (fecha: string) => `Publicado el ${fecha}`,
+  editadoEl: (fecha: string) => `Editado el ${fecha}`,
+  /** [PROPIO] Paginación del listado (RNF002). */
+  pagina: (actual: number, total: number) =>
+    `Página ${String(actual)} de ${String(total)}`,
+  paginaAnterior: 'Página anterior',
+  paginaSiguiente: 'Página siguiente',
+} as const;
+
+/**
  * Pantallas todavía no codificadas.
  *
  * Cada una anuncia su código PAN, su módulo y qué va a hacer: un placeholder
@@ -291,12 +342,19 @@ export const PANTALLAS_PENDIENTES = {
     descripcion:
       'Tus conversaciones con la otra parte de cada pedido, con el último mensaje y los no leídos.',
   },
-  platos: {
-    codigo: 'PAN-PUB-01',
+  nuevaPublicacion: {
+    codigo: 'PAN-PUB-02',
     modulo: 'Publicaciones',
-    titulo: 'Mis platos',
+    titulo: 'Nueva publicación',
     descripcion:
-      'Tus publicaciones, su disponibilidad y el alta, edición y baja de cada plato.',
+      'El formulario para publicar un plato nuevo: nombre, descripción, precio, categoría, imagen y tiempo estimado de preparación.',
+  },
+  editarPublicacion: {
+    codigo: 'PAN-PUB-03',
+    modulo: 'Publicaciones',
+    titulo: 'Editar publicación',
+    descripcion:
+      'El mismo formulario de alta, precargado con los datos actuales del plato para modificarlos.',
   },
   pedidosCocinero: {
     codigo: 'PAN-PED-04',
