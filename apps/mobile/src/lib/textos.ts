@@ -135,13 +135,33 @@ export const TEXTOS_NUEVA_PASSWORD = {
   /** [PROPIO] Estado del botón mientras Supabase actualiza la credencial. */
   guardando: 'Guardando…',
   /**
+   * [PROPIO] Encabezado y bajada cuando el enlace es una invitación (US-GURP-06)
+   * y no una recuperación.
+   *
+   * La maquetación fija los de arriba para PAN-AUT-04.1, que es la pantalla de
+   * US-AUT-04, y ahí "tu nueva contraseña" y "recuperar el acceso a tu cuenta"
+   * son correctos. A quien un administrador acaba de dar de alta no le sirven:
+   * no tiene una contraseña anterior ni un acceso que recuperar. Es la misma
+   * situación que ya resolvió el panel con textos propios.
+   */
+  encabezadoInvitacion: 'Creá tu contraseña',
+  bajadaInvitacion:
+    'Elegí la contraseña con la que vas a entrar a tu cuenta de FoodHub.',
+  /**
    * [PROPIO] La pantalla se abrió sin token: el enlace venció, ya se usó o
    * alguien entró a la ruta a mano.
+   *
+   * No nombra la recuperación ni la invitación porque, sin tokens, tampoco se
+   * puede saber cuál de las dos era. La salida que ofrece sirve para las dos: a
+   * quien fue invitado, pedir la recuperación también le llega, porque su cuenta
+   * ya existe desde que el administrador la creó.
    */
   enlaceInvalido:
-    'Este enlace no es válido o ya venció. Pedí uno nuevo desde "¿Olvidaste tu contraseña?".',
+    'Este enlace no es válido o ya venció. Los enlaces del correo se usan una sola vez: pedí uno nuevo desde "¿Olvidaste tu contraseña?".',
   /** [PROPIO] Confirmación previa a volver al login. */
   listo: 'Actualizamos tu contraseña. Iniciá sesión con la nueva.',
+  /** [PROPIO] La misma confirmación, sin dar por hecho que había una anterior. */
+  listoInvitacion: 'Guardamos tu contraseña. Ya podés iniciar sesión.',
   pedirOtroEnlace: 'Pedir un enlace nuevo',
 } as const;
 

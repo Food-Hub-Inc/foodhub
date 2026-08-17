@@ -1,9 +1,11 @@
 import type { FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { Alert, FieldError, Input, Label, TextField } from '@heroui/react';
 import { BotonDeEnvio } from '../../components/BotonDeEnvio.js';
 import { CampoConIcono } from '../../components/CampoConIcono.js';
 import { CampoDeContrasena } from '../../components/CampoDeContrasena.js';
 import { IconoAlerta, IconoCorreo } from '../../components/iconos/index.js';
+import { RUTAS } from '../../lib/rutas.js';
 import { TEXTOS_LOGIN } from '../../lib/textos.js';
 
 /** Errores por campo del formulario de ingreso. */
@@ -83,6 +85,17 @@ export function FormularioDeIngreso({
         placeholder={TEXTOS_LOGIN.contrasenaPlaceholder}
         valor={contrasena}
       />
+
+      {/* Va pegado al campo de contraseña y antes del botón, que es donde lo
+          busca quien acaba de fallar el ingreso — igual que en PAN-AUT-03. */}
+      <p className="-mt-2 text-right">
+        <Link
+          className="text-caption font-semibold text-primary hover:text-primary-dark"
+          to={RUTAS.recuperar}
+        >
+          {TEXTOS_LOGIN.olvideMiContrasena}
+        </Link>
+      </p>
 
       <BotonDeEnvio enviando={enviando} textoEnviando={TEXTOS_LOGIN.ingresando}>
         {TEXTOS_LOGIN.ingresar}

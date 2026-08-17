@@ -21,6 +21,11 @@ import { crearClienteSinSesion, supabase } from '../lib/supabase';
  *   LOGIN      va directo a Supabase con el SDK: la API no ve nunca la
  *              contraseña, solo verifica después el JWT que emitió Supabase.
  *   RECUPERAR  lo dispara la API, que además decide si el correo existe.
+ *
+ * La segunda mitad de US-AUT-04 —canjear el enlace del correo y fijar la
+ * contraseña nueva— no está acá sino en `hooks/useRecuperacion.ts`: opera sobre
+ * un cliente de Supabase descartable, propio de ese flujo, y no sobre la sesión
+ * de la app que manejan estas funciones.
  */
 
 /** US-AUT-01 · PAN-AUT-01. Devuelve el perfil recién creado. */
@@ -120,39 +125,7 @@ export async function adoptarSesion(sesion: SesionProvisoria): Promise<void> {
   if (error) throw error;
 }
 
-/**
- * US-AUT-04 · PAN-AUT-04.1. Fija la contraseña nueva.
- *
- * Tampoco tiene endpoint, por el mismo motivo que el login: la contraseña
- * nunca pasa por la API. `updateUser` la aplica sobre la sesión de recuperación
- * que deja el enlace del correo, así que la pantalla que llama a esto tiene que
- * comprobar antes que esa sesión exista; sin ella Supabase responde
- * `AuthSessionMissingError` y no hay a quién cambiarle la credencial.
- */
-export async function fijarNuevaPassword(password: string): Promise<void> {
-  const { error } = await supabase.auth.updateUser({ password });
-  if (error) throw error;
-}
-
 /** US-AUT-05 · PAN-AUT-05. Borra el token del Keystore y corta el refresh. */
 export async function cerrarSesion(): Promise<void> {
-  await supabase.auth.signOut();
-}
-
-/**
- * US-AUT-04 · PAN-AUT-04.1. Fija la contraseña nueva.
- *
- * No recibe el token del correo: el enlace ya dejó una sesión de recuperación
- * abierta cuando esta pantalla se monta, y `updateUser` opera sobre ella. Por
- * eso el formulario solo pide la contraseña y no vuelve a pedir el correo.
- *
- * Al terminar se cierra la sesión a propósito. La de recuperación sirve para
- * cambiar la credencial y nada más; dejarla abierta metería al usuario en la
- * app sin haber usado nunca su contraseña nueva, y el criterio de aceptación
- * pide volver al inicio de sesión.
- */
-export async function restablecerPassword(password: string): Promise<void> {
-  const { error } = await supabase.auth.updateUser({ password });
-  if (error) throw error;
   await supabase.auth.signOut();
 }

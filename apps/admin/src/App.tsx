@@ -6,21 +6,25 @@ import { Auditoria } from './pages/auditoria/Auditoria.js';
 import { Login } from './pages/Login.js';
 import { NuevaPassword } from './pages/NuevaPassword.js';
 import { Proximamente } from './pages/Proximamente.js';
+import { Recuperar } from './pages/Recuperar.js';
 import { Usuarios } from './pages/usuarios/Usuarios.js';
 
 /**
  * Ruteo del panel de administración.
  *
- * Hay exactamente dos rutas públicas, y las dos por el mismo motivo: quien las
+ * Hay exactamente tres rutas públicas, y las tres por el mismo motivo: quien las
  * abre todavía no puede acreditar que es administrador. `/login` porque no tiene
- * sesión, y `/nueva-password` porque llega desde el correo de invitación con una
- * sesión pero sin contraseña propia. Todo el resto vive detrás de
- * `RutaProtegida`, que exige sesión iniciada Y rol `ADMINISTRADOR` (US-GURP-10).
+ * sesión, `/recuperar` porque justamente no puede iniciarla, y
+ * `/nueva-password` porque llega desde el correo con una sesión que abrió GoTrue
+ * pero sin contraseña propia. Todo el resto vive detrás de `RutaProtegida`, que
+ * exige sesión iniciada Y rol `ADMINISTRADOR` (US-GURP-10).
  *
  * Estado de la Etapa 6:
  *
  *   /login           PAN-AUT-03 · ingreso del administrador       implementada
- *   /nueva-password  definición de contraseña del invitado        implementada
+ *   /recuperar       US-AUT-04 · pedido del enlace                implementada
+ *   /nueva-password  definición de contraseña (invitación         implementada
+ *                    y recuperación)
  *   /usuarios        PAN-ADM-01 · gestión de cuentas              implementada
  *   /auditoria       PAN-AUD-01 · auditoría y seguridad           implementada
  *   /                inicio del panel                             por codificar
@@ -32,6 +36,7 @@ export function App() {
   return (
     <Routes>
       <Route element={<Login />} path={RUTAS.login} />
+      <Route element={<Recuperar />} path={RUTAS.recuperar} />
       <Route element={<NuevaPassword />} path={RUTAS.nuevaPassword} />
 
       <Route

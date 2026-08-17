@@ -42,20 +42,53 @@ export const TEXTOS_LOGIN = {
   ocultarContrasena: 'Ocultar contraseña',
   ingresar: 'Iniciar sesión',
   ingresando: 'Verificando…',
+  /** Enlace a la recuperación de contraseña, como pide US-AUT-04. */
+  olvideMiContrasena: '¿Olvidaste tu contraseña?',
   /** [PROPIO] Aclara que el panel no es para clientes ni cocineros. */
   soloAdministradores:
     'El acceso al panel está reservado a las cuentas con rol de administrador.',
 } as const;
 
 /**
- * Definición de contraseña de un administrador invitado (US-GURP-06).
+ * Recuperación de contraseña desde el panel — US-AUT-04.
+ *
+ * La maquetación de la Etapa 5 resuelve esta historia en PAN-AUT-04, que es una
+ * pantalla de la app móvil, porque el actor de US-AUT-04 es el cliente y el
+ * cocinero. El administrador quedó sin camino: trabaja solo en el panel y, si
+ * olvidaba su contraseña, no tenía desde dónde pedir el enlace. Misma decisión y
+ * mismo motivo que en `/nueva-password` (ver TEXTOS_NUEVA_PASSWORD).
+ *
+ * Los dos mensajes de resultado los redacta la API —«Te enviamos un enlace para
+ * restablecer tu contraseña.» y «No existe una cuenta asociada a ese correo
+ * electrónico.», los dos literales de US-AUT-04— y esta pantalla los muestra tal
+ * cual, sin tener su propia copia. Lo de acá es todo [PROPIO].
+ */
+export const TEXTOS_RECUPERAR = {
+  titulo: 'Recuperar contraseña',
+  descripcion:
+    'Te enviamos un enlace al correo de tu cuenta para que definas una contraseña nueva.',
+  correo: 'Correo electrónico',
+  correoPlaceholder: 'administrador@foodhub.com',
+  enviar: 'Enviar enlace',
+  enviando: 'Enviando…',
+  volverAlIngreso: 'Volver al inicio de sesión',
+} as const;
+
+/**
+ * Definición de contraseña de un administrador (US-GURP-06 y US-AUT-04).
  *
  * La maquetación de la Etapa 5 no tiene esta pantalla: PAN-AUT-04.1 resuelve el
- * caso en la app móvil, que es adonde va el enlace cuando el invitado es un
+ * caso en la app móvil, que es adonde va el enlace cuando quien lo recibe es un
  * CLIENTE. Para un ADMINISTRADOR no había destino, y obligarlo a instalar la
  * app solo para definir su contraseña no tenía sentido, así que la API lo manda
  * acá. Todos los textos son [PROPIO]: no hay criterio de aceptación que los
  * fije, salvo los de validación, que salen de `restablecerPasswordSchema`.
+ *
+ * A esta pantalla llegan DOS enlaces distintos —la invitación y la recuperación
+ * de contraseña— porque para ella son el mismo caso: una sesión abierta por
+ * GoTrue y una cuenta sin contraseña propia. Por eso los textos no nombran
+ * ninguno de los dos: decirle "tu invitación venció" a quien pidió recuperar su
+ * contraseña sería mentirle.
  */
 export const TEXTOS_NUEVA_PASSWORD = {
   titulo: 'Definí tu contraseña',
@@ -75,12 +108,14 @@ export const TEXTOS_NUEVA_PASSWORD = {
   irAlIngreso: 'Ir a iniciar sesión',
 
   /**
-   * Estado de enlace inválido: alguien escribió la dirección a mano o el enlace
-   * del correo ya venció. Se explica sin tecnicismos y con una salida.
+   * Estado de enlace inválido: alguien escribió la dirección a mano, o el enlace
+   * del correo venció o ya se usó. Se explica sin tecnicismos y con una salida
+   * que sirve para los dos orígenes posibles del enlace.
    */
-  sinInvitacionTitulo: 'Este enlace ya no es válido',
-  sinInvitacionDescripcion:
-    'El enlace de invitación vence a las pocas horas y solo se puede usar una vez. Pedile al administrador que te invitó que te envíe uno nuevo.',
+  enlaceInvalidoTitulo: 'Este enlace ya no es válido',
+  enlaceInvalidoDescripcion:
+    'Los enlaces del correo vencen a las pocas horas y solo se pueden usar una vez. Pedí uno nuevo desde "¿Olvidaste tu contraseña?", o si estabas aceptando una invitación, pedile al administrador que te invitó que te la reenvíe.',
+  pedirOtroEnlace: 'Pedir un enlace nuevo',
   volverAlIngreso: 'Volver al inicio de sesión',
 
   /** Verificación del enlace, antes de saber si hay invitación válida. */

@@ -95,6 +95,25 @@ Público, con rate limit propio más estricto que el global. Body:
 > porque es el criterio de aceptación textual de US-AUT-04. La mitigación es el
 > rate limit y el registro de cada consulta.
 
+**El destino del enlace lo elige la API según el rol de la cuenta**
+(`DESTINO_RECUPERACION`), no quien llama. Es el mismo criterio que ya usa la
+invitación, y por el mismo motivo: cada rol tiene una sola interfaz.
+
+| Rol de la cuenta      | Destino del enlace          | Dónde termina            |
+| --------------------- | --------------------------- | ------------------------ |
+| `CLIENTE`, `COCINERO` | `URL_RECUPERACION_PASSWORD` | PAN-AUT-04.1, app móvil  |
+| `ADMINISTRADOR`       | `URL_INVITACION_PANEL`      | `/nueva-password`, panel |
+
+Por eso los dos clientes llaman al mismo endpoint sin filtrar por rol: si un
+cocinero escribe su correo en el formulario del panel, recibe igual el deep link
+que le corresponde. Filtrar sería, además, revelar quién es administrador a
+cualquiera que pruebe correos.
+
+Consecuencia operativa: el enlace de un CLIENTE o un COCINERO **no funciona
+abierto en una computadora**, porque ningún navegador de escritorio tiene
+registrado el esquema `foodhub://`. Es esperado; el correo tiene que decirlo
+(ver `CORREOS-AUTH.md`).
+
 ### Login y cierre de sesión — US-AUT-03 y US-AUT-05
 
 **No tienen endpoint.** El cliente llama a `signInWithPassword` y `signOut` del

@@ -12,6 +12,7 @@
  */
 export const RUTAS = {
   login: '/login',
+  recuperar: '/recuperar',
   nuevaPassword: '/nueva-password',
   inicio: '/',
   usuarios: '/usuarios',
