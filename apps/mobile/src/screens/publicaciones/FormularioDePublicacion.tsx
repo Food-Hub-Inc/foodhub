@@ -44,7 +44,7 @@ import { TEXTOS_PUBLICACIONES } from '../../lib/textos';
  * conocida de TypeScript-. Es segura porque los cinco campos ya declarados son
  * `string`, el mismo tipo que el índice.
  */
-interface ValoresPublicacion {
+export interface ValoresPublicacion {
   nombre: string;
   descripcion: string;
   precio: string;
@@ -112,6 +112,8 @@ const CONFIGURACION_FOTO_PLATO: ConfiguracionFoto = {
 export function FormularioDePublicacion({
   foto,
   onFoto,
+  onQuitarImagen,
+  fotoTocada = false,
   onEnviar,
   onCancelar,
   enviando,
@@ -120,8 +122,31 @@ export function FormularioDePublicacion({
 }: {
   foto: FotoElegida | null;
   onFoto: (foto: FotoElegida | null) => void;
+  /**
+   * US-PUB-02 - Presente solo en modo edición: pinta el botón "Quitar
+   * imagen" debajo del selector, cuando hay una imagen para quitar (`foto`
+   * no es `null`). El alta no la pasa porque no tiene una imagen "actual"
+   * de la cual desprenderse -si el cocinero no quiere la que eligió, la
+   * reemplaza tocando de nuevo la zona de carga-.
+   */
+  onQuitarImagen?: () => void;
+  /**
+   * US-PUB-02 - Si el cocinero ya tocó la imagen (la reemplazó o la quitó).
+   * Participa de `hayCambios` junto con los campos de texto: sin este dato
+   * el formulario no podría distinguir "no tocó nada" de "sacó la foto y no
+   * puso otra", dos casos que dejan `foto` igual a `null`.
+   */
+  fotoTocada?: boolean;
   onEnviar: (datos: DatosFormularioPublicacion) => void;
-  onCancelar: () => void;
+  /**
+   * US-PUB-02 - Además de la intención de cancelar, informa si el
+   * formulario tiene cambios pendientes respecto de `valoresIniciales`: el
+   * criterio de aceptación de la edición solo exige el diálogo de
+   * confirmación "con cambios pendientes" (a diferencia del alta, que lo
+   * muestra siempre). El alta ignora el argumento porque, al arrancar de
+   * campos vacíos, para cuando el botón se habilita ya hay cambios.
+   */
+  onCancelar: (hayCambios: boolean) => void;
   enviando: boolean;
   textoBoton: string;
   /** US-PUB-02 la usa para precargar el formulario en modo edición. */
@@ -136,9 +161,17 @@ export function FormularioDePublicacion({
     (categoria) => ({ valor: categoria.id, etiqueta: categoria.nombre }),
   );
 
+  const hayCambiosDeCampos = Object.keys(valoresIniciales).some(
+    (campo) => formulario.valores[campo] !== valoresIniciales[campo],
+  );
+
   function enviar() {
     formulario.revelarErrores();
     if (formulario.datos) onEnviar(formulario.datos);
+  }
+
+  function cancelar() {
+    onCancelar(hayCambiosDeCampos || fotoTocada);
   }
 
   return (
@@ -154,11 +187,21 @@ export function FormularioDePublicacion({
           foto={foto}
           onElegir={onFoto}
         />
+        {onQuitarImagen && foto ? (
+          <View className="mt-2 items-start">
+            <BotonDeTexto
+              className="text-text-secondary"
+              onPress={onQuitarImagen}
+            >
+              {TEXTOS_PUBLICACIONES.quitarImagen}
+            </BotonDeTexto>
+          </View>
+        ) : null}
       </View>
 
       <Pie
         enviando={enviando}
-        onCancelar={onCancelar}
+        onCancelar={cancelar}
         onEnviar={enviar}
         puedeEnviar={formulario.esValido}
         textoBoton={textoBoton}

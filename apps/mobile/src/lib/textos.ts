@@ -318,6 +318,17 @@ export const TEXTOS_PUBLICACIONES = {
   cambiarFoto: 'Cambiar foto',
   /** [PROPIO] Botón único de `DialogoExito`. */
   aceptar: 'Aceptar',
+
+  /**
+   * Edición de un plato (US-PUB-02, PAN-PUB-03). El título de la pantalla no
+   * está fijado por un criterio de aceptación -se redacta análogo a
+   * `nuevaPublicacion`, más arriba-; el resto es la copia transcrita del
+   * criterio de aceptación (botón "Guardar cambios" y botón "Quitar imagen").
+   */
+  /** [PROPIO] Título de la pantalla de edición. */
+  editarPublicacion: 'Editar publicación',
+  guardarCambios: 'Guardar cambios',
+  quitarImagen: 'Quitar imagen',
 } as const;
 
 /**
@@ -369,13 +380,6 @@ export const PANTALLAS_PENDIENTES = {
     titulo: 'Mensajes',
     descripcion:
       'Tus conversaciones con la otra parte de cada pedido, con el último mensaje y los no leídos.',
-  },
-  editarPublicacion: {
-    codigo: 'PAN-PUB-03',
-    modulo: 'Publicaciones',
-    titulo: 'Editar publicación',
-    descripcion:
-      'El mismo formulario de alta, precargado con los datos actuales del plato para modificarlos.',
   },
   pedidosCocinero: {
     codigo: 'PAN-PED-04',

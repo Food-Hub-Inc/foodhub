@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   cambiarDisponibilidadPublicacionSchema,
   crearPublicacionSchema,
+  editarPublicacionSchema,
   filtrosPublicacionSchema,
 } from '@foodhub/shared';
 import { sesionDe } from '../../lib/request.js';
@@ -72,4 +73,14 @@ publicacionesRouter.patch('/:id/disponibilidad', async (req, res) => {
       .estadoPublicacion,
   });
   res.json(resultado);
+});
+
+/** US-PUB-02 - Edición parcial de una publicación propia. */
+publicacionesRouter.patch('/:id', async (req, res) => {
+  const detalle = await publicacionesService.editarPublicacion({
+    cocineroId: sesionDe(req).id,
+    publicacionId: idPublicacionSchema.parse(req.params.id),
+    datos: editarPublicacionSchema.parse(req.body),
+  });
+  res.json(detalle);
 });

@@ -16,6 +16,7 @@ import { categoria, itemPedido, pedido, publicacion } from '@foodhub/db';
 import {
   PUBLICACIONES_POR_PAGINA,
   type CrearPublicacionInput,
+  type EditarPublicacionInput,
   type EstadoPublicacion,
   type FiltrosPublicacion,
   type OrdenPublicacion,
@@ -25,6 +26,7 @@ import {
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
 import { noEncontrado } from '../../middleware/error.middleware.js';
+import { limpiarFotoDePlatoAnterior } from '../almacenamiento/almacenamiento.service.js';
 
 /**
  * Modulo de Publicaciones (US-PUB-01 a US-PUB-05).
@@ -398,4 +400,133 @@ export async function cambiarDisponibilidad(entrada: {
 
   if (!actualizada) throw noEncontrado('la publicación');
   return actualizada;
+}
+
+// ---------------------------------------------------------------------------
+// Edicion (US-PUB-02)
+// ---------------------------------------------------------------------------
+
+/**
+ * Traduce el contrato de edicion (parcial) a las columnas del UPDATE.
+ *
+ * Funcion pura -igual criterio que `valoresDeAltaPublicacion`-, asi que se
+ * prueba sin mockear `db`. Cada campo se incluye SOLO si el cocinero lo
+ * mando: un `undefined` explicito en `datos` significa "no tocado" y tiene
+ * que desaparecer del `SET`, nunca pisar la columna. `imagenUrl` es el unico
+ * campo donde `null` es un valor valido y distinto de "no tocado" (ver el
+ * comentario de `imagenUrlSchema` en `packages/shared`), por eso se compara
+ * contra `undefined` y no con un chequeo de verdad/falsedad.
+ */
+export function cambiosDeEdicion(
+  datos: EditarPublicacionInput,
+): Partial<typeof publicacion.$inferInsert> {
+  return {
+    ...(datos.nombre !== undefined ? { nombre: datos.nombre } : {}),
+    ...(datos.descripcion !== undefined
+      ? { descripcion: datos.descripcion }
+      : {}),
+    ...(datos.precio !== undefined ? { precio: datos.precio } : {}),
+    ...(datos.categoriaId !== undefined
+      ? { categoriaId: datos.categoriaId }
+      : {}),
+    ...(datos.imagenUrl !== undefined ? { imagenUrl: datos.imagenUrl } : {}),
+    ...(datos.tiempoEstimadoPreparacion !== undefined
+      ? { tiempoEstimadoPreparacion: datos.tiempoEstimadoPreparacion }
+      : {}),
+  };
+}
+
+/**
+ * Decide si la edicion tiene que limpiar la foto anterior del plato en
+ * Storage, y con que argumentos.
+ *
+ * Funcion pura -no toca `db` ni Storage- para poder probar la condicion
+ * "solo cuando `imagenUrl` participo de la edicion" sin mockear la subida ni
+ * el borrado. `imagenUrlEnPayload === undefined` es "el cocinero no toco la
+ * imagen": ni se sube nada nuevo ni hay nada que borrar. Cualquier otro valor
+ * -una URL nueva o `null` ("Quitar imagen")- exige revisar la carpeta.
+ */
+export function limpiezaDeImagenTrasEditar(entrada: {
+  cocineroId: string;
+  imagenUrlEnPayload: string | null | undefined;
+  imagenUrlAnterior: string | null;
+}): Parameters<typeof limpiarFotoDePlatoAnterior>[0] | null {
+  if (entrada.imagenUrlEnPayload === undefined) return null;
+
+  return {
+    cocineroId: entrada.cocineroId,
+    urlAnterior: entrada.imagenUrlAnterior,
+    urlNueva: entrada.imagenUrlEnPayload,
+  };
+}
+
+/**
+ * US-PUB-02 - Edicion parcial de una publicacion propia.
+ *
+ * La URL anterior de la imagen SOLO se lee cuando `imagenUrl` participa de
+ * esta edicion (ver `limpiezaDeImagenTrasEditar`): es el unico dato que la
+ * limpieza de Storage necesita y que este UPDATE no devuelve por si solo, asi
+ * que evitar la lectura en el caso comun (editar precio, nombre, etc. sin
+ * tocar la foto) ahorra una consulta.
+ *
+ * Ownership: TODOS los `WHERE` de esta funcion exigen `cocineroId` ademas del
+ * `id` -igual criterio que `obtenerPublicacionPropia` y
+ * `cambiarDisponibilidad`-, asi que una publicacion ajena, inexistente o ya
+ * dada de baja siempre responde 404, nunca 403 (no confirma la existencia de
+ * un recurso ajeno).
+ *
+ * Sin `registrarOperacion`: el modulo de Publicaciones no audita sus cambios,
+ * mismo criterio que ya aplica `crearPublicacion` y `cambiarDisponibilidad`.
+ *
+ * Sin notificacion push: US-NOT-06 no existe todavia en la API (ver el
+ * comentario de `crearPublicacion`), y el propio criterio de aceptacion de
+ * esta historia aclara que la edicion NO genera push a diferencia del alta.
+ */
+export async function editarPublicacion(entrada: {
+  cocineroId: string;
+  publicacionId: string;
+  datos: EditarPublicacionInput;
+}): Promise<PublicacionDetalle> {
+  const { cocineroId, publicacionId, datos } = entrada;
+
+  let imagenAnterior: string | null = null;
+  if (datos.imagenUrl !== undefined) {
+    const [previa] = await db
+      .select({ imagenUrl: publicacion.imagenUrl })
+      .from(publicacion)
+      .where(
+        and(
+          eq(publicacion.id, publicacionId),
+          eq(publicacion.cocineroId, cocineroId),
+          eq(publicacion.activo, true),
+        ),
+      )
+      .limit(1);
+
+    if (!previa) throw noEncontrado('la publicación');
+    imagenAnterior = previa.imagenUrl;
+  }
+
+  const [actualizada] = await db
+    .update(publicacion)
+    .set({ ...cambiosDeEdicion(datos), fechaUltimaEdicion: new Date() })
+    .where(
+      and(
+        eq(publicacion.id, publicacionId),
+        eq(publicacion.cocineroId, cocineroId),
+        eq(publicacion.activo, true),
+      ),
+    )
+    .returning({ id: publicacion.id });
+
+  if (!actualizada) throw noEncontrado('la publicación');
+
+  const limpieza = limpiezaDeImagenTrasEditar({
+    cocineroId,
+    imagenUrlEnPayload: datos.imagenUrl,
+    imagenUrlAnterior: imagenAnterior,
+  });
+  if (limpieza) void limpiarFotoDePlatoAnterior(limpieza);
+
+  return obtenerPublicacionPropia(cocineroId, publicacionId);
 }

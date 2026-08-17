@@ -1,6 +1,7 @@
 import type {
   CambiarDisponibilidadPublicacionRespuesta,
   CrearPublicacionInput,
+  EditarPublicacionInput,
   EstadoPublicacion,
   FiltrosPublicacion,
   PaginaPublicaciones,
@@ -19,6 +20,7 @@ import {
 import {
   cambiarDisponibilidad,
   crearPublicacion,
+  editarPublicacion,
   listarMisPublicaciones,
   obtenerMiPublicacion,
 } from '../api/publicaciones';
@@ -174,6 +176,66 @@ export function useCambiarDisponibilidad(): UseMutationResult<
     // vuelva a converger con el servidor ante cualquier duda.
     onSettled: () => {
       void cliente.invalidateQueries({ queryKey: CLAVE_PUBLICACIONES });
+    },
+  });
+}
+
+/** Datos validados del formulario de edición, sin la imagen: igual criterio que el alta. */
+export type DatosEditarPublicacion = Omit<EditarPublicacionInput, 'imagenUrl'>;
+
+/**
+ * US-PUB-02 · Edición de una publicación propia.
+ *
+ * Mismo encadenado subida+persistencia que `useCrearPublicacion`, pero acá
+ * `imagenUrl` viaja en TRES estados en vez de dos -de ahí que reciba
+ * `fotoTocada` aparte de `foto`-:
+ *
+ *   - `fotoTocada` es `false`: el cocinero no tocó la imagen. `imagenUrl` se
+ *     OMITE del PATCH: no participa de esta edición.
+ *   - `fotoTocada` es `true` y `foto` es `null`: presionó "Quitar imagen".
+ *     `imagenUrl` viaja como `null` explícito (ver `imagenUrlSchema` en
+ *     `@foodhub/shared`); la capa de lectura resuelve el fallback a la
+ *     imagen de la categoría.
+ *   - `fotoTocada` es `true` y `foto` no es `null`: hay una foto nueva que
+ *     subir, igual que en el alta.
+ */
+export function useEditarPublicacion(): UseMutationResult<
+  PublicacionDetalle,
+  Error,
+  {
+    id: string;
+    datos: DatosEditarPublicacion;
+    foto: FotoElegida | null;
+    fotoTocada: boolean;
+  }
+> {
+  const cliente = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, datos, foto, fotoTocada }) => {
+      const imagenUrl: string | null | undefined = fotoTocada
+        ? foto
+          ? await subirFotoDePlato(foto)
+          : null
+        : undefined;
+
+      return editarPublicacion(id, {
+        ...datos,
+        ...(imagenUrl !== undefined ? { imagenUrl } : {}),
+      });
+    },
+    onSuccess: (detalle) => {
+      // La API devuelve el detalle ya actualizado: se escribe directo en la
+      // caché para que la pantalla de detalle quede consistente en el mismo
+      // tick, sin esperar un GET redundante (mismo criterio que
+      // `useEditarPerfil`). El listado sí se invalida: sus tarjetas muestran
+      // varios de los campos que la edición puede haber tocado (nombre,
+      // precio, categoría, imagen).
+      cliente.setQueryData(
+        [...CLAVE_PUBLICACIONES, 'detalle', detalle.id],
+        detalle,
+      );
+      void cliente.invalidateQueries(consultasDeListado);
     },
   });
 }

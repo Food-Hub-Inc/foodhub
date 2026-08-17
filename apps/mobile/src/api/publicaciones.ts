@@ -1,6 +1,7 @@
 import type {
   CambiarDisponibilidadPublicacionRespuesta,
   CrearPublicacionInput,
+  EditarPublicacionInput,
   EstadoPublicacion,
   FiltrosPublicacion,
   PaginaPublicaciones,
@@ -77,4 +78,12 @@ export function cambiarDisponibilidad(
     `/publicaciones/${id}/disponibilidad`,
     { estadoPublicacion },
   );
+}
+
+/** US-PUB-02. Edición parcial de una publicación propia. */
+export function editarPublicacion(
+  id: string,
+  datos: EditarPublicacionInput,
+): Promise<PublicacionDetalle> {
+  return api.modificar<PublicacionDetalle>(`/publicaciones/${id}`, datos);
 }

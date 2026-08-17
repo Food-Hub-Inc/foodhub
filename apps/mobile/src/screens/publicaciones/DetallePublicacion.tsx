@@ -1,6 +1,6 @@
 import { ScrollView, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import type { EstadoPublicacion, PublicacionDetalle } from '@foodhub/shared';
 import {
   IconoBolsa,
@@ -34,10 +34,10 @@ const COLOR_ESTADO: Record<EstadoPublicacion, string> = {
  *
  * Los botones "Editar" y "Eliminar" se muestran acá porque el criterio de
  * aceptación de US-PUB-05 los exige en esta pantalla ("desde donde puedo ver
- * toda la información del plato y los botones 'Editar' y 'Eliminar'"), pero
- * NO están conectados todavía: US-PUB-02 conecta "Editar" a la navegación de
- * edición y US-PUB-03 conecta "Eliminar" al diálogo de baja. Cablearlos acá
- * sería adelantarse al trabajo de esas dos historias.
+ * toda la información del plato y los botones 'Editar' y 'Eliminar'").
+ * US-PUB-02 conecta "Editar" a la navegación de edición; "Eliminar" sigue
+ * sin conectar todavía -lo hace US-PUB-03, al diálogo de baja- para no
+ * adelantarse al trabajo de esa historia.
  */
 export function DetallePublicacion() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -91,7 +91,7 @@ function Contenido({ publicacion }: { publicacion: PublicacionDetalle }) {
       ) : null}
 
       <Fechas publicacion={publicacion} />
-      <Acciones />
+      <Acciones publicacionId={publicacion.id} />
     </ScrollView>
   );
 }
@@ -192,13 +192,22 @@ function Fechas({ publicacion }: { publicacion: PublicacionDetalle }) {
 }
 
 /**
- * Sin conectar todavía: ver el comentario de `DetallePublicacion`. US-PUB-02
- * conecta "Editar" y US-PUB-03 conecta "Eliminar".
+ * "Eliminar" sigue sin conectar: ver el comentario de `DetallePublicacion`.
+ * US-PUB-03 lo conecta al diálogo de baja.
  */
-function Acciones() {
+function Acciones({ publicacionId }: { publicacionId: string }) {
   return (
     <View className="mt-6 flex-row gap-3">
-      <Boton className="flex-1" onPress={() => undefined} variante="secundario">
+      <Boton
+        className="flex-1"
+        onPress={() => {
+          router.push({
+            pathname: '/publicaciones/[id]/editar',
+            params: { id: publicacionId },
+          });
+        }}
+        variante="secundario"
+      >
         {TEXTOS_PUBLICACIONES.editar}
       </Boton>
       <Boton
