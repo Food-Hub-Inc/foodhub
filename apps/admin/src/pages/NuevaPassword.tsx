@@ -13,14 +13,20 @@ import { supabase } from '../lib/supabase.js';
 import { TEXTOS_NUEVA_PASSWORD } from '../lib/textos.js';
 
 /**
- * Definición de contraseña de un administrador invitado — US-GURP-06.
+ * Definición de contraseña de un administrador — US-GURP-06 y US-AUT-04.
  *
  * ESTA PANTALLA NO ESTÁ EN LA MAQUETACIÓN DE LA ETAPA 5, y la razón es que el
  * caso no existía cuando se diseñó: PAN-AUT-04.1 lo resuelve en la app móvil,
- * que es adonde va el enlace del correo cuando el invitado es un CLIENTE. Para
- * un ADMINISTRADOR no había destino, y obligarlo a instalar la app solo para
- * elegir su contraseña no tenía sentido. Decisión del equipo: la API dirige la
- * invitación según el rol y este es el destino del administrador.
+ * que es adonde va el enlace del correo cuando quien lo recibe es un CLIENTE.
+ * Para un ADMINISTRADOR no había destino, y obligarlo a instalar la app solo
+ * para elegir su contraseña no tenía sentido. Decisión del equipo: la API dirige
+ * el enlace según el rol y este es el destino del administrador.
+ *
+ * ATIENDE LOS DOS ENLACES QUE PUEDE RECIBIR UN ADMINISTRADOR: la invitación
+ * (`DESTINO_INVITACION`) y la recuperación de contraseña
+ * (`DESTINO_RECUPERACION`). No necesita distinguirlos porque para ella son el
+ * mismo caso —una sesión que abrió GoTrue y una cuenta sin contraseña propia— y
+ * los textos están redactados para no nombrar ninguno de los dos.
  *
  * Es pública a propósito. Quien llega TIENE una sesión de Supabase —el enlace
  * del correo la establece— pero todavía no tiene contraseña ni pasó por ningún
@@ -55,43 +61,41 @@ export function NuevaPassword() {
 /**
  * Verifica que exista la sesión que deja el enlace del correo.
  *
- * `detectSessionInUrl` ya está activo en el cliente de Supabase, así que para
- * cuando este componente se monta el token del fragmento de la URL puede haberse
- * canjeado o no todavía. Por eso se pregunta con `getSession()` y ADEMÁS se
- * escucha `onAuthStateChange`: si solo se preguntara una vez, una pantalla que
- * monta antes del canje mostraría "enlace inválido" sobre un enlace correcto.
+ * `INITIAL_SESSION` ES LA SEÑAL, Y ES DETERMINISTA
+ * ---------------------------------------------------------------------------
+ * `detectSessionInUrl` está activo, así que el cliente canjea solo el token del
+ * fragmento de la URL. La pregunta difícil es cuándo se puede afirmar que ese
+ * canje no va a ocurrir, para recién ahí declarar el enlace inválido.
+ *
+ * La respuesta la da el propio SDK: `_initialize()` procesa el fragmento ANTES
+ * de resolver su promesa de arranque, y `onAuthStateChange` espera esa promesa
+ * antes de emitir `INITIAL_SESSION`. Es decir, cuando llega ese evento el canje
+ * ya se intentó, con éxito o sin él. Si además viene sin sesión, no hay enlace
+ * válido y no lo va a haber.
+ *
+ * Antes acá había un `setTimeout` de dos segundos que suponía lo mismo por
+ * reloj. Adivinaba bien casi siempre, pero con la red lenta le mostraba "enlace
+ * inválido" a alguien cuyo enlace estaba perfecto, y no hay forma de elegir un
+ * número que sea correcto en todas las conexiones. Este evento no adivina.
  */
 function useEstadoDelEnlace(): EstadoDelEnlace {
   const [estado, setEstado] = useState<EstadoDelEnlace>('verificando');
 
   useEffect(() => {
-    let montado = true;
+    const { data } = supabase.auth.onAuthStateChange((evento, sesion) => {
+      if (sesion) {
+        setEstado('valido');
+        return;
+      }
 
-    void supabase.auth.getSession().then(({ data }) => {
-      if (montado && data.session) setEstado('valido');
+      // Sin sesión y con el canje ya terminado: el enlace venció, ya se usó, o
+      // alguien escribió la dirección a mano. Los eventos posteriores no se
+      // miran: un `SIGNED_OUT` de más tarde no vuelve inválido a este enlace.
+      if (evento === 'INITIAL_SESSION') setEstado('invalido');
     });
 
-    const { data: suscripcion } = supabase.auth.onAuthStateChange(
-      (_evento, sesion) => {
-        if (sesion) setEstado('valido');
-      },
-    );
-
-    /**
-     * Sin este plazo la pantalla se quedaría en "verificando" para siempre
-     * cuando alguien escribe la dirección a mano: no hay sesión que detectar y
-     * `onAuthStateChange` nunca dispara. Dos segundos alcanzan para el canje del
-     * token y no se perciben como espera.
-     */
-    const plazo = setTimeout(() => {
-      if (montado)
-        setEstado((actual) => (actual === 'valido' ? actual : 'invalido'));
-    }, 2000);
-
     return () => {
-      montado = false;
-      clearTimeout(plazo);
-      suscripcion.subscription.unsubscribe();
+      data.subscription.unsubscribe();
     };
   }, []);
 
@@ -214,18 +218,30 @@ function ContrasenaDefinida() {
   );
 }
 
-/** El enlace venció, ya se usó, o alguien escribió la dirección a mano. */
+/**
+ * El enlace venció, ya se usó, o alguien escribió la dirección a mano.
+ *
+ * Ofrece pedir uno nuevo además de volver al ingreso: quien llega acá desde una
+ * recuperación vencida necesita exactamente eso, y mandarlo al login lo dejaría
+ * dando la misma vuelta que ya no le funcionó.
+ */
 function EnlaceInvalido() {
   return (
     <MarcoDeAcceso
-      descripcion={TEXTOS_NUEVA_PASSWORD.sinInvitacionDescripcion}
-      titulo={TEXTOS_NUEVA_PASSWORD.sinInvitacionTitulo}
+      descripcion={TEXTOS_NUEVA_PASSWORD.enlaceInvalidoDescripcion}
+      titulo={TEXTOS_NUEVA_PASSWORD.enlaceInvalidoTitulo}
     >
       <TarjetaDeAcceso>
         <div className="flex flex-col items-center gap-3 text-center">
           <IconoAlerta className="size-9 text-warning" />
           <Link
             className="text-body font-semibold text-primary hover:text-primary-dark"
+            to={RUTAS.recuperar}
+          >
+            {TEXTOS_NUEVA_PASSWORD.pedirOtroEnlace}
+          </Link>
+          <Link
+            className="text-caption text-text-secondary hover:text-text-primary"
             to={RUTAS.login}
           >
             {TEXTOS_NUEVA_PASSWORD.volverAlIngreso}

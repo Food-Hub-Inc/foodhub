@@ -60,10 +60,15 @@ export function useEscucharSesion(): void {
   useEffect(() => {
     const fijarSesion = useSesion.getState().fijarSesion;
 
-    void supabase.auth.getSession().then(({ data }) => {
-      fijarSesion(data.session);
-    });
-
+    /**
+     * UN SOLO ESCRITOR. `onAuthStateChange` emite `INITIAL_SESSION` apenas se
+     * suscribe —con la sesión restaurada del Keystore, o con `null` si no había
+     * ninguna—, así que llamar además a `getSession()` no aporta nada y sí abre
+     * una carrera: su promesa puede resolver DESPUÉS de un `SIGNED_IN` posterior
+     * y pisar la sesión buena con el valor viejo. Dos fuentes escribiendo el
+     * mismo estado es lo que hacía que el arranque fallara a veces sí y a veces
+     * no.
+     */
     const { data } = supabase.auth.onAuthStateChange((_evento, sesion) => {
       fijarSesion(sesion);
     });

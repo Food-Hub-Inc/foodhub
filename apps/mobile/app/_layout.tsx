@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -58,14 +57,16 @@ export default function LayoutRaiz() {
     PlusJakartaSans_800ExtraBold,
   });
 
-  useEffect(() => {
-    // También se oculta el splash si las fuentes fallan: es preferible mostrar
-    // la app con la tipografía del sistema antes que dejarla trabada.
-    if (fuentesListas || errorFuentes) {
-      void SplashScreen.hideAsync();
-    }
-  }, [fuentesListas, errorFuentes]);
-
+  /**
+   * El splash NO se oculta acá aunque las fuentes ya estén: lo oculta
+   * `GateDeSesion`, y solo cuando sabe qué pantalla dibujar. Ocultarlo antes
+   * deja a la vista el fondo vacío que hay debajo mientras el gate todavía
+   * decide, que es la pantalla en blanco que se veía al abrir el enlace de
+   * recuperación.
+   *
+   * También se sigue de largo si las fuentes fallan: es preferible mostrar la
+   * app con la tipografía del sistema antes que dejarla trabada.
+   */
   if (!fuentesListas && !errorFuentes) return null;
 
   return (

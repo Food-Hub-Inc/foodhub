@@ -1,46 +1,51 @@
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import {
   restablecerPasswordSchema,
   type RestablecerPasswordInput,
 } from '@foodhub/shared';
-import { restablecerPassword } from '../../src/api/auth';
 import { SafeAreaView } from '../../src/components/SafeAreaView';
 import { Aviso } from '../../src/components/ui/Aviso';
 import { Boton, BotonDeTexto } from '../../src/components/ui/Boton';
 import { CampoContrasena } from '../../src/components/ui/CampoContrasena';
 import { EncabezadoPantalla } from '../../src/components/ui/EncabezadoPantalla';
+import { Esqueleto } from '../../src/components/ui/Esqueleto';
+import { useEnlaceDeAcceso } from '../../src/hooks/useEnlaceDeAcceso';
 import {
   useFormulario,
   type Formulario as FormularioDe,
 } from '../../src/hooks/useFormulario';
-import { useSesion } from '../../src/hooks/useSesion';
 import { mensajeDeError } from '../../src/lib/api';
+import type { MotivoDelEnlace } from '../../src/lib/enlaceDeAcceso';
 import { TEXTOS_NUEVA_PASSWORD } from '../../src/lib/textos';
 
 /**
- * PAN-AUT-04.1 · Nueva contraseña — US-AUT-04.
+ * PAN-AUT-04.1 · Nueva contraseña — US-AUT-04 y US-GURP-06.
  *
- * Se abre desde el enlace del correo, no desde otra pantalla de la app. El
- * enlace trae un token de recuperación que el cliente de Supabase canjea por
- * una sesión antes de que esta pantalla se monte; por eso el formulario solo
- * pide la contraseña y no vuelve a pedir el correo.
+ * Se abre desde el enlace del correo, no desde otra pantalla de la app. Todo lo
+ * que decide qué se ve acá vive en `useEnlaceDeAcceso`: la pantalla es un
+ * `switch` sobre esa máquina de estados y no calcula nada por su cuenta.
  *
- * Esa sesión de recuperación es también la razón por la que `GateDeSesion`
- * tiene una excepción para esta ruta: sin ella, "tener sesión" sacaría al
- * usuario de acá justo cuando está por recuperar su cuenta.
+ * Antes preguntaba "¿hay sesión de Supabase?" para decidirlo, y esa pregunta no
+ * distingue "el enlace todavía se está validando" de "el enlace no sirve": por
+ * eso el cartel rojo aparecía por un instante en cada enlace válido. Los estados
+ * `canjeando` e `invalida` son ahora dos cosas distintas y se dibujan distinto.
+ *
+ * Atiende los DOS enlaces que llegan a esta ruta —recuperación e invitación— y
+ * lo único que cambia entre ellos es lo que dicen los textos: el formulario, la
+ * validación y el guardado son idénticos.
  *
  * El botón «Guardar nueva contraseña» arranca deshabilitado y solo se habilita
  * cuando las dos contraseñas coinciden y cumplen la política, tal como pide el
  * estado alternativo del mockup.
  */
 export default function NuevaPassword() {
-  const sesion = useSesion((estado) => estado.sesion);
-  const resuelta = useSesion((estado) => estado.resuelta);
+  const paso = useEnlaceDeAcceso((estado) => estado.paso);
+  const motivo = useEnlaceDeAcceso((estado) => estado.motivo);
+  const fijarPassword = useEnlaceDeAcceso((estado) => estado.fijarPassword);
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
-  const [listo, setListo] = useState(false);
 
   const formulario = useFormulario(restablecerPasswordSchema, {
     password: '',
@@ -56,8 +61,9 @@ export default function NuevaPassword() {
     setGuardando(true);
 
     try {
-      await restablecerPassword(datos.password);
-      setListo(true);
+      // El paso a `cambiada` lo hace el store: es un hecho del flujo, no de esta
+      // pantalla, y el gate también tiene que enterarse.
+      await fijarPassword(datos.password);
     } catch (fallo) {
       setError(mensajeDeError(fallo));
     } finally {
@@ -65,10 +71,31 @@ export default function NuevaPassword() {
     }
   }
 
-  // Enlace vencido, ya usado, o alguien entró a la ruta a mano. Se espera a que
-  // Supabase resuelva antes de decidirlo: preguntarlo antes daría un falso
-  // negativo mientras el token todavía se está canjeando.
-  const sinEnlaceValido = resuelta && sesion === null && !listo;
+  function contenido(): ReactElement {
+    switch (paso) {
+      case 'sinResolver':
+      case 'canjeando':
+        return <Validando />;
+      case 'activa':
+        return (
+          <Formulario
+            error={error}
+            formulario={formulario}
+            guardando={guardando}
+            motivo={motivo}
+            onGuardar={() => void guardar()}
+          />
+        );
+      case 'cambiada':
+        return <Cerrada motivo={motivo} />;
+      // `ocioso` es entrar a la ruta a mano, sin enlace ninguno: para el usuario
+      // es el mismo callejón sin salida que un enlace vencido y se resuelve con
+      // la misma acción.
+      case 'ocioso':
+      case 'invalida':
+        return <EnlaceInvalido />;
+    }
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -81,18 +108,7 @@ export default function NuevaPassword() {
         contentContainerClassName="grow px-6 pt-6 pb-10"
         keyboardShouldPersistTaps="handled"
       >
-        {listo ? (
-          <Cerrada />
-        ) : sinEnlaceValido ? (
-          <EnlaceInvalido />
-        ) : (
-          <Formulario
-            error={error}
-            formulario={formulario}
-            guardando={guardando}
-            onGuardar={() => void guardar()}
-          />
-        )}
+        {contenido()}
       </ScrollView>
     </SafeAreaView>
   );
@@ -104,6 +120,26 @@ interface ValoresDeContrasena {
 }
 
 /**
+ * GoTrue está validando los tokens del enlace.
+ *
+ * Va un esqueleto con la forma del formulario y no un spinner, como pide la guía
+ * de UX: cuando el enlace termina de validarse los campos aparecen donde el
+ * usuario ya estaba mirando y nada salta de lugar.
+ */
+function Validando() {
+  return (
+    <>
+      <Esqueleto className="h-8 w-3/4" />
+      <Esqueleto className="mt-3 h-4 w-full" />
+      <Esqueleto className="mt-2 mb-8 h-4 w-2/3" />
+      <Esqueleto className="h-14 rounded-md" />
+      <Esqueleto className="mt-4 h-14 rounded-md" />
+      <Esqueleto className="mt-6 h-14 rounded-md" />
+    </>
+  );
+}
+
+/**
  * El formulario en sí. El botón arranca deshabilitado y solo se habilita cuando
  * las dos contraseñas coinciden y cumplen la política, como pide el estado
  * alternativo de PAN-AUT-04.1.
@@ -112,20 +148,28 @@ function Formulario({
   formulario,
   error,
   guardando,
+  motivo,
   onGuardar,
 }: {
   formulario: FormularioDe<ValoresDeContrasena, RestablecerPasswordInput>;
   error: string | null;
   guardando: boolean;
+  motivo: MotivoDelEnlace;
   onGuardar: () => void;
 }) {
+  const esInvitacion = motivo === 'invitacion';
+
   return (
     <>
       <Text className="text-h2 font-bold text-text-primary">
-        {TEXTOS_NUEVA_PASSWORD.encabezado}
+        {esInvitacion
+          ? TEXTOS_NUEVA_PASSWORD.encabezadoInvitacion
+          : TEXTOS_NUEVA_PASSWORD.encabezado}
       </Text>
       <Text className="mt-2 mb-6 text-body text-text-secondary">
-        {TEXTOS_NUEVA_PASSWORD.bajada}
+        {esInvitacion
+          ? TEXTOS_NUEVA_PASSWORD.bajadaInvitacion
+          : TEXTOS_NUEVA_PASSWORD.bajada}
       </Text>
 
       {error === null ? null : (
@@ -168,11 +212,18 @@ function Formulario({
   );
 }
 
-/** La contraseña se actualizó: se invalidó la anterior y hay que volver a entrar. */
-function Cerrada() {
+/** La contraseña quedó guardada: hay que entrar con ella desde el login. */
+function Cerrada({ motivo }: { motivo: MotivoDelEnlace }) {
   return (
     <View className="grow justify-center">
-      <Aviso mensaje={TEXTOS_NUEVA_PASSWORD.listo} tono="exito" />
+      <Aviso
+        mensaje={
+          motivo === 'invitacion'
+            ? TEXTOS_NUEVA_PASSWORD.listoInvitacion
+            : TEXTOS_NUEVA_PASSWORD.listo
+        }
+        tono="exito"
+      />
       <Boton
         className="mt-6"
         onPress={() => {
