@@ -29,6 +29,15 @@ import '../global.css';
  * importar qué tan anidada esté dentro de un ScrollView. Tiene que estar por
  * encima de `GateDeSesion` y del `Stack`: cualquier pantalla, en cualquier
  * ruta, puede abrir una hoja.
+ *
+ * Y TIENE QUE ESTAR POR DEBAJO de `HeroUINativeProvider` y
+ * `QueryClientProvider`, no por encima. El portal donde @gorhom/bottom-sheet
+ * monta el contenido de la hoja (`BottomSheetHostingContainer`) es HERMANO
+ * de la porción del árbol que ve `children`, no descendiente: hereda el
+ * contexto de lo que envuelve a `BottomSheetModalProvider` desde afuera, no
+ * el de lo que está declarado adentro. Con el orden invertido, cualquier hoja
+ * que use `useQuery` (como el selector de categorías de `HojaDeFiltros`)
+ * revienta con "No QueryClient set" apenas se abre.
  */
 
 // Mantiene el splash visible hasta que las fuentes estén listas: sin esto la
@@ -71,9 +80,9 @@ export default function LayoutRaiz() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <BottomSheetModalProvider>
-        <HeroUINativeProvider>
-          <QueryClientProvider client={queryClient}>
+      <HeroUINativeProvider>
+        <QueryClientProvider client={queryClient}>
+          <BottomSheetModalProvider>
             <StatusBar style="dark" />
             {/* El gate va DENTRO del proveedor de consultas y por encima del
                 Stack: necesita React Query para preguntar el perfil, y tiene que
@@ -81,9 +90,9 @@ export default function LayoutRaiz() {
             <GateDeSesion>
               <Stack screenOptions={{ headerShown: false }} />
             </GateDeSesion>
-          </QueryClientProvider>
-        </HeroUINativeProvider>
-      </BottomSheetModalProvider>
+          </BottomSheetModalProvider>
+        </QueryClientProvider>
+      </HeroUINativeProvider>
     </GestureHandlerRootView>
   );
 }
