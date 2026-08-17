@@ -4,16 +4,17 @@ import { EncabezadoPantalla } from '../../components/layout/EncabezadoPantalla.j
 import { IconoObra } from '../../components/iconos/index.js';
 import { TEXTOS_CONFIGURACION, TEXTOS_PROXIMAMENTE } from '../../lib/textos.js';
 import { PanelDeCategorias } from './categorias/PanelDeCategorias.js';
+import { PanelDeMotivos } from './motivos/PanelDeMotivos.js';
 
 /**
  * PAN-ADM-04 · Configuración del sistema — CFG-01 a CFG-04.
  *
  * Cuatro áreas administrables sin desplegar código, en pestañas: categorías
- * de platos (US-CFG-01, la única codificada por ahora), motivos de
- * cancelación (US-CFG-02), parámetros generales (US-CFG-03) y términos y
- * condiciones (US-CFG-04). Mismo patrón de pestañas con estado local que
- * `Auditoria.tsx`, no sub-rutas: ninguna de las cuatro necesita un enlace
- * profundo propio todavía.
+ * de platos (US-CFG-01) y motivos de cancelación (US-CFG-02) ya codificados;
+ * parámetros generales (US-CFG-03) y términos y condiciones (US-CFG-04) por
+ * codificar. Mismo patrón de pestañas con estado local que `Auditoria.tsx`,
+ * no sub-rutas: ninguna de las cuatro necesita un enlace profundo propio
+ * todavía.
  */
 type Solapa = 'categorias' | 'motivos' | 'parametros' | 'terminos';
 
@@ -63,7 +64,9 @@ export function Configuracion() {
           </Tabs.Panel>
 
           <Tabs.Panel className="pt-4" id="motivos">
-            <PorCodificar historias="US-CFG-02" />
+            <Marco>
+              <PanelDeMotivos />
+            </Marco>
           </Tabs.Panel>
 
           <Tabs.Panel className="pt-4" id="parametros">

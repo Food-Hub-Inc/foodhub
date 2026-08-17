@@ -13,11 +13,17 @@ import { AppError } from '../../middleware/error.middleware.js';
  *                                 `onDelete: 'restrict'`.
  *
  * La base se reemplaza por un doble para poder lanzar esos codigos SQLSTATE
- * sin una base real: es exactamente lo que postgres.js expone en
- * `error.code` cuando Postgres rechaza la sentencia.
+ * sin una base real. La forma anidada (`cause.code`, no `code` directo)
+ * reproduce lo que realmente lanza `drizzle-orm/postgres-js`: envuelve el
+ * `PostgresError` de postgres.js —que es donde vive el `.code`— dentro de un
+ * `DrizzleQueryError` propio. Ver `lib/errores-postgres.ts`.
  */
-function errorPostgres(code: string): Error & { code: string } {
-  return Object.assign(new Error('error de postgres simulado'), { code });
+function errorPostgres(
+  code: string,
+): Error & { cause: Error & { code: string } } {
+  return Object.assign(new Error('error de drizzle simulado'), {
+    cause: Object.assign(new Error('error de postgres simulado'), { code }),
+  });
 }
 
 const { aplicarInsert, aplicarDelete } = vi.hoisted(() => ({

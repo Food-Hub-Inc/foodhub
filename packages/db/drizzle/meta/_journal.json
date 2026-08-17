@@ -15,6 +15,20 @@
       "when": 1786665087684,
       "tag": "0001_habilitar_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787002227447,
+      "tag": "0002_bizarre_quentin_quire",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787002254371,
+      "tag": "0003_sembrar_tipos_usuario_cancelacion",
+      "breakpoints": true
     }
   ]
 }

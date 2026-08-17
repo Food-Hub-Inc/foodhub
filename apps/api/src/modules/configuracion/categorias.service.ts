@@ -9,34 +9,23 @@ import {
   type PaginaCategorias,
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
+import { tieneCodigoSql } from '../../lib/errores-postgres.js';
 import { AppError, noEncontrado } from '../../middleware/error.middleware.js';
 import { registrarOperacion } from '../auditoria/auditoria.service.js';
 
 /**
  * Modulo de Configuracion y parametros — categorias de platos (US-CFG-01,
  * RF054, PAN-ADM-04).
- */
-
-type FilaCategoria = typeof categoria.$inferSelect;
-
-/**
- * Codigo SQLSTATE que postgres.js expone en `error.code`.
  *
- * `23505` es unique_violation: se dispara al chocar con
- * `categoria_nombre_activo_uq`. `23503` es foreign_key_violation: se dispara
- * al intentar `DELETE` una categoria que una publicacion todavia referencia,
+ * `23505` (unique_violation) se dispara al chocar con
+ * `categoria_nombre_activo_uq`. `23503` (foreign_key_violation) se dispara al
+ * intentar `DELETE` una categoria que una publicacion todavia referencia,
  * porque `publicacion.categoria_id` tiene `onDelete: 'restrict'`. Se
  * reutiliza esa restriccion de la base en lugar de repetir la regla con un
  * `select exists` propio: la base ya la garantiza sin ventana de carrera.
  */
-function tieneCodigoSql(error: unknown, codigo: string): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: unknown }).code === codigo
-  );
-}
+
+type FilaCategoria = typeof categoria.$inferSelect;
 
 function aCategoriaListado(
   fila: FilaCategoria,

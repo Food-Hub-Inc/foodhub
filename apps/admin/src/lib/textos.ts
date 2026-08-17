@@ -327,6 +327,45 @@ export const TEXTOS_CATEGORIAS = {
   limpiarFiltros: 'Limpiar filtros',
 } as const;
 
+/** PAN-ADM-04 · Motivos de cancelación de pedido — US-CFG-02. */
+export const TEXTOS_MOTIVOS = {
+  titulo: 'Motivos de cancelación',
+  /** LITERAL - US-CFG-02, botón que abre el alta (RF056: "Presiono 'Crear'"). */
+  nuevo: 'Crear',
+  filtroAplicabilidad: 'Aplicabilidad',
+  filtroEstado: 'Estado',
+  todos: 'Todos',
+  habilitados: 'Habilitados',
+  deshabilitados: 'Deshabilitados',
+
+  columnaNombre: 'NOMBRE',
+  columnaAplicabilidad: 'APLICABILIDAD',
+  columnaPedidos: 'PEDIDOS ASOCIADOS',
+  columnaEstado: 'ESTADO',
+  columnaAcciones: 'ACCIONES',
+
+  accionEditar: 'Editar motivo',
+  accionHabilitar: 'Habilitar motivo',
+  accionDeshabilitar: 'Deshabilitar motivo',
+
+  dialogoAltaTitulo: 'Crear motivo',
+  dialogoEdicionTitulo: 'Editar motivo',
+  /** [PROPIO] Título corto; el texto completo de la advertencia es el literal de RF056. */
+  dialogoDeshabilitacionTitulo: 'Deshabilitar motivo',
+
+  /** LITERAL - US-CFG-02, RF056: "Los botones disponibles son 'Guardar' y 'Cancelar'." */
+  guardarAlta: 'Guardar',
+
+  campoNombre: 'Nombre del motivo',
+  campoAplicableA: 'Aplicable a',
+
+  /** [PROPIO] Estado vacío del listado sin filtros aplicados. */
+  vacioSinFiltros: 'Todavía no hay motivos de cancelación cargados.',
+  /** [PROPIO] Estado vacío del listado con filtros aplicados. */
+  vacioConFiltros: 'No se encontraron motivos con los filtros seleccionados.',
+  limpiarFiltros: 'Limpiar filtros',
+} as const;
+
 /** Estados transversales de cualquier pantalla con datos. */
 export const TEXTOS_ESTADO = {
   reintentar: 'Reintentar',

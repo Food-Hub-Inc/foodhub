@@ -235,6 +235,36 @@ export const MENSAJES_CONFIGURACION = {
 
   /** PROPIO - US-CFG-01, confirmacion de la eliminación física. */
   categoriaEliminada: 'Eliminamos la categoría.',
+
+  // --- US-CFG-02 · Motivos de cancelación de pedido -----------------------
+
+  /**
+   * PROPIO - US-CFG-02: RF056 exige nombre unico pero, a diferencia de
+   * US-CFG-01, el documento no fija el texto del error.
+   */
+  nombreMotivoDuplicado: 'Ya existe un motivo con ese nombre.',
+
+  /** PROPIO - US-CFG-02, alta exitosa (RF056 no fija un texto de confirmación). */
+  motivoCreado: 'Motivo creado con éxito.',
+
+  /**
+   * LITERAL - US-CFG-02, texto único de confirmación (título y mensaje en
+   * una sola oración, a diferencia de US-CFG-01 que los separa).
+   */
+  confirmarDeshabilitarMotivo:
+    'Al deshabilitar este motivo, ya no aparecerá como opción rápida en los flujos de cancelación. ¿Confirma la acción?',
+
+  /** PROPIO - US-CFG-02, confirmación de la edición. */
+  motivoActualizado: 'Guardamos los cambios del motivo.',
+
+  /**
+   * PROPIO - US-CFG-02: RF056 solo detalla el flujo de deshabilitar: habilitar
+   * es simétrico y sigue, sin criterio propio, el mismo criterio "sin
+   * solicitar confirmación" de US-CFG-01.
+   */
+  motivoHabilitado:
+    'El motivo vuelve a estar disponible en los flujos de cancelación.',
+  motivoDeshabilitado: 'El motivo quedó deshabilitado.',
 } as const;
 
 /** Errores tecnicos, sin detalle del stack (requisito del modulo de seguridad). */
