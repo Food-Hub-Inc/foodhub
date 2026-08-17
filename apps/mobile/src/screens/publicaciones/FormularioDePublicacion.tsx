@@ -7,6 +7,7 @@ import {
   MENSAJES_PUBLICACION,
 } from '@foodhub/shared';
 import { AreaTexto } from '../../components/ui/AreaTexto';
+import { Aviso } from '../../components/ui/Aviso';
 import { Boton, BotonDeTexto } from '../../components/ui/Boton';
 import {
   CampoDesplegable,
@@ -174,11 +175,21 @@ export function FormularioDePublicacion({
     onCancelar(hayCambiosDeCampos || fotoTocada);
   }
 
+  const sinCategorias = categorias.isSuccess && categorias.data.length === 0;
+
   return (
     <ScrollView
       contentContainerClassName="px-4 pb-10 pt-4"
       keyboardShouldPersistTaps="handled"
     >
+      {sinCategorias ? (
+        <Aviso
+          className="mb-4"
+          mensaje={TEXTOS_PUBLICACIONES.sinCategorias}
+          tono="informativo"
+        />
+      ) : null}
+
       <Campos formulario={formulario} opciones={opciones} />
 
       <View className="mt-4">

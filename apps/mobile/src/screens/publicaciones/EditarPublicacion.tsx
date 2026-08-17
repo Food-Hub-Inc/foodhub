@@ -114,7 +114,7 @@ function Formulario({ publicacion }: { publicacion: PublicacionDetalle }) {
 
   const volver = () => {
     router.replace({
-      pathname: '/publicaciones/[id]/index',
+      pathname: '/publicaciones/[id]',
       params: { id: publicacion.id },
     });
   };

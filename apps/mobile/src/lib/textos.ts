@@ -313,6 +313,15 @@ export const TEXTOS_PUBLICACIONES = {
   campoImagen: 'Imagen del plato',
   /** [PROPIO] Placeholder del desplegable de categoría sin selección. */
   categoriaPlaceholder: 'Seleccioná una categoría',
+  /**
+   * [PROPIO] La categoría es obligatoria y no hay forma de publicar sin
+   * elegir una. Sin categorías cargadas el desplegable queda sin opciones y
+   * el botón "Publicar" permanece deshabilitado (falta un campo obligatorio),
+   * pero eso solo, sin este aviso, es indistinguible de un formulario recién
+   * abierto: el cocinero no tiene forma de saber por qué no puede avanzar.
+   */
+  sinCategorias:
+    'Todavía no hay categorías cargadas. Contactá al soporte para poder publicar un plato.',
   /** [PROPIO] Reusados también por `SelectorDeFoto` en la foto del plato. */
   agregarFoto: 'Agregar foto',
   cambiarFoto: 'Cambiar foto',

@@ -278,10 +278,12 @@ function Contenido({
       renderItem={({ item }) => (
         <TarjetaDePublicacion
           onPress={() => {
-            // El archivo de ruta es `publicaciones/[id]/index.tsx`: expo-router
-            // tipa ese destino literalmente como `/publicaciones/[id]/index`.
+            // El archivo de ruta es `publicaciones/[id]/index.tsx`, pero
+            // expo-router colapsa un `index.tsx` al path de su directorio:
+            // el destino tipado es `/publicaciones/[id]`, no
+            // `/publicaciones/[id]/index` (ese literal no existe).
             router.push({
-              pathname: '/publicaciones/[id]/index',
+              pathname: '/publicaciones/[id]',
               params: { id: item.id },
             });
           }}
