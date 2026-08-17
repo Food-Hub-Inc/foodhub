@@ -1,19 +1,29 @@
+import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import type { EstadoPublicacion, PublicacionDetalle } from '@foodhub/shared';
+import {
+  MENSAJES_PUBLICACION,
+  type EstadoPublicacion,
+  type PublicacionDetalle,
+} from '@foodhub/shared';
 import {
   IconoBolsa,
   IconoCocinero,
   IconoEstrella,
 } from '../../components/iconos';
 import { Boton } from '../../components/ui/Boton';
+import { DialogoExito } from '../../components/ui/DialogoExito';
+import { DialogoSevero } from '../../components/ui/DialogoSevero';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { mensajeDeError } from '../../lib/api';
-import { usePublicacionPropia } from '../../hooks/usePublicaciones';
+import {
+  useEliminarPublicacion,
+  usePublicacionPropia,
+} from '../../hooks/usePublicaciones';
 import { formatearFecha, formatearPrecio } from '../../lib/formato';
 import { TEXTOS_PUBLICACIONES } from '../../lib/textos';
 
@@ -35,9 +45,8 @@ const COLOR_ESTADO: Record<EstadoPublicacion, string> = {
  * Los botones "Editar" y "Eliminar" se muestran acá porque el criterio de
  * aceptación de US-PUB-05 los exige en esta pantalla ("desde donde puedo ver
  * toda la información del plato y los botones 'Editar' y 'Eliminar'").
- * US-PUB-02 conecta "Editar" a la navegación de edición; "Eliminar" sigue
- * sin conectar todavía -lo hace US-PUB-03, al diálogo de baja- para no
- * adelantarse al trabajo de esa historia.
+ * US-PUB-02 conecta "Editar" a la navegación de edición; US-PUB-03 conecta
+ * "Eliminar" al diálogo de baja (ver `Acciones`, más abajo).
  */
 export function DetallePublicacion() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -91,7 +100,7 @@ function Contenido({ publicacion }: { publicacion: PublicacionDetalle }) {
       ) : null}
 
       <Fechas publicacion={publicacion} />
-      <Acciones publicacionId={publicacion.id} />
+      <Acciones publicacion={publicacion} />
     </ScrollView>
   );
 }
@@ -192,31 +201,78 @@ function Fechas({ publicacion }: { publicacion: PublicacionDetalle }) {
 }
 
 /**
- * "Eliminar" sigue sin conectar: ver el comentario de `DetallePublicacion`.
- * US-PUB-03 lo conecta al diálogo de baja.
+ * Los botones "Editar"/"Eliminar" y, para "Eliminar", sus dos diálogos
+ * (confirmación y éxito) - US-PUB-02 y US-PUB-03.
+ *
+ * A diferencia de la tarjeta del listado (`TarjetaDePublicacion`), que se
+ * queda donde está al terminar, acá SÍ hay que navegar: la publicación que
+ * esta pantalla muestra dejó de existir, así que cerrar el diálogo de éxito
+ * vuelve a "Mis publicaciones" con `replace` -no `push`- para que "Volver"
+ * no regrese al detalle de un plato ya eliminado.
  */
-function Acciones({ publicacionId }: { publicacionId: string }) {
+function Acciones({ publicacion }: { publicacion: PublicacionDetalle }) {
+  const [confirmandoEliminar, setConfirmandoEliminar] = useState(false);
+  const [eliminada, setEliminada] = useState(false);
+  const eliminar = useEliminarPublicacion();
+
   return (
-    <View className="mt-6 flex-row gap-3">
-      <Boton
-        className="flex-1"
-        onPress={() => {
-          router.push({
-            pathname: '/publicaciones/[id]/editar',
-            params: { id: publicacionId },
+    <>
+      <View className="mt-6 flex-row gap-3">
+        <Boton
+          className="flex-1"
+          onPress={() => {
+            router.push({
+              pathname: '/publicaciones/[id]/editar',
+              params: { id: publicacion.id },
+            });
+          }}
+          variante="secundario"
+        >
+          {TEXTOS_PUBLICACIONES.editar}
+        </Boton>
+        <Boton
+          className="flex-1"
+          onPress={() => {
+            setConfirmandoEliminar(true);
+          }}
+          variante="destructivo"
+        >
+          {TEXTOS_PUBLICACIONES.eliminar}
+        </Boton>
+      </View>
+
+      <DialogoSevero
+        abierto={confirmandoEliminar}
+        error={eliminar.isError ? mensajeDeError(eliminar.error) : undefined}
+        mensaje={MENSAJES_PUBLICACION.confirmarEliminarMensaje(
+          publicacion.nombre,
+        )}
+        onCancelar={() => {
+          setConfirmandoEliminar(false);
+          eliminar.reset();
+        }}
+        onConfirmar={() => {
+          eliminar.mutate(publicacion.id, {
+            onSuccess: () => {
+              setConfirmandoEliminar(false);
+              setEliminada(true);
+            },
           });
         }}
-        variante="secundario"
-      >
-        {TEXTOS_PUBLICACIONES.editar}
-      </Boton>
-      <Boton
-        className="flex-1"
-        onPress={() => undefined}
-        variante="destructivo"
-      >
-        {TEXTOS_PUBLICACIONES.eliminar}
-      </Boton>
-    </View>
+        procesando={eliminar.isPending}
+        textoCancelar={MENSAJES_PUBLICACION.confirmarEliminarBotonCancelar}
+        textoConfirmar={MENSAJES_PUBLICACION.confirmarEliminarBotonConfirmar}
+        titulo={MENSAJES_PUBLICACION.confirmarEliminarTitulo}
+      />
+
+      <DialogoExito
+        abierto={eliminada}
+        mensaje={MENSAJES_PUBLICACION.publicacionEliminada}
+        onCerrar={() => {
+          router.replace('/(cocinero)/platos');
+        }}
+        textoBoton={TEXTOS_PUBLICACIONES.aceptar}
+      />
+    </>
   );
 }

@@ -87,3 +87,13 @@ export function editarPublicacion(
 ): Promise<PublicacionDetalle> {
   return api.modificar<PublicacionDetalle>(`/publicaciones/${id}`, datos);
 }
+
+/**
+ * US-PUB-03. Baja lógica de una publicación propia. Sin body: a diferencia de
+ * `eliminarCuentaPropia` (`/usuarios/yo`), acá no hay una casilla de
+ * "confirmación" que mandar -el `DialogoSevero` de la pantalla ya cumple ese
+ * rol- y el `id` en la URL alcanza para identificar el recurso.
+ */
+export function eliminarPublicacion(id: string): Promise<void> {
+  return api.eliminar<void>(`/publicaciones/${id}`);
+}

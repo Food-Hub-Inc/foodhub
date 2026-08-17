@@ -14,9 +14,11 @@ import {
 } from 'drizzle-orm';
 import { categoria, itemPedido, pedido, publicacion } from '@foodhub/db';
 import {
+  MENSAJES_PUBLICACION,
   PUBLICACIONES_POR_PAGINA,
   type CrearPublicacionInput,
   type EditarPublicacionInput,
+  type EstadoPedido,
   type EstadoPublicacion,
   type FiltrosPublicacion,
   type OrdenPublicacion,
@@ -25,7 +27,7 @@ import {
   type PublicacionListado,
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
-import { noEncontrado } from '../../middleware/error.middleware.js';
+import { AppError, noEncontrado } from '../../middleware/error.middleware.js';
 import { limpiarFotoDePlatoAnterior } from '../almacenamiento/almacenamiento.service.js';
 
 /**
@@ -529,4 +531,102 @@ export async function editarPublicacion(entrada: {
   if (limpieza) void limpiarFotoDePlatoAnterior(limpieza);
 
   return obtenerPublicacionPropia(cocineroId, publicacionId);
+}
+
+// ---------------------------------------------------------------------------
+// Baja logica (US-PUB-03)
+// ---------------------------------------------------------------------------
+
+/**
+ * Estados de pedido que bloquean la baja de una publicacion (US-PUB-03,
+ * tercer criterio de aceptacion: "pedidos asociados en estado 'Creado',
+ * 'Aceptado' o 'Listo'"). 'RECHAZADO' y 'COMPLETADO' son estados terminales
+ * -el pedido ya no va a cambiar- y por eso no bloquean la baja.
+ */
+const ESTADOS_PEDIDO_ACTIVO: EstadoPedido[] = ['CREADO', 'ACEPTADO', 'LISTO'];
+
+/**
+ * US-PUB-03 - Baja logica de una publicacion propia.
+ *
+ * Nunca es un `DELETE` fisico: `publicacion.activo` pasa a `false` (ver el
+ * comentario del propio schema en `packages/db/src/schema/publicaciones.ts`,
+ * "un pedido historico referencia la publicacion, y perder ese dato dejaria
+ * el historial del cliente mostrando platos vacios"). Por eso el
+ * `onDelete: 'restrict'` que protege `item_pedido.publicacion_id` -pensado
+ * para impedir un DELETE fisico de una publicacion con pedidos asociados- NO
+ * se dispara nunca desde este modulo: esta funcion jamas ejecuta un DELETE
+ * contra `publicacion`.
+ *
+ * Tres pasos, en este orden:
+ *   1. Ownership + existencia: la publicacion tiene que ser del cocinero que
+ *      pide la baja y seguir activa. 404 si no -mismo criterio que el resto
+ *      del modulo: nunca 403, para no confirmarle a quien pregunta que el id
+ *      pertenece a un recurso real de otro cocinero.
+ *   2. Pedidos activos: si existe al menos un `item_pedido` de esta
+ *      publicacion cuyo pedido esta en 'CREADO', 'ACEPTADO' o 'LISTO',
+ *      rechaza con 409 SIN tocar la fila - el criterio de aceptacion exige
+ *      que "la eliminacion no se efectuara y la publicacion permanece
+ *      intacta".
+ *   3. Baja logica: recien aca se ejecuta el UPDATE.
+ *
+ * `resena` no participa de ninguno de estos pasos: no tiene FK a
+ * `publicacion` (se relaciona con `pedido`), asi que es fisicamente
+ * imposible tocarla por accidente desde aca - es, ademas, lo que exige el
+ * ultimo criterio de aceptacion de la historia (conservar las resenas del
+ * cocinero tras la baja).
+ *
+ * Sin notificacion push ni `registrarOperacion`: mismo alcance que el resto
+ * del modulo (ver el comentario de `crearPublicacion` sobre US-NOT-06, y el
+ * de `cambiarDisponibilidad` sobre la auditoria).
+ */
+export async function eliminarPublicacion(entrada: {
+  cocineroId: string;
+  publicacionId: string;
+}): Promise<void> {
+  const { cocineroId, publicacionId } = entrada;
+
+  const [propia] = await db
+    .select({ id: publicacion.id })
+    .from(publicacion)
+    .where(
+      and(
+        eq(publicacion.id, publicacionId),
+        eq(publicacion.cocineroId, cocineroId),
+        eq(publicacion.activo, true),
+      ),
+    )
+    .limit(1);
+
+  if (!propia) throw noEncontrado('la publicación');
+
+  const [pedidoActivo] = await db
+    .select({ id: itemPedido.id })
+    .from(itemPedido)
+    .innerJoin(pedido, eq(pedido.id, itemPedido.pedidoId))
+    .where(
+      and(
+        eq(itemPedido.publicacionId, publicacionId),
+        inArray(pedido.estadoPedidoActual, ESTADOS_PEDIDO_ACTIVO),
+      ),
+    )
+    .limit(1);
+
+  if (pedidoActivo) {
+    throw new AppError(
+      409,
+      MENSAJES_PUBLICACION.pedidosActivosNoEliminable,
+      'PEDIDOS_ACTIVOS',
+    );
+  }
+
+  await db
+    .update(publicacion)
+    .set({ activo: false })
+    .where(
+      and(
+        eq(publicacion.id, publicacionId),
+        eq(publicacion.cocineroId, cocineroId),
+        eq(publicacion.activo, true),
+      ),
+    );
 }

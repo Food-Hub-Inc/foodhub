@@ -21,6 +21,7 @@ import {
   cambiarDisponibilidad,
   crearPublicacion,
   editarPublicacion,
+  eliminarPublicacion,
   listarMisPublicaciones,
   obtenerMiPublicacion,
 } from '../api/publicaciones';
@@ -236,6 +237,40 @@ export function useEditarPublicacion(): UseMutationResult<
         detalle,
       );
       void cliente.invalidateQueries(consultasDeListado);
+    },
+  });
+}
+
+/**
+ * US-PUB-03 · Baja lógica de una publicación propia.
+ *
+ * El criterio de aceptación exige el botón "Eliminar" en DOS pantallas -la
+ * tarjeta del listado y el detalle-, y cada una decide qué hacer después de
+ * cerrar el diálogo de éxito: el detalle vuelve al listado (la publicación
+ * que estaba mostrando dejó de existir), la tarjeta se queda donde está (el
+ * resto del listado sigue vigente). Por eso, mismo criterio que
+ * `useCrearPublicacion`/`useEditarPublicacion`, este hook NO navega: solo
+ * ejecuta la baja y avisa que terminó; la navegación queda a cargo de quien
+ * llama a `mutate`.
+ *
+ * Invalida TODO el prefijo `CLAVE_PUBLICACIONES` -listado Y detalle, a
+ * diferencia de `useCambiarDisponibilidad`/`useEditarPublicacion`, que
+ * restringen la invalidación al listado con `consultasDeListado` para no
+ * pisar la entrada de detalle que acaban de escribir a mano-: acá no hay nada
+ * que preservar, el registro completo deja de existir. Mismo criterio, por
+ * eso, que `useCrearPublicacion`.
+ */
+export function useEliminarPublicacion(): UseMutationResult<
+  void,
+  Error,
+  string
+> {
+  const cliente = useQueryClient();
+
+  return useMutation({
+    mutationFn: (publicacionId: string) => eliminarPublicacion(publicacionId),
+    onSuccess: () => {
+      void cliente.invalidateQueries({ queryKey: CLAVE_PUBLICACIONES });
     },
   });
 }

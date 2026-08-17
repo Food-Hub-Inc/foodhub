@@ -1,12 +1,20 @@
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import type { PublicacionListado } from '@foodhub/shared';
+import { MENSAJES_PUBLICACION, type PublicacionListado } from '@foodhub/shared';
 import {
   IconoBolsa,
   IconoCocinero,
   IconoEstrella,
+  IconoTacho,
 } from '../../components/iconos';
-import { useCambiarDisponibilidad } from '../../hooks/usePublicaciones';
+import { DialogoExito } from '../../components/ui/DialogoExito';
+import { DialogoSevero } from '../../components/ui/DialogoSevero';
+import {
+  useCambiarDisponibilidad,
+  useEliminarPublicacion,
+} from '../../hooks/usePublicaciones';
+import { mensajeDeError } from '../../lib/api';
 import { formatearFecha, formatearPrecio } from '../../lib/formato';
 import { TEXTOS_PUBLICACIONES } from '../../lib/textos';
 import { SelectorDeDisponibilidad } from './SelectorDeDisponibilidad';
@@ -19,7 +27,16 @@ import { SelectorDeDisponibilidad } from './SelectorDeDisponibilidad';
  * El indicador de disponibilidad es el selector interactivo real
  * (`SelectorDeDisponibilidad`, US-PUB-04): tocarlo abre el menú de las tres
  * opciones y el cambio se aplica de inmediato, sin pasar por la pantalla de
- * detalle. Tampoco lleva acción de eliminar todavía (la agrega US-PUB-03).
+ * detalle.
+ *
+ * El ícono de eliminar (US-PUB-03) es un segundo `Pressable` anidado dentro
+ * del que navega al detalle -mismo patrón ya probado en esta tarjeta por
+ * `SelectorDeDisponibilidad`-: el sistema de gestos de React Native resuelve
+ * el toque contra el responder más interno, así que tocar el ícono nunca
+ * dispara también la navegación. El criterio de aceptación exige el botón
+ * "Eliminar" en esta tarjeta Y en el detalle (`DetallePublicacion`); cada uno
+ * mantiene su propio diálogo porque cada uno decide algo distinto al
+ * terminar (ver `useEliminarPublicacion`).
  */
 export function TarjetaDePublicacion({
   publicacion,
@@ -54,7 +71,74 @@ export function TarjetaDePublicacion({
         />
         <FilaResumen publicacion={publicacion} />
       </View>
+
+      <BotonEliminarTarjeta publicacion={publicacion} />
     </Pressable>
+  );
+}
+
+/**
+ * Ícono de eliminar + sus dos diálogos (confirmación y éxito). Se queda en el
+ * listado al terminar -a diferencia del de `DetallePublicacion`, que navega-:
+ * el resto de las tarjetas sigue vigente y la invalidación de
+ * `useEliminarPublicacion` ya se encarga de que esta desaparezca.
+ */
+function BotonEliminarTarjeta({
+  publicacion,
+}: {
+  publicacion: PublicacionListado;
+}) {
+  const [confirmando, setConfirmando] = useState(false);
+  const [eliminada, setEliminada] = useState(false);
+  const eliminar = useEliminarPublicacion();
+
+  return (
+    <>
+      <Pressable
+        accessibilityLabel={TEXTOS_PUBLICACIONES.eliminar}
+        accessibilityRole="button"
+        className="h-8 w-8 items-center justify-center self-start rounded-sm"
+        hitSlop={8}
+        onPress={() => {
+          setConfirmando(true);
+        }}
+      >
+        <IconoTacho className="text-error" size={18} />
+      </Pressable>
+
+      <DialogoSevero
+        abierto={confirmando}
+        error={eliminar.isError ? mensajeDeError(eliminar.error) : undefined}
+        mensaje={MENSAJES_PUBLICACION.confirmarEliminarMensaje(
+          publicacion.nombre,
+        )}
+        onCancelar={() => {
+          setConfirmando(false);
+          eliminar.reset();
+        }}
+        onConfirmar={() => {
+          eliminar.mutate(publicacion.id, {
+            onSuccess: () => {
+              setConfirmando(false);
+              setEliminada(true);
+            },
+          });
+        }}
+        procesando={eliminar.isPending}
+        textoCancelar={MENSAJES_PUBLICACION.confirmarEliminarBotonCancelar}
+        textoConfirmar={MENSAJES_PUBLICACION.confirmarEliminarBotonConfirmar}
+        titulo={MENSAJES_PUBLICACION.confirmarEliminarTitulo}
+      />
+
+      <DialogoExito
+        abierto={eliminada}
+        mensaje={MENSAJES_PUBLICACION.publicacionEliminada}
+        onCerrar={() => {
+          setEliminada(false);
+        }}
+        textoBoton={TEXTOS_PUBLICACIONES.aceptar}
+      />
+    </>
   );
 }
 

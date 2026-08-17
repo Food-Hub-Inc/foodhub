@@ -5,6 +5,7 @@ import {
   crearPublicacionSchema,
   editarPublicacionSchema,
   filtrosPublicacionSchema,
+  MENSAJES_PUBLICACION,
 } from '@foodhub/shared';
 import { sesionDe } from '../../lib/request.js';
 import { requiereAutenticacion } from '../../middleware/auth.middleware.js';
@@ -20,9 +21,10 @@ import * as publicacionesService from './publicaciones.service.js';
  * distinguir. Por eso `requiereRol('COCINERO')` se monta una unica vez para
  * todo el router en lugar de repetirse ruta por ruta.
  *
- * US-PUB-05 crea el router con el listado y el detalle. Las historias
- * siguientes agregan sus propias rutas aca (alta, edicion, disponibilidad,
- * baja), sin tocar las que ya estan probadas.
+ * US-PUB-05 crea el router con el listado y el detalle; las historias
+ * siguientes fueron agregando sus propias rutas aca (alta, edicion,
+ * disponibilidad, y por ultimo la baja logica de US-PUB-03), sin tocar las
+ * que ya estaban probadas.
  */
 export const publicacionesRouter: Router = Router();
 
@@ -83,4 +85,13 @@ publicacionesRouter.patch('/:id', async (req, res) => {
     datos: editarPublicacionSchema.parse(req.body),
   });
   res.json(detalle);
+});
+
+/** US-PUB-03 - Baja lógica de una publicación propia. */
+publicacionesRouter.delete('/:id', async (req, res) => {
+  await publicacionesService.eliminarPublicacion({
+    cocineroId: sesionDe(req).id,
+    publicacionId: idPublicacionSchema.parse(req.params.id),
+  });
+  res.json({ mensaje: MENSAJES_PUBLICACION.publicacionEliminada });
 });

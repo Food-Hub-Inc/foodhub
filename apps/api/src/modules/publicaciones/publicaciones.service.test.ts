@@ -1,30 +1,57 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { SQL } from 'drizzle-orm';
-import type {
-  CrearPublicacionInput,
-  EditarPublicacionInput,
-  FiltrosPublicacion,
+import {
+  MENSAJES_PUBLICACION,
+  type CrearPublicacionInput,
+  type EditarPublicacionInput,
+  type FiltrosPublicacion,
 } from '@foodhub/shared';
 import { AppError } from '../../middleware/error.middleware.js';
 
 /**
- * `cambiarDisponibilidad` (US-PUB-04) SI toca `db`, a diferencia de las dos
- * funciones puras de arriba: por eso, y solo para ese `describe`, se
+ * `cambiarDisponibilidad` (US-PUB-04), `editarPublicacion` (US-PUB-02) y
+ * `eliminarPublicacion` (US-PUB-03) SI tocan `db`, a diferencia de las
+ * funciones puras de arriba: por eso, y solo para esos `describe`, se
  * reemplaza `db` por un doble - mismo patron `vi.hoisted` + `vi.mock` que
  * `usuarios.service.test.ts`. El resto de este archivo importa el modulo real
  * sin verse afectado: las funciones puras nunca llaman a `db`.
+ *
+ * `dondeUpdate` es la propia funcion `.where()` del UPDATE, expuesta con
+ * nombre propio (no solo `.returning`) porque `eliminarPublicacion` NO llama
+ * a `.returning()` -a diferencia de `cambiarDisponibilidad`/
+ * `editarPublicacion`- asi que es el unico punto en comun desde el que se
+ * puede afirmar "el UPDATE se ejecuto" o "no llego a ejecutarse" para las
+ * tres funciones a la vez.
+ *
+ * `resolverSelect` es el `.limit()` que cierra tanto el SELECT simple de
+ * ownership (`.from().where().limit()`) como el SELECT con join de pedidos
+ * activos (`.from().innerJoin().where().limit()`): `eliminarPublicacion` los
+ * ejecuta en secuencia estricta (nunca en paralelo), asi que encolar sus
+ * resultados con `mockResolvedValueOnce` alcanza sin tener que distinguir
+ * cual de los dos SELECT esta resolviendo.
  */
-const { aplicarActualizacion } = vi.hoisted(() => ({
-  aplicarActualizacion: vi.fn(),
-}));
+const { aplicarActualizacion, dondeUpdate, resolverSelect } = vi.hoisted(() => {
+  const aplicarActualizacion = vi.fn();
+  return {
+    aplicarActualizacion,
+    dondeUpdate: vi.fn(() => ({ returning: aplicarActualizacion })),
+    resolverSelect: vi.fn(),
+  };
+});
 
 vi.mock('../../lib/db.js', () => ({
   db: {
-    update: vi.fn(() => ({
-      set: vi.fn(() => ({
-        where: vi.fn(() => ({ returning: aplicarActualizacion })),
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({ limit: resolverSelect })),
+        innerJoin: vi.fn(() => ({
+          where: vi.fn(() => ({ limit: resolverSelect })),
+        })),
       })),
+    })),
+    update: vi.fn(() => ({
+      set: vi.fn(() => ({ where: dondeUpdate })),
     })),
   },
 }));
@@ -34,6 +61,7 @@ const {
   cambiarDisponibilidad,
   cambiosDeEdicion,
   editarPublicacion,
+  eliminarPublicacion,
   limpiezaDeImagenTrasEditar,
   valoresDeAltaPublicacion,
 } = await import('./publicaciones.service.js');
@@ -321,13 +349,14 @@ describe('limpiezaDeImagenTrasEditar', () => {
 
 /**
  * US-PUB-02 - `editarPublicacion`. Cubre únicamente el rechazo por ownership
- * (el caso que sí toca `db`) mandando un payload SIN `imagenUrl`: así la
- * función nunca entra a la rama que lee la foto anterior (`db.select`, que
- * este archivo no mockea) y el doble de `db.update` ya definido al principio
- * alcanza, mismo patrón que `cambiarDisponibilidad`. El resto de la función
- * -el UPDATE aplicado con éxito y la limpieza condicional de la foto- ya está
- * cubierto por `cambiosDeEdicion` y `limpiezaDeImagenTrasEditar` de forma
- * aislada; probar el camino feliz completo exigiría mockear además el JOIN de
+ * mandando un payload SIN `imagenUrl`: así la función nunca entra a la rama
+ * que lee la foto anterior por `db.select` (mockeado más abajo para
+ * `eliminarPublicacion`, pero sin resultado encolado acá) y el doble de
+ * `db.update` ya definido al principio alcanza, mismo patrón que
+ * `cambiarDisponibilidad`. El resto de la función -el UPDATE aplicado con
+ * éxito y la limpieza condicional de la foto- ya está cubierto por
+ * `cambiosDeEdicion` y `limpiezaDeImagenTrasEditar` de forma aislada; probar
+ * el camino feliz completo exigiría mockear además el JOIN de
  * `obtenerPublicacionPropia`, que ninguna otra función de este archivo prueba
  * por la misma razón (ver `crearPublicacion`).
  */
@@ -352,5 +381,71 @@ describe('editarPublicacion', () => {
       status: 404,
       codigo: 'NO_ENCONTRADO',
     });
+  });
+});
+
+/**
+ * US-PUB-03 - `eliminarPublicacion`. El caso más importante es el segundo: la
+ * baja tiene que rechazar con 409 cuando hay pedidos activos y, sobre todo,
+ * NO llegar a ejecutar el UPDATE - `dondeUpdate` (la propia función
+ * `.where()` del UPDATE) queda sin invocar, así que un futuro cambio que
+ * invierta el orden de los pasos (tocar la fila antes de revisar los pedidos)
+ * rompería este test antes de llegar a producción.
+ */
+describe('eliminarPublicacion', () => {
+  const PUBLICACION_ID = '44444444-4444-4444-4444-444444444444';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('rechaza con 404 cuando la publicación no existe, es ajena o ya está eliminada', async () => {
+    resolverSelect.mockResolvedValueOnce([]);
+
+    const baja = eliminarPublicacion({
+      cocineroId: COCINERO_ID,
+      publicacionId: PUBLICACION_ID,
+    });
+
+    await expect(baja).rejects.toBeInstanceOf(AppError);
+    await expect(baja).rejects.toMatchObject({
+      status: 404,
+      codigo: 'NO_ENCONTRADO',
+    });
+    expect(dondeUpdate).not.toHaveBeenCalled();
+  });
+
+  it('rechaza con 409 PEDIDOS_ACTIVOS cuando hay pedidos activos, sin llegar a ejecutar el UPDATE', async () => {
+    resolverSelect
+      .mockResolvedValueOnce([{ id: PUBLICACION_ID }]) // ownership: existe y es propia
+      .mockResolvedValueOnce([{ id: 'item-pedido-activo' }]); // hay un pedido CREADO/ACEPTADO/LISTO
+
+    const baja = eliminarPublicacion({
+      cocineroId: COCINERO_ID,
+      publicacionId: PUBLICACION_ID,
+    });
+
+    await expect(baja).rejects.toBeInstanceOf(AppError);
+    await expect(baja).rejects.toMatchObject({
+      status: 409,
+      codigo: 'PEDIDOS_ACTIVOS',
+      message: MENSAJES_PUBLICACION.pedidosActivosNoEliminable,
+    });
+    expect(dondeUpdate).not.toHaveBeenCalled();
+  });
+
+  it('da de baja lógica la publicación cuando no tiene pedidos activos', async () => {
+    resolverSelect
+      .mockResolvedValueOnce([{ id: PUBLICACION_ID }]) // ownership: existe y es propia
+      .mockResolvedValueOnce([]); // sin pedidos activos
+
+    await expect(
+      eliminarPublicacion({
+        cocineroId: COCINERO_ID,
+        publicacionId: PUBLICACION_ID,
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(dondeUpdate).toHaveBeenCalledTimes(1);
   });
 });
