@@ -1,7 +1,11 @@
 import { Router } from 'express';
-import { solicitarUrlDeCargaSchema } from '@foodhub/shared';
+import {
+  solicitarUrlDeCargaPlatoSchema,
+  solicitarUrlDeCargaSchema,
+} from '@foodhub/shared';
 import { sesionDe } from '../../lib/request.js';
 import { requiereAutenticacion } from '../../middleware/auth.middleware.js';
+import { requiereRol } from '../../middleware/rbac.middleware.js';
 import * as almacenamientoService from './almacenamiento.service.js';
 
 /**
@@ -29,3 +33,22 @@ almacenamientoRouter.post('/foto-perfil', async (req, res) => {
   });
   res.status(201).json(urlDeCarga);
 });
+
+/**
+ * US-PUB-01 - Foto de un plato del cocinero autenticado.
+ *
+ * A diferencia de `/foto-perfil` (cualquier tipo de usuario), exige rol
+ * COCINERO: solo un cocinero publica platos, y el resto de los roles no tiene
+ * ninguna carpeta propia en el bucket de publicaciones que llenar.
+ */
+almacenamientoRouter.post(
+  '/foto-plato',
+  requiereRol('COCINERO'),
+  async (req, res) => {
+    const urlDeCarga = await almacenamientoService.crearUrlDeCargaDeFotoPlato({
+      cocineroId: sesionDe(req).id,
+      datos: solicitarUrlDeCargaPlatoSchema.parse(req.body),
+    });
+    res.status(201).json(urlDeCarga);
+  },
+);

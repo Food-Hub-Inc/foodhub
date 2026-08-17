@@ -196,6 +196,129 @@ export const MENSAJES_AUDITORIA = {
     'No se encontraron eventos de seguridad con los filtros seleccionados.',
 } as const;
 
+/**
+ * Modulo de Publicaciones (US-PUB-01 a US-PUB-05).
+ *
+ * Los textos de validacion de imagen y de precio, los cinco modales de
+ * confirmacion (publicar, cancelar-crear, guardar cambios, cancelar-editar,
+ * eliminar) con sus titulos, mensajes y botones, los tres mensajes de exito,
+ * el rechazo por pedidos activos y los dos estados vacios del listado
+ * transcriben caracter por caracter la tabla de criterios de aceptacion de
+ * `MOD_PUBLICACIONES.md`. "Este campo es obligatorio" (US-PUB-01) no se
+ * repite aca: es el mismo mensaje que `MENSAJES_VALIDACION.campoObligatorio`
+ * ya usan otros formularios del sistema, y fragmentarlo en una variante propia
+ * de este modulo solo por una diferencia de puntuacion en la transcripcion del
+ * documento (que carece del punto final que si lleva la constante existente)
+ * dejaria dos mensajes que dicen lo mismo divergiendo con el tiempo.
+ */
+export const MENSAJES_PUBLICACION = {
+  // --- Validacion del formulario de plato (US-PUB-01) -----------------------
+  /** LITERAL - US-PUB-01, imagen fuera de formato o de tamaño. */
+  imagenInvalida:
+    'El archivo debe ser una imagen JPG, PNG o WEBP de hasta 5 MB',
+
+  /** LITERAL - US-PUB-01, precio igual a 0 o negativo. */
+  precioInvalido: 'El precio debe ser mayor a 0',
+
+  // --- Confirmar publicacion (US-PUB-01) -------------------------------------
+  /** LITERAL - US-PUB-01, título del modal de confirmación al crear. */
+  confirmarPublicarTitulo: '¿Confirmás la publicación del plato?',
+
+  /** LITERAL - US-PUB-01, mensaje del modal de confirmación al crear. */
+  confirmarPublicarMensaje:
+    "El plato quedará visible para los clientes con estado 'Disponible'.",
+
+  /** LITERAL - US-PUB-01, botón que confirma la publicación. */
+  confirmarPublicarBotonConfirmar: 'Sí, publicar',
+
+  /** LITERAL - US-PUB-01, botón que vuelve al formulario sin publicar. */
+  confirmarPublicarBotonCancelar: 'No, volver',
+
+  /** LITERAL - US-PUB-01, éxito de la creación. */
+  publicacionCreada: '¡Publicación creada con éxito!',
+
+  // --- Cancelar la creación con datos cargados (US-PUB-01) -------------------
+  /** LITERAL - US-PUB-01, mensaje al presionar "Cancelar" en el alta. */
+  cancelarCreacionMensaje:
+    '¿Está seguro de que desea volver? Los cambios no se guardarán',
+
+  /** LITERAL - US-PUB-01, botón que descarta el formulario de alta. */
+  cancelarCreacionBotonConfirmar: 'Sí, volver',
+
+  /** LITERAL - US-PUB-01, botón que vuelve a editar el formulario de alta. */
+  cancelarCreacionBotonCancelar: 'No, cerrar',
+
+  // --- Confirmar edición (US-PUB-02) ------------------------------------------
+  /** LITERAL - US-PUB-02, título del modal de confirmación al editar. */
+  confirmarEdicionTitulo: '¿Confirmás los cambios realizados?',
+
+  /** LITERAL - US-PUB-02, botón que confirma los cambios. */
+  confirmarEdicionBotonConfirmar: 'Sí, guardar',
+
+  /** LITERAL - US-PUB-02, botón que vuelve al formulario sin guardar. */
+  confirmarEdicionBotonCancelar: 'No, volver',
+
+  /** LITERAL - US-PUB-02, éxito del guardado. */
+  cambiosGuardados: '¡Cambios guardados con éxito!',
+
+  // --- Cancelar la edición con cambios pendientes (US-PUB-02) ----------------
+  /** LITERAL - US-PUB-02, mensaje al presionar "Cancelar" en la edición. */
+  cancelarEdicionMensaje:
+    'Los cambios realizados no se guardarán. ¿Está seguro de que desea volver?',
+
+  /** LITERAL - US-PUB-02, botón que descarta la edición. */
+  cancelarEdicionBotonConfirmar: 'Sí, volver',
+
+  /** LITERAL - US-PUB-02, botón que vuelve a editar el formulario. */
+  cancelarEdicionBotonCancelar: 'No, cerrar',
+
+  // --- Eliminar (US-PUB-03) ----------------------------------------------------
+  /** LITERAL - US-PUB-03, título del modal de confirmación de baja. */
+  confirmarEliminarTitulo: '¿Eliminar publicación?',
+
+  /**
+   * LITERAL - US-PUB-03, mensaje del modal de confirmación de baja. El
+   * criterio de aceptación marca el nombre del plato como
+   * "[Nombre del plato]"; esta función interpola el valor real en ese lugar
+   * y conserva las comillas simples que rodean al placeholder en el documento.
+   */
+  confirmarEliminarMensaje: (nombrePlato: string) =>
+    `Esta acción no se puede deshacer. La publicación '${nombrePlato}' dejará de ser visible para los clientes.`,
+
+  /** LITERAL - US-PUB-03, botón que confirma la baja (color rojo en la UI). */
+  confirmarEliminarBotonConfirmar: 'Sí, eliminar',
+
+  /** LITERAL - US-PUB-03, botón que vuelve sin eliminar. */
+  confirmarEliminarBotonCancelar: 'No, volver',
+
+  /**
+   * LITERAL - US-PUB-03, éxito de la baja. Sin signos de exclamación a
+   * diferencia de `publicacionCreada` y `cambiosGuardados`: así está escrito
+   * en el criterio de aceptación, y esta constante respeta el documento tal
+   * como está redactado en vez de uniformar el estilo por su cuenta.
+   */
+  publicacionEliminada: 'Publicación eliminada con éxito',
+
+  /**
+   * LITERAL - US-PUB-03, intento de baja con pedidos en estado "Creado",
+   * "Aceptado" o "Listo".
+   */
+  pedidosActivosNoEliminable:
+    'No se puede eliminar una publicación con pedidos activos. Finalice o rechace los pedidos pendientes antes de eliminarla.',
+
+  // --- Estados vacíos del listado (US-PUB-05) ---------------------------------
+  /** LITERAL - US-PUB-05, título del estado vacío sin publicaciones propias. */
+  sinPublicacionesTitulo: 'Aún no tenés publicaciones',
+
+  /** LITERAL - US-PUB-05, subtítulo del estado vacío sin publicaciones propias. */
+  sinPublicacionesSubtitulo:
+    "Presioná 'Nueva publicación' para crear tu primer plato",
+
+  /** LITERAL - US-PUB-05, búsqueda o filtros combinados sin coincidencias. */
+  sinResultados:
+    'No se encontraron publicaciones con esos criterios. Probá modificar los filtros o la búsqueda.',
+} as const;
+
 /** Errores tecnicos, sin detalle del stack (requisito del modulo de seguridad). */
 export const MENSAJES_ERROR = {
   interno: 'Ocurrió un error inesperado. Intentá nuevamente en unos minutos.',
