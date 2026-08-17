@@ -1,5 +1,7 @@
 import type {
+  CambiarDisponibilidadPublicacionRespuesta,
   CrearPublicacionInput,
+  EstadoPublicacion,
   FiltrosPublicacion,
   PaginaPublicaciones,
   PublicacionDetalle,
@@ -60,4 +62,19 @@ export function crearPublicacion(
   datos: CrearPublicacionInput,
 ): Promise<PublicacionDetalle> {
   return api.enviar<PublicacionDetalle>('/publicaciones', datos);
+}
+
+/**
+ * US-PUB-04. Cambio de disponibilidad. Ruta propia (no el PATCH general de
+ * edición): el criterio de aceptación exige que se aplique sin modal de
+ * confirmación.
+ */
+export function cambiarDisponibilidad(
+  id: string,
+  estadoPublicacion: EstadoPublicacion,
+): Promise<CambiarDisponibilidadPublicacionRespuesta> {
+  return api.modificar<CambiarDisponibilidadPublicacionRespuesta>(
+    `/publicaciones/${id}/disponibilidad`,
+    { estadoPublicacion },
+  );
 }

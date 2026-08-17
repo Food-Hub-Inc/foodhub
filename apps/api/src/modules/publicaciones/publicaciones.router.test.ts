@@ -26,6 +26,7 @@ const rutasProtegidas = [
   ['get', '/api/v1/publicaciones'],
   ['get', `/api/v1/publicaciones/${ID_CUALQUIERA}`],
   ['post', '/api/v1/publicaciones'],
+  ['patch', `/api/v1/publicaciones/${ID_CUALQUIERA}/disponibilidad`],
 ] as const;
 
 describe('acceso al módulo de publicaciones', () => {

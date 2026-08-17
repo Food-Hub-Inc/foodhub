@@ -1,53 +1,25 @@
 import { Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import type { EstadoPublicacion, PublicacionListado } from '@foodhub/shared';
+import type { PublicacionListado } from '@foodhub/shared';
 import {
   IconoBolsa,
   IconoCocinero,
   IconoEstrella,
 } from '../../components/iconos';
+import { useCambiarDisponibilidad } from '../../hooks/usePublicaciones';
 import { formatearFecha, formatearPrecio } from '../../lib/formato';
 import { TEXTOS_PUBLICACIONES } from '../../lib/textos';
-
-/**
- * Representación cromática de la disponibilidad (guía visual, badges de
- * `EstadoPublicacion`): éxito para disponible, advertencia para últimas
- * unidades y el gris de texto deshabilitado —nunca el rojo de error, reservado
- * a acciones destructivas— para no disponible.
- *
- * El color nunca es el único canal: cada estado lleva además su etiqueta en
- * texto, no solo el punto de color.
- */
-const ESTILO_ESTADO: Record<
-  EstadoPublicacion,
-  { punto: string; texto: string; etiqueta: string }
-> = {
-  DISPONIBLE: {
-    punto: 'bg-success',
-    texto: 'text-success',
-    etiqueta: TEXTOS_PUBLICACIONES.estadoDisponible,
-  },
-  ULTIMAS_UNIDADES: {
-    punto: 'bg-warning',
-    texto: 'text-warning',
-    etiqueta: TEXTOS_PUBLICACIONES.estadoUltimasUnidades,
-  },
-  NO_DISPONIBLE: {
-    punto: 'bg-text-disabled',
-    texto: 'text-text-disabled',
-    etiqueta: TEXTOS_PUBLICACIONES.estadoNoDisponible,
-  },
-};
+import { SelectorDeDisponibilidad } from './SelectorDeDisponibilidad';
 
 /**
  * Tarjeta del listado "Mis publicaciones" (US-PUB-05): imagen, nombre,
  * categoría, precio, disponibilidad, pedidos recibidos, valoración y fecha de
  * creación — las ocho columnas que exige el criterio de aceptación.
  *
- * El indicador de disponibilidad es un BADGE ESTÁTICO en esta historia:
- * US-PUB-04 lo reemplaza por un selector interactivo
- * (`SelectorDeDisponibilidad`) sobre esta misma tarjeta. Tampoco lleva acción
- * de eliminar todavía (la agrega US-PUB-03).
+ * El indicador de disponibilidad es el selector interactivo real
+ * (`SelectorDeDisponibilidad`, US-PUB-04): tocarlo abre el menú de las tres
+ * opciones y el cambio se aplica de inmediato, sin pasar por la pantalla de
+ * detalle. Tampoco lleva acción de eliminar todavía (la agrega US-PUB-03).
  */
 export function TarjetaDePublicacion({
   publicacion,
@@ -56,7 +28,7 @@ export function TarjetaDePublicacion({
   publicacion: PublicacionListado;
   onPress: () => void;
 }) {
-  const estado = ESTILO_ESTADO[publicacion.estadoPublicacion];
+  const cambiarDisponibilidad = useCambiarDisponibilidad();
   const imagen =
     publicacion.imagenUrl ?? publicacion.categoria.imagenPredeterminadaUrl;
 
@@ -67,68 +39,117 @@ export function TarjetaDePublicacion({
       accessibilityRole="button"
       accessibilityLabel={publicacion.nombre}
     >
-      <View className="h-20 w-20 items-center justify-center overflow-hidden rounded-sm bg-background">
-        {imagen ? (
-          <Image
-            contentFit="cover"
-            source={{ uri: imagen }}
-            style={{ width: '100%', height: '100%' }}
-          />
-        ) : (
-          <IconoCocinero className="text-text-disabled" size={28} />
-        )}
-      </View>
+      <Miniatura imagen={imagen} />
 
       <View className="flex-1 justify-center">
-        <Text className="text-h2 font-bold text-text-primary" numberOfLines={1}>
-          {publicacion.nombre}
-        </Text>
-        <Text
-          className="mt-0.5 text-caption text-text-secondary"
-          numberOfLines={1}
-        >
-          {publicacion.categoria.nombre}
-        </Text>
-        <Text className="mt-1 text-body font-bold text-text-primary">
-          {formatearPrecio(publicacion.precio)}
-        </Text>
-
-        <View className="mt-2 flex-row items-center justify-between">
-          <View className="flex-row items-center gap-1.5">
-            <View className={`h-2 w-2 rounded-full ${estado.punto}`} />
-            <Text className={`text-caption font-semibold ${estado.texto}`}>
-              {estado.etiqueta}
-            </Text>
-          </View>
-
-          {/* Decisión 1 del plan del módulo: `valoracionPromedio` siempre
-              llega null (el modelo de datos no permite atribuir una reseña a
-              un plato puntual), así que hoy nunca se dibuja. Se deja resuelto
-              para cuando se corrija el modelo. */}
-          {publicacion.valoracionPromedio !== null ? (
-            <View className="flex-row items-center gap-1">
-              <IconoEstrella size={14} className="text-warning" />
-              <Text className="text-caption text-text-secondary">
-                {publicacion.valoracionPromedio.toFixed(1)}
-              </Text>
-            </View>
-          ) : null}
-        </View>
-
-        <View className="mt-1.5 flex-row items-center justify-between">
-          <View className="flex-row items-center gap-1.5">
-            <IconoBolsa size={14} className="text-text-disabled" />
-            <Text className="text-caption text-text-secondary">
-              {TEXTOS_PUBLICACIONES.pedidosRecibidos(
-                publicacion.cantidadPedidos,
-              )}
-            </Text>
-          </View>
-          <Text className="text-caption text-text-disabled">
-            {formatearFecha(publicacion.fechaCreacion)}
-          </Text>
-        </View>
+        <Encabezado publicacion={publicacion} />
+        <FilaDisponibilidad
+          publicacion={publicacion}
+          onCambiar={(estadoPublicacion) => {
+            cambiarDisponibilidad.mutate({
+              publicacionId: publicacion.id,
+              estadoPublicacion,
+            });
+          }}
+        />
+        <FilaResumen publicacion={publicacion} />
       </View>
     </Pressable>
+  );
+}
+
+function Miniatura({ imagen }: { imagen: string | null }) {
+  return (
+    <View className="h-20 w-20 items-center justify-center overflow-hidden rounded-sm bg-background">
+      {imagen ? (
+        <Image
+          contentFit="cover"
+          source={{ uri: imagen }}
+          style={{ width: '100%', height: '100%' }}
+        />
+      ) : (
+        <IconoCocinero className="text-text-disabled" size={28} />
+      )}
+    </View>
+  );
+}
+
+function Encabezado({ publicacion }: { publicacion: PublicacionListado }) {
+  return (
+    <>
+      <Text className="text-h2 font-bold text-text-primary" numberOfLines={1}>
+        {publicacion.nombre}
+      </Text>
+      <Text
+        className="mt-0.5 text-caption text-text-secondary"
+        numberOfLines={1}
+      >
+        {publicacion.categoria.nombre}
+      </Text>
+      <Text className="mt-1 text-body font-bold text-text-primary">
+        {formatearPrecio(publicacion.precio)}
+      </Text>
+    </>
+  );
+}
+
+/**
+ * Selector de disponibilidad (US-PUB-04) + la etiqueta adicional "Sin
+ * unidades" cuando corresponde, a la izquierda; valoración a la derecha (ver
+ * la Decisión 1 del plan del módulo: siempre `null` hoy, así que no se
+ * dibuja todavía).
+ */
+function FilaDisponibilidad({
+  publicacion,
+  onCambiar,
+}: {
+  publicacion: PublicacionListado;
+  onCambiar: (estado: PublicacionListado['estadoPublicacion']) => void;
+}) {
+  return (
+    <View className="mt-2 flex-row items-center justify-between">
+      <View className="flex-row items-center gap-2">
+        <SelectorDeDisponibilidad
+          valor={publicacion.estadoPublicacion}
+          onCambiar={onCambiar}
+        />
+
+        {/* US-PUB-04, último criterio de "No disponible": además del
+            selector, la tarjeta lleva esta etiqueta adicional (ver la nota
+            [PROPIO] de `sinUnidades` en `TEXTOS_PUBLICACIONES`). */}
+        {publicacion.estadoPublicacion === 'NO_DISPONIBLE' ? (
+          <View className="rounded-full bg-border px-2 py-1">
+            <Text className="text-caption font-semibold text-text-disabled">
+              {TEXTOS_PUBLICACIONES.sinUnidades}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      {publicacion.valoracionPromedio !== null ? (
+        <View className="flex-row items-center gap-1">
+          <IconoEstrella size={14} className="text-warning" />
+          <Text className="text-caption text-text-secondary">
+            {publicacion.valoracionPromedio.toFixed(1)}
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function FilaResumen({ publicacion }: { publicacion: PublicacionListado }) {
+  return (
+    <View className="mt-1.5 flex-row items-center justify-between">
+      <View className="flex-row items-center gap-1.5">
+        <IconoBolsa size={14} className="text-text-disabled" />
+        <Text className="text-caption text-text-secondary">
+          {TEXTOS_PUBLICACIONES.pedidosRecibidos(publicacion.cantidadPedidos)}
+        </Text>
+      </View>
+      <Text className="text-caption text-text-disabled">
+        {formatearFecha(publicacion.fechaCreacion)}
+      </Text>
+    </View>
   );
 }

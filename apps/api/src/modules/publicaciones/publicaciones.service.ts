@@ -352,3 +352,50 @@ export async function crearPublicacion(entrada: {
 
   return obtenerPublicacionPropia(entrada.cocineroId, creada.id);
 }
+
+// ---------------------------------------------------------------------------
+// Disponibilidad (US-PUB-04)
+// ---------------------------------------------------------------------------
+
+/**
+ * US-PUB-04 - Cambio de disponibilidad. Endpoint propio y liviano, separado
+ * de `editarPublicacion` (que agrega US-PUB-02): el criterio de aceptación
+ * exige que el cambio "se aplica de forma inmediata sin necesidad de
+ * confirmación adicional", así que no hay modal ni motivo para pasar por el
+ * schema completo de edición.
+ *
+ * El `WHERE` exige `cocineroId` (y `activo`) ademas del `id`, igual que
+ * `obtenerPublicacionPropia`: un cocinero jamas puede cambiar la
+ * disponibilidad de una publicacion ajena, ni siquiera conociendo su id.
+ * Cero filas afectadas -por ajena, inexistente o ya dada de baja- se traduce
+ * en el mismo 404 que el resto del modulo, nunca en un 403: no hay que
+ * confirmarle a quien pregunta que el id pertenece a un recurso real de otro
+ * cocinero.
+ *
+ * Sin `registrarOperacion`: es un toggle de alta frecuencia que la propia
+ * historia no exige trazar (a diferencia de las bajas y suspensiones del
+ * panel, que si lo hacen); agregarlo seria construir algo no pedido.
+ */
+export async function cambiarDisponibilidad(entrada: {
+  cocineroId: string;
+  publicacionId: string;
+  estadoPublicacion: EstadoPublicacion;
+}): Promise<{ id: string; estadoPublicacion: EstadoPublicacion }> {
+  const [actualizada] = await db
+    .update(publicacion)
+    .set({ estadoPublicacion: entrada.estadoPublicacion })
+    .where(
+      and(
+        eq(publicacion.id, entrada.publicacionId),
+        eq(publicacion.cocineroId, entrada.cocineroId),
+        eq(publicacion.activo, true),
+      ),
+    )
+    .returning({
+      id: publicacion.id,
+      estadoPublicacion: publicacion.estadoPublicacion,
+    });
+
+  if (!actualizada) throw noEncontrado('la publicación');
+  return actualizada;
+}

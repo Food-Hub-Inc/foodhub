@@ -263,6 +263,14 @@ export const TEXTOS_PUBLICACIONES = {
   estadoDisponible: 'Disponible',
   estadoUltimasUnidades: 'Últimas unidades',
   estadoNoDisponible: 'No disponible',
+  /**
+   * [PROPIO] US-PUB-04, último criterio de "No disponible": la tarjeta debe
+   * llevar, además del selector, "una etiqueta de 'Sin unidades' o
+   * 'Agotado'". El propio criterio ofrece las dos opciones sin fijar una; se
+   * elige "Sin unidades" por ser la más consistente con el resto de las
+   * etiquetas del módulo (no dramatiza la ausencia de stock).
+   */
+  sinUnidades: 'Sin unidades',
   rangoDePrecio: 'Rango de precio',
   /** [PROPIO] Etiquetas de los dos campos del rango de precio. */
   precioMinimo: 'Mínimo',

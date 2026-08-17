@@ -121,6 +121,18 @@ export const cambiarDisponibilidadPublicacionSchema = z.object({
   estadoPublicacion: z.enum(ESTADO_PUBLICACION),
 });
 
+/**
+ * US-PUB-04 - Respuesta del cambio de disponibilidad. Deliberadamente liviana
+ * (no el detalle completo de la publicación): el criterio de aceptación no
+ * exige releer todo el recurso tras el cambio, y el cliente ya tiene el resto
+ * de los datos en la caché del listado que acaba de actualizar de forma
+ * optimista.
+ */
+export const cambiarDisponibilidadPublicacionRespuestaSchema = z.object({
+  id: z.uuid(),
+  estadoPublicacion: z.enum(ESTADO_PUBLICACION),
+});
+
 // ---------------------------------------------------------------------------
 // Listado (US-PUB-05)
 // ---------------------------------------------------------------------------
@@ -237,6 +249,9 @@ export type CrearPublicacionInput = z.infer<typeof crearPublicacionSchema>;
 export type EditarPublicacionInput = z.infer<typeof editarPublicacionSchema>;
 export type CambiarDisponibilidadPublicacionInput = z.infer<
   typeof cambiarDisponibilidadPublicacionSchema
+>;
+export type CambiarDisponibilidadPublicacionRespuesta = z.infer<
+  typeof cambiarDisponibilidadPublicacionRespuestaSchema
 >;
 export type FiltrosPublicacion = z.infer<typeof filtrosPublicacionSchema>;
 export type PublicacionListado = z.infer<typeof publicacionListadoSchema>;

@@ -1,5 +1,7 @@
 import type {
+  CambiarDisponibilidadPublicacionRespuesta,
   CrearPublicacionInput,
+  EstadoPublicacion,
   FiltrosPublicacion,
   PaginaPublicaciones,
   PublicacionDetalle,
@@ -9,10 +11,13 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  type Query,
+  type QueryKey,
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query';
 import {
+  cambiarDisponibilidad,
   crearPublicacion,
   listarMisPublicaciones,
   obtenerMiPublicacion,
@@ -91,6 +96,83 @@ export function useCrearPublicacion(): UseMutationResult<
       });
     },
     onSuccess: () => {
+      void cliente.invalidateQueries({ queryKey: CLAVE_PUBLICACIONES });
+    },
+  });
+}
+
+/**
+ * Selecciona, de entre TODAS las consultas cacheadas de publicaciones
+ * propias, las de LISTADO (`PaginaPublicaciones`) y excluye la de detalle
+ * (`PublicacionDetalle`, bajo la misma clave base + `'detalle'`): sus formas
+ * son distintas y escribirle a la de detalle el mismo `datos.map(...)` de
+ * abajo la rompería. Puede haber varias entradas de listado en caché a la vez
+ * -una por combinación de filtros/página que el cocinero visitó- y todas
+ * tienen que reflejar el cambio, no solo la que está en pantalla.
+ */
+const consultasDeListado = {
+  predicate: (query: Query) =>
+    query.queryKey[0] === CLAVE_PUBLICACIONES[0] &&
+    query.queryKey[1] === CLAVE_PUBLICACIONES[1] &&
+    query.queryKey[2] !== 'detalle',
+};
+
+/**
+ * US-PUB-04 · Cambio de disponibilidad.
+ *
+ * El criterio de aceptación exige que, al elegir una opción en el selector,
+ * "el cambio se aplica de forma inmediata (...) y el indicador visual se
+ * actualiza al color correspondiente" - sin esperar la respuesta del
+ * servidor. Por eso la actualización de la card es OPTIMISTA (`onMutate`), a
+ * diferencia del resto de las mutaciones del módulo, que escriben la caché
+ * recién en `onSuccess`. Si el PATCH falla (la publicación se volvió ajena o
+ * se eliminó desde otro dispositivo mientras tanto), `onError` revierte el
+ * listado exactamente al estado que tenía antes del toque.
+ */
+export function useCambiarDisponibilidad(): UseMutationResult<
+  CambiarDisponibilidadPublicacionRespuesta,
+  Error,
+  { publicacionId: string; estadoPublicacion: EstadoPublicacion },
+  { previas: [QueryKey, PaginaPublicaciones | undefined][] }
+> {
+  const cliente = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ publicacionId, estadoPublicacion }) =>
+      cambiarDisponibilidad(publicacionId, estadoPublicacion),
+
+    onMutate: async ({ publicacionId, estadoPublicacion }) => {
+      await cliente.cancelQueries({ queryKey: CLAVE_PUBLICACIONES });
+
+      const previas =
+        cliente.getQueriesData<PaginaPublicaciones>(consultasDeListado);
+
+      cliente.setQueriesData<PaginaPublicaciones>(
+        consultasDeListado,
+        (pagina) =>
+          pagina && {
+            ...pagina,
+            datos: pagina.datos.map((item) =>
+              item.id === publicacionId ? { ...item, estadoPublicacion } : item,
+            ),
+          },
+      );
+
+      return { previas };
+    },
+
+    onError: (_error, _variables, contexto) => {
+      contexto?.previas.forEach(([clave, pagina]) => {
+        cliente.setQueryData(clave, pagina);
+      });
+    },
+
+    // No invalida en `onSuccess`: la respuesta del servidor confirma
+    // exactamente lo que ya se escribió de forma optimista, así que un
+    // refetch inmediato solo gastaría datos móviles sin cambiar nada en
+    // pantalla. `onSettled` sí revalida, éxito o error, para que la caché
+    // vuelva a converger con el servidor ante cualquier duda.
+    onSettled: () => {
       void cliente.invalidateQueries({ queryKey: CLAVE_PUBLICACIONES });
     },
   });

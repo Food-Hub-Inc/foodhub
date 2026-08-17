@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import {
+  cambiarDisponibilidadPublicacionSchema,
   crearPublicacionSchema,
   filtrosPublicacionSchema,
 } from '@foodhub/shared';
@@ -55,4 +56,20 @@ publicacionesRouter.post('/', async (req, res) => {
     datos: crearPublicacionSchema.parse(req.body),
   });
   res.status(201).json(detalle);
+});
+
+/**
+ * US-PUB-04 - Cambio de disponibilidad. Ruta propia, sin pasar por el PATCH
+ * general que agrega US-PUB-02: el criterio de aceptación exige que se
+ * aplique "sin necesidad de confirmación adicional", así que no comparte
+ * validación con la edición completa del plato.
+ */
+publicacionesRouter.patch('/:id/disponibilidad', async (req, res) => {
+  const resultado = await publicacionesService.cambiarDisponibilidad({
+    cocineroId: sesionDe(req).id,
+    publicacionId: idPublicacionSchema.parse(req.params.id),
+    estadoPublicacion: cambiarDisponibilidadPublicacionSchema.parse(req.body)
+      .estadoPublicacion,
+  });
+  res.json(resultado);
 });

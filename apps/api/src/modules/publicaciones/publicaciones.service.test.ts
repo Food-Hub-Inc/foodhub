@@ -1,14 +1,38 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { SQL } from 'drizzle-orm';
 import type {
   CrearPublicacionInput,
   FiltrosPublicacion,
 } from '@foodhub/shared';
-import {
+import { AppError } from '../../middleware/error.middleware.js';
+
+/**
+ * `cambiarDisponibilidad` (US-PUB-04) SI toca `db`, a diferencia de las dos
+ * funciones puras de arriba: por eso, y solo para ese `describe`, se
+ * reemplaza `db` por un doble - mismo patron `vi.hoisted` + `vi.mock` que
+ * `usuarios.service.test.ts`. El resto de este archivo importa el modulo real
+ * sin verse afectado: las funciones puras nunca llaman a `db`.
+ */
+const { aplicarActualizacion } = vi.hoisted(() => ({
+  aplicarActualizacion: vi.fn(),
+}));
+
+vi.mock('../../lib/db.js', () => ({
+  db: {
+    update: vi.fn(() => ({
+      set: vi.fn(() => ({
+        where: vi.fn(() => ({ returning: aplicarActualizacion })),
+      })),
+    })),
+  },
+}));
+
+const {
   armarFiltroPublicaciones,
+  cambiarDisponibilidad,
   valoresDeAltaPublicacion,
-} from './publicaciones.service.js';
+} = await import('./publicaciones.service.js');
 
 /**
  * US-PUB-05 - `armarFiltroPublicaciones`.
@@ -155,5 +179,54 @@ describe('valoresDeAltaPublicacion', () => {
       'https://storage.test/publicaciones/foto.jpg',
     );
     expect(valores.tiempoEstimadoPreparacion).toBe(30);
+  });
+});
+
+/**
+ * US-PUB-04 - `cambiarDisponibilidad`. A diferencia de las dos funciones de
+ * arriba, SI ejecuta contra `db` (un UPDATE con ownership), asi que se prueba
+ * con el doble definido al principio del archivo, igual patron que
+ * `usuarios.service.test.ts` con `eliminarCuentaPropia`: lo importante es que
+ * una publicacion ajena o inexistente rechace con 404 sin que el llamador
+ * pueda distinguir un caso del otro.
+ */
+describe('cambiarDisponibilidad', () => {
+  const PUBLICACION_ID = '44444444-4444-4444-4444-444444444444';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('devuelve el id y el nuevo estado cuando el UPDATE afecta una fila', async () => {
+    aplicarActualizacion.mockResolvedValue([
+      { id: PUBLICACION_ID, estadoPublicacion: 'ULTIMAS_UNIDADES' },
+    ]);
+
+    const resultado = await cambiarDisponibilidad({
+      cocineroId: COCINERO_ID,
+      publicacionId: PUBLICACION_ID,
+      estadoPublicacion: 'ULTIMAS_UNIDADES',
+    });
+
+    expect(resultado).toEqual({
+      id: PUBLICACION_ID,
+      estadoPublicacion: 'ULTIMAS_UNIDADES',
+    });
+  });
+
+  it('rechaza con 404 cuando el UPDATE no afecta ninguna fila (ajena, inexistente o ya eliminada)', async () => {
+    aplicarActualizacion.mockResolvedValue([]);
+
+    const cambio = cambiarDisponibilidad({
+      cocineroId: COCINERO_ID,
+      publicacionId: PUBLICACION_ID,
+      estadoPublicacion: 'NO_DISPONIBLE',
+    });
+
+    await expect(cambio).rejects.toBeInstanceOf(AppError);
+    await expect(cambio).rejects.toMatchObject({
+      status: 404,
+      codigo: 'NO_ENCONTRADO',
+    });
   });
 });
