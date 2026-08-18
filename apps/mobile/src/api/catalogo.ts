@@ -1,4 +1,4 @@
-import type { CategoriaListado } from '@foodhub/shared';
+import type { CategoriaResumen } from '@foodhub/shared';
 import { api } from '../lib/api';
 
 /**
@@ -8,6 +8,6 @@ import { api } from '../lib/api';
  */
 
 /** Categorías activas, sin paginación: es una tabla chica que gestiona el administrador. */
-export function listarCategorias(): Promise<CategoriaListado[]> {
-  return api.obtener<CategoriaListado[]>('/catalogo/categorias');
+export function listarCategorias(): Promise<CategoriaResumen[]> {
+  return api.obtener<CategoriaResumen[]>('/catalogo/categorias');
 }

@@ -1,6 +1,6 @@
 {
-  "id": "f8ea3ff0-b6b6-4eb9-9b76-b5af9e84f7b0",
-  "prevId": "7e02c517-b887-4d1a-a9e3-20f9937b86d2",
+  "id": "c9355c2d-9b52-4b96-8203-5e1234997a3e",
+  "prevId": "2068f0e2-30d3-478e-a97f-c81a75565800",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -60,10 +60,10 @@
             }
           ],
           "isUnique": true,
-          "where": "\"categoria\".\"activo\" = true",
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "where": "\"categoria\".\"activo\" = true",
+          "concurrently": false
         }
       },
       "foreignKeys": {},
@@ -122,10 +122,10 @@
       "uniqueConstraints": {
         "configuracion_sistema_clave_unique": {
           "name": "configuracion_sistema_clave_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "clave"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -175,24 +175,40 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
+        },
+        "motivo_cancelacion_nombre_activo_uq": {
+          "name": "motivo_cancelacion_nombre_activo_uq",
+          "columns": [
+            {
+              "expression": "nombre",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"motivo_cancelacion\".\"activo\" = true",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "motivo_cancelacion_tipo_usuario_cancelacion_id_tipo_usuario_cancelacion_id_fk": {
           "name": "motivo_cancelacion_tipo_usuario_cancelacion_id_tipo_usuario_cancelacion_id_fk",
           "tableFrom": "motivo_cancelacion",
-          "tableTo": "tipo_usuario_cancelacion",
           "columnsFrom": [
             "tipo_usuario_cancelacion_id"
           ],
+          "tableTo": "tipo_usuario_cancelacion",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
@@ -225,10 +241,10 @@
       "uniqueConstraints": {
         "rol_destino_nombre_unique": {
           "name": "rol_destino_nombre_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "nombre"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -266,10 +282,10 @@
       "uniqueConstraints": {
         "tipo_consulta_nombre_tipo_consulta_unique": {
           "name": "tipo_consulta_nombre_tipo_consulta_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "nombre_tipo_consulta"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -300,10 +316,10 @@
       "uniqueConstraints": {
         "tipo_usuario_cancelacion_nombre_tipo_usuario_cancelacion_unique": {
           "name": "tipo_usuario_cancelacion_nombre_tipo_usuario_cancelacion_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "nombre_tipo_usuario_cancelacion"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -351,15 +367,15 @@
         "cocinero_usuario_id_usuario_id_fk": {
           "name": "cocinero_usuario_id_usuario_id_fk",
           "tableFrom": "cocinero",
-          "tableTo": "usuario",
           "columnsFrom": [
             "usuario_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -436,9 +452,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "evento_seguridad_tipo_idx": {
           "name": "evento_seguridad_tipo_idx",
@@ -457,9 +473,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "evento_seguridad_email_idx": {
           "name": "evento_seguridad_email_idx",
@@ -472,9 +488,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "evento_seguridad_ip_idx": {
           "name": "evento_seguridad_ip_idx",
@@ -487,24 +503,24 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "evento_seguridad_usuario_id_usuario_id_fk": {
           "name": "evento_seguridad_usuario_id_usuario_id_fk",
           "tableFrom": "evento_seguridad",
-          "tableTo": "usuario",
           "columnsFrom": [
             "usuario_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -620,9 +636,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "usuario_tipo_idx": {
           "name": "usuario_tipo_idx",
@@ -635,9 +651,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "usuario_ubicacion_gix": {
           "name": "usuario_ubicacion_gix",
@@ -650,26 +666,26 @@
             }
           ],
           "isUnique": false,
-          "where": "\"usuario\".\"ubicacion\" is not null",
-          "concurrently": false,
+          "with": {},
           "method": "gist",
-          "with": {}
+          "where": "\"usuario\".\"ubicacion\" is not null",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "usuario_id_users_id_fk": {
           "name": "usuario_id_users_id_fk",
           "tableFrom": "usuario",
-          "tableTo": "users",
-          "schemaTo": "auth",
           "columnsFrom": [
             "id"
           ],
+          "tableTo": "users",
+          "schemaTo": "auth",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -745,9 +761,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "version_terminos_numero_idx": {
           "name": "version_terminos_numero_idx",
@@ -766,24 +782,24 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "version_terminos_admin_autor_id_usuario_id_fk": {
           "name": "version_terminos_admin_autor_id_usuario_id_fk",
           "tableFrom": "version_terminos",
-          "tableTo": "usuario",
           "columnsFrom": [
             "admin_autor_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -831,48 +847,54 @@
         }
       },
       "indexes": {
-        "carrito_cliente_uq": {
-          "name": "carrito_cliente_uq",
+        "carrito_cliente_cocinero_uq": {
+          "name": "carrito_cliente_cocinero_uq",
           "columns": [
             {
               "expression": "cliente_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
+            },
+            {
+              "expression": "cocinero_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "carrito_cliente_id_usuario_id_fk": {
           "name": "carrito_cliente_id_usuario_id_fk",
           "tableFrom": "carrito",
-          "tableTo": "usuario",
           "columnsFrom": [
             "cliente_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "carrito_cocinero_id_cocinero_usuario_id_fk": {
           "name": "carrito_cocinero_id_cocinero_usuario_id_fk",
           "tableFrom": "carrito",
-          "tableTo": "cocinero",
           "columnsFrom": [
             "cocinero_id"
           ],
+          "tableTo": "cocinero",
           "columnsTo": [
             "usuario_id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -930,9 +952,9 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "favorito_cocinero_cliente_idx": {
           "name": "favorito_cocinero_cliente_idx",
@@ -945,37 +967,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "favorito_cocinero_cliente_id_usuario_id_fk": {
           "name": "favorito_cocinero_cliente_id_usuario_id_fk",
           "tableFrom": "favorito_cocinero",
-          "tableTo": "usuario",
           "columnsFrom": [
             "cliente_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "favorito_cocinero_cocinero_id_cocinero_usuario_id_fk": {
           "name": "favorito_cocinero_cocinero_id_cocinero_usuario_id_fk",
           "tableFrom": "favorito_cocinero",
-          "tableTo": "cocinero",
           "columnsFrom": [
             "cocinero_id"
           ],
+          "tableTo": "cocinero",
           "columnsTo": [
             "usuario_id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1033,9 +1055,9 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "favorito_publicacion_cliente_idx": {
           "name": "favorito_publicacion_cliente_idx",
@@ -1048,37 +1070,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "favorito_publicacion_cliente_id_usuario_id_fk": {
           "name": "favorito_publicacion_cliente_id_usuario_id_fk",
           "tableFrom": "favorito_publicacion",
-          "tableTo": "usuario",
           "columnsFrom": [
             "cliente_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "favorito_publicacion_publicacion_id_publicacion_id_fk": {
           "name": "favorito_publicacion_publicacion_id_publicacion_id_fk",
           "tableFrom": "favorito_publicacion",
-          "tableTo": "publicacion",
           "columnsFrom": [
             "publicacion_id"
           ],
+          "tableTo": "publicacion",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1154,37 +1176,37 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "item_carrito_carrito_id_carrito_id_fk": {
           "name": "item_carrito_carrito_id_carrito_id_fk",
           "tableFrom": "item_carrito",
-          "tableTo": "carrito",
           "columnsFrom": [
             "carrito_id"
           ],
+          "tableTo": "carrito",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "item_carrito_publicacion_id_publicacion_id_fk": {
           "name": "item_carrito_publicacion_id_publicacion_id_fk",
           "tableFrom": "item_carrito",
-          "tableTo": "publicacion",
           "columnsFrom": [
             "publicacion_id"
           ],
+          "tableTo": "publicacion",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1304,9 +1326,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "publicacion_categoria_idx": {
           "name": "publicacion_categoria_idx",
@@ -1319,9 +1341,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "publicacion_feed_idx": {
           "name": "publicacion_feed_idx",
@@ -1334,51 +1356,51 @@
             }
           ],
           "isUnique": false,
-          "where": "\"publicacion\".\"activo\" = true",
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "where": "\"publicacion\".\"activo\" = true",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "publicacion_cocinero_id_cocinero_usuario_id_fk": {
           "name": "publicacion_cocinero_id_cocinero_usuario_id_fk",
           "tableFrom": "publicacion",
-          "tableTo": "cocinero",
           "columnsFrom": [
             "cocinero_id"
           ],
+          "tableTo": "cocinero",
           "columnsTo": [
             "usuario_id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "publicacion_categoria_id_categoria_id_fk": {
           "name": "publicacion_categoria_id_categoria_id_fk",
           "tableFrom": "publicacion",
-          "tableTo": "categoria",
           "columnsFrom": [
             "categoria_id"
           ],
+          "tableTo": "categoria",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "publicacion_eliminada_por_admin_id_usuario_id_fk": {
           "name": "publicacion_eliminada_por_admin_id_usuario_id_fk",
           "tableFrom": "publicacion",
-          "tableTo": "usuario",
           "columnsFrom": [
             "eliminada_por_admin_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -1472,37 +1494,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "historial_estado_pedido_pedido_id_pedido_id_fk": {
           "name": "historial_estado_pedido_pedido_id_pedido_id_fk",
           "tableFrom": "historial_estado_pedido",
-          "tableTo": "pedido",
           "columnsFrom": [
             "pedido_id"
           ],
+          "tableTo": "pedido",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "historial_estado_pedido_usuario_responsable_id_usuario_id_fk": {
           "name": "historial_estado_pedido_usuario_responsable_id_usuario_id_fk",
           "tableFrom": "historial_estado_pedido",
-          "tableTo": "usuario",
           "columnsFrom": [
             "usuario_responsable_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -1576,37 +1598,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "item_pedido_pedido_id_pedido_id_fk": {
           "name": "item_pedido_pedido_id_pedido_id_fk",
           "tableFrom": "item_pedido",
-          "tableTo": "pedido",
           "columnsFrom": [
             "pedido_id"
           ],
+          "tableTo": "pedido",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "item_pedido_publicacion_id_publicacion_id_fk": {
           "name": "item_pedido_publicacion_id_publicacion_id_fk",
           "tableFrom": "item_pedido",
-          "tableTo": "publicacion",
           "columnsFrom": [
             "publicacion_id"
           ],
+          "tableTo": "publicacion",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
@@ -1743,9 +1765,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "pedido_cocinero_idx": {
           "name": "pedido_cocinero_idx",
@@ -1770,9 +1792,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "pedido_expiracion_idx": {
           "name": "pedido_expiracion_idx",
@@ -1785,74 +1807,74 @@
             }
           ],
           "isUnique": false,
-          "where": "\"pedido\".\"estado_pedido_actual\" = 'CREADO'",
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "where": "\"pedido\".\"estado_pedido_actual\" = 'CREADO'",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "pedido_cliente_pedido_id_usuario_id_fk": {
           "name": "pedido_cliente_pedido_id_usuario_id_fk",
           "tableFrom": "pedido",
-          "tableTo": "usuario",
           "columnsFrom": [
             "cliente_pedido_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "pedido_cocinero_pedido_id_cocinero_usuario_id_fk": {
           "name": "pedido_cocinero_pedido_id_cocinero_usuario_id_fk",
           "tableFrom": "pedido",
-          "tableTo": "cocinero",
           "columnsFrom": [
             "cocinero_pedido_id"
           ],
+          "tableTo": "cocinero",
           "columnsTo": [
             "usuario_id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "pedido_usuario_origen_rechazo_id_usuario_id_fk": {
           "name": "pedido_usuario_origen_rechazo_id_usuario_id_fk",
           "tableFrom": "pedido",
-          "tableTo": "usuario",
           "columnsFrom": [
             "usuario_origen_rechazo_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         },
         "pedido_motivo_cancelacion_id_motivo_cancelacion_id_fk": {
           "name": "pedido_motivo_cancelacion_id_motivo_cancelacion_id_fk",
           "tableFrom": "pedido",
-          "tableTo": "motivo_cancelacion",
           "columnsFrom": [
             "motivo_cancelacion_id"
           ],
+          "tableTo": "motivo_cancelacion",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "pedido_numero_pedido_unique": {
           "name": "pedido_numero_pedido_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "numero_pedido"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -1878,6 +1900,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "pedido_id": {
+          "name": "pedido_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         },
         "cocinero_evaluador_id": {
           "name": "cocinero_evaluador_id",
@@ -1918,27 +1946,6 @@
         }
       },
       "indexes": {
-        "calificacion_cocinero_uq": {
-          "name": "calificacion_cocinero_uq",
-          "columns": [
-            {
-              "expression": "cocinero_evaluador_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "cliente_evaluado_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "calificacion_cliente_idx": {
           "name": "calificacion_cliente_idx",
           "columns": [
@@ -1950,41 +1957,62 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
+        "calificacion_cocinero_pedido_id_pedido_id_fk": {
+          "name": "calificacion_cocinero_pedido_id_pedido_id_fk",
+          "tableFrom": "calificacion_cocinero",
+          "columnsFrom": [
+            "pedido_id"
+          ],
+          "tableTo": "pedido",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
         "calificacion_cocinero_cocinero_evaluador_id_cocinero_usuario_id_fk": {
           "name": "calificacion_cocinero_cocinero_evaluador_id_cocinero_usuario_id_fk",
           "tableFrom": "calificacion_cocinero",
-          "tableTo": "cocinero",
           "columnsFrom": [
             "cocinero_evaluador_id"
           ],
+          "tableTo": "cocinero",
           "columnsTo": [
             "usuario_id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "calificacion_cocinero_cliente_evaluado_id_usuario_id_fk": {
           "name": "calificacion_cocinero_cliente_evaluado_id_usuario_id_fk",
           "tableFrom": "calificacion_cocinero",
-          "tableTo": "usuario",
           "columnsFrom": [
             "cliente_evaluado_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "calificacion_cocinero_pedido_id_unique": {
+          "name": "calificacion_cocinero_pedido_id_unique",
+          "columns": [
+            "pedido_id"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "calificacion_cocinero_rango": {
@@ -2050,9 +2078,9 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "reaccion_resena_resena_idx": {
           "name": "reaccion_resena_resena_idx",
@@ -2065,37 +2093,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "reaccion_resena_resena_id_resena_id_fk": {
           "name": "reaccion_resena_resena_id_resena_id_fk",
           "tableFrom": "reaccion_resena",
-          "tableTo": "resena",
           "columnsFrom": [
             "resena_id"
           ],
+          "tableTo": "resena",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "reaccion_resena_usuario_id_usuario_id_fk": {
           "name": "reaccion_resena_usuario_id_usuario_id_fk",
           "tableFrom": "reaccion_resena",
-          "tableTo": "usuario",
           "columnsFrom": [
             "usuario_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -2185,9 +2213,9 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "reporte_resena_pendientes_idx": {
           "name": "reporte_resena_pendientes_idx",
@@ -2200,51 +2228,51 @@
             }
           ],
           "isUnique": false,
-          "where": "\"reporte_resena\".\"estado_reporte\" = 'PENDIENTE'",
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "where": "\"reporte_resena\".\"estado_reporte\" = 'PENDIENTE'",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "reporte_resena_resena_id_resena_id_fk": {
           "name": "reporte_resena_resena_id_resena_id_fk",
           "tableFrom": "reporte_resena",
-          "tableTo": "resena",
           "columnsFrom": [
             "resena_id"
           ],
+          "tableTo": "resena",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "reporte_resena_usuario_reportante_id_usuario_id_fk": {
           "name": "reporte_resena_usuario_reportante_id_usuario_id_fk",
           "tableFrom": "reporte_resena",
-          "tableTo": "usuario",
           "columnsFrom": [
             "usuario_reportante_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "reporte_resena_admin_resolutor_id_usuario_id_fk": {
           "name": "reporte_resena_admin_resolutor_id_usuario_id_fk",
           "tableFrom": "reporte_resena",
-          "tableTo": "usuario",
           "columnsFrom": [
             "admin_resolutor_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -2264,8 +2292,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "publicacion_id": {
-          "name": "publicacion_id",
+        "pedido_id": {
+          "name": "pedido_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -2336,27 +2364,6 @@
         }
       },
       "indexes": {
-        "resena_cliente_publicacion_uq": {
-          "name": "resena_cliente_publicacion_uq",
-          "columns": [
-            {
-              "expression": "cliente_res_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "publicacion_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "resena_cocinero_idx": {
           "name": "resena_cocinero_idx",
           "columns": [
@@ -2374,26 +2381,10 @@
             }
           ],
           "isUnique": false,
-          "where": "\"resena\".\"estado_resena\" = 'VISIBLE'",
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
-        },
-        "resena_publicacion_idx": {
-          "name": "resena_publicacion_idx",
-          "columns": [
-            {
-              "expression": "publicacion_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "where": "\"resena\".\"estado_resena\" = 'VISIBLE'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "resena_cliente_idx": {
           "name": "resena_cliente_idx",
@@ -2406,54 +2397,62 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
-        "resena_publicacion_id_publicacion_id_fk": {
-          "name": "resena_publicacion_id_publicacion_id_fk",
+        "resena_pedido_id_pedido_id_fk": {
+          "name": "resena_pedido_id_pedido_id_fk",
           "tableFrom": "resena",
-          "tableTo": "publicacion",
           "columnsFrom": [
-            "publicacion_id"
+            "pedido_id"
           ],
+          "tableTo": "pedido",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "resena_cliente_res_id_usuario_id_fk": {
           "name": "resena_cliente_res_id_usuario_id_fk",
           "tableFrom": "resena",
-          "tableTo": "usuario",
           "columnsFrom": [
             "cliente_res_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "resena_cocinero_res_id_cocinero_usuario_id_fk": {
           "name": "resena_cocinero_res_id_cocinero_usuario_id_fk",
           "tableFrom": "resena",
-          "tableTo": "cocinero",
           "columnsFrom": [
             "cocinero_res_id"
           ],
+          "tableTo": "cocinero",
           "columnsTo": [
             "usuario_id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "resena_pedido_id_unique": {
+          "name": "resena_pedido_id_unique",
+          "columns": [
+            "pedido_id"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "resena_calificacion_rango": {
@@ -2525,47 +2524,47 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "respuesta_cocinero_resena_id_resena_id_fk": {
           "name": "respuesta_cocinero_resena_id_resena_id_fk",
           "tableFrom": "respuesta_cocinero",
-          "tableTo": "resena",
           "columnsFrom": [
             "resena_id"
           ],
+          "tableTo": "resena",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "respuesta_cocinero_cocinero_id_cocinero_usuario_id_fk": {
           "name": "respuesta_cocinero_cocinero_id_cocinero_usuario_id_fk",
           "tableFrom": "respuesta_cocinero",
-          "tableTo": "cocinero",
           "columnsFrom": [
             "cocinero_id"
           ],
+          "tableTo": "cocinero",
           "columnsTo": [
             "usuario_id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "respuesta_cocinero_resena_id_unique": {
           "name": "respuesta_cocinero_resena_id_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "resena_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -2650,21 +2649,21 @@
           "columns": [
             {
               "expression": "least(\"usuario1_id\", \"usuario2_id\")",
-              "asc": true,
               "isExpression": true,
+              "asc": true,
               "nulls": "last"
             },
             {
               "expression": "greatest(\"usuario1_id\", \"usuario2_id\")",
-              "asc": true,
               "isExpression": true,
+              "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "conversacion_usuario1_idx": {
           "name": "conversacion_usuario1_idx",
@@ -2683,9 +2682,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "conversacion_usuario2_idx": {
           "name": "conversacion_usuario2_idx",
@@ -2704,37 +2703,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "conversacion_usuario1_id_usuario_id_fk": {
           "name": "conversacion_usuario1_id_usuario_id_fk",
           "tableFrom": "conversacion",
-          "tableTo": "usuario",
           "columnsFrom": [
             "usuario1_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "conversacion_usuario2_id_usuario_id_fk": {
           "name": "conversacion_usuario2_id_usuario_id_fk",
           "tableFrom": "conversacion",
-          "tableTo": "usuario",
           "columnsFrom": [
             "usuario2_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -2830,37 +2829,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "mensaje_conversacion_id_conversacion_id_fk": {
           "name": "mensaje_conversacion_id_conversacion_id_fk",
           "tableFrom": "mensaje",
-          "tableTo": "conversacion",
           "columnsFrom": [
             "conversacion_id"
           ],
+          "tableTo": "conversacion",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "mensaje_remitente_id_usuario_id_fk": {
           "name": "mensaje_remitente_id_usuario_id_fk",
           "tableFrom": "mensaje",
-          "tableTo": "usuario",
           "columnsFrom": [
             "remitente_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -2942,35 +2941,35 @@
             }
           ],
           "isUnique": false,
-          "where": "\"dispositivo_push\".\"activo\" = true",
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "where": "\"dispositivo_push\".\"activo\" = true",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "dispositivo_push_usuario_id_usuario_id_fk": {
           "name": "dispositivo_push_usuario_id_usuario_id_fk",
           "tableFrom": "dispositivo_push",
-          "tableTo": "usuario",
           "columnsFrom": [
             "usuario_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "dispositivo_push_expo_push_token_unique": {
           "name": "dispositivo_push_expo_push_token_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "expo_push_token"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -3052,9 +3051,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "notificacion_no_leidas_idx": {
           "name": "notificacion_no_leidas_idx",
@@ -3067,25 +3066,25 @@
             }
           ],
           "isUnique": false,
-          "where": "\"notificacion\".\"leida\" = false",
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "where": "\"notificacion\".\"leida\" = false",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "notificacion_usuario_destino_id_usuario_id_fk": {
           "name": "notificacion_usuario_destino_id_usuario_id_fk",
           "tableFrom": "notificacion",
-          "tableTo": "usuario",
           "columnsFrom": [
             "usuario_destino_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -3151,24 +3150,24 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "preferencia_notificacion_usuario_id_usuario_id_fk": {
           "name": "preferencia_notificacion_usuario_id_usuario_id_fk",
           "tableFrom": "preferencia_notificacion",
-          "tableTo": "usuario",
           "columnsFrom": [
             "usuario_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -3231,24 +3230,24 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "adjunto_ticket_ticket_id_ticket_soporte_id_fk": {
           "name": "adjunto_ticket_ticket_id_ticket_soporte_id_fk",
           "tableFrom": "adjunto_ticket",
-          "tableTo": "ticket_soporte",
           "columnsFrom": [
             "ticket_id"
           ],
+          "tableTo": "ticket_soporte",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -3313,24 +3312,24 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "capitulo_ayuda_rol_destino_id_rol_destino_id_fk": {
           "name": "capitulo_ayuda_rol_destino_id_rol_destino_id_fk",
           "tableFrom": "capitulo_ayuda",
-          "tableTo": "rol_destino",
           "columnsFrom": [
             "rol_destino_id"
           ],
+          "tableTo": "rol_destino",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
@@ -3408,24 +3407,24 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "faq_rol_destino_id_rol_destino_id_fk": {
           "name": "faq_rol_destino_id_rol_destino_id_fk",
           "tableFrom": "faq",
-          "tableTo": "rol_destino",
           "columnsFrom": [
             "rol_destino_id"
           ],
+          "tableTo": "rol_destino",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
@@ -3502,37 +3501,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "seccion_ayuda_capitulo_id_capitulo_ayuda_id_fk": {
           "name": "seccion_ayuda_capitulo_id_capitulo_ayuda_id_fk",
           "tableFrom": "seccion_ayuda",
-          "tableTo": "capitulo_ayuda",
           "columnsFrom": [
             "capitulo_id"
           ],
+          "tableTo": "capitulo_ayuda",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "seccion_ayuda_rol_destino_id_rol_destino_id_fk": {
           "name": "seccion_ayuda_rol_destino_id_rol_destino_id_fk",
           "tableFrom": "seccion_ayuda",
-          "tableTo": "rol_destino",
           "columnsFrom": [
             "rol_destino_id"
           ],
+          "tableTo": "rol_destino",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
@@ -3604,9 +3603,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "ticket_soporte_estado_idx": {
           "name": "ticket_soporte_estado_idx",
@@ -3625,37 +3624,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "ticket_soporte_usuario_id_usuario_id_fk": {
           "name": "ticket_soporte_usuario_id_usuario_id_fk",
           "tableFrom": "ticket_soporte",
-          "tableTo": "usuario",
           "columnsFrom": [
             "usuario_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "ticket_soporte_tipo_consulta_id_tipo_consulta_id_fk": {
           "name": "ticket_soporte_tipo_consulta_id_tipo_consulta_id_fk",
           "tableFrom": "ticket_soporte",
-          "tableTo": "tipo_consulta",
           "columnsFrom": [
             "tipo_consulta_id"
           ],
+          "tableTo": "tipo_consulta",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
@@ -3732,9 +3731,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "registro_auditoria_usuario_idx": {
           "name": "registro_auditoria_usuario_idx",
@@ -3753,9 +3752,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "registro_auditoria_operacion_idx": {
           "name": "registro_auditoria_operacion_idx",
@@ -3774,9 +3773,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "registro_auditoria_objeto_idx": {
           "name": "registro_auditoria_objeto_idx",
@@ -3795,24 +3794,24 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "registro_auditoria_usuario_id_usuario_id_fk": {
           "name": "registro_auditoria_usuario_id_usuario_id_fk",
           "tableFrom": "registro_auditoria",
-          "tableTo": "usuario",
           "columnsFrom": [
             "usuario_id"
           ],
+          "tableTo": "usuario",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -3965,10 +3964,10 @@
     }
   },
   "schemas": {},
+  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
-  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

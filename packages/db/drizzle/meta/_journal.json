@@ -19,15 +19,43 @@
     {
       "idx": 2,
       "version": "7",
-      "when": 1787070414311,
-      "tag": "0002_quitar_pedido_de_resenas",
+      "when": 1787002227447,
+      "tag": "0002_bizarre_quentin_quire",
       "breakpoints": true
     },
     {
       "idx": 3,
       "version": "7",
-      "when": 1787070432625,
-      "tag": "0003_resena_por_plato",
+      "when": 1787002254371,
+      "tag": "0003_sembrar_tipos_usuario_cancelacion",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787004464035,
+      "tag": "0004_sembrar_configuracion_sistema",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787012536746,
+      "tag": "0005_sembrar_preferencias_notificacion",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787076307446,
+      "tag": "0006_quitar_pedido_de_resenas",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787076318282,
+      "tag": "0007_resena_por_plato",
       "breakpoints": true
     }
   ]

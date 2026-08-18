@@ -19,6 +19,10 @@ import { catalogoRouter } from './modules/catalogo/catalogo.router.js';
 import { carritoRouter } from './modules/exploracion/carrito.router.js';
 import { exploracionRouter } from './modules/exploracion/exploracion.router.js';
 import { publicacionesRouter } from './modules/publicaciones/publicaciones.router.js';
+import { categoriasRouter } from './modules/configuracion/categorias.router.js';
+import { motivosCancelacionRouter } from './modules/configuracion/motivosCancelacion.router.js';
+import { parametrosSistemaRouter } from './modules/configuracion/parametrosSistema.router.js';
+import { terminosRouter } from './modules/configuracion/terminos.router.js';
 import { seguridadRouter } from './modules/seguridad/seguridad.router.js';
 import { usuariosRouter } from './modules/usuarios/usuarios.router.js';
 
@@ -121,6 +125,15 @@ export function crearApp(): Express {
   app.use(`${PREFIJO_API}/almacenamiento`, almacenamientoRouter);
   app.use(`${PREFIJO_API}/catalogo`, catalogoRouter);
   app.use(`${PREFIJO_API}/publicaciones`, publicacionesRouter);
+
+  // Modulo de Configuracion y parametros (US-CFG-01 a US-CFG-04, PAN-ADM-04).
+  app.use(`${PREFIJO_API}/configuracion/categorias`, categoriasRouter);
+  app.use(
+    `${PREFIJO_API}/configuracion/motivos-cancelacion`,
+    motivosCancelacionRouter,
+  );
+  app.use(`${PREFIJO_API}/configuracion/parametros`, parametrosSistemaRouter);
+  app.use(`${PREFIJO_API}/configuracion/terminos`, terminosRouter);
 
   // Modulos funcionales: exploracion y busqueda (US-EXP-01 a US-EXP-07).
   // El carrito va en su propio prefijo y no bajo /exploracion: es un recurso

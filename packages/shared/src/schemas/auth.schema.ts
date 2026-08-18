@@ -159,6 +159,14 @@ export const perfilUsuarioSchema = z.object({
   fechaRegistro: z.iso.datetime(),
   descripcionPublica: z.string().nullable().optional(),
   ubicacion: ubicacionSchema.nullable().optional(),
+  /**
+   * US-CFG-04 (RF058) - Si hay una versión de términos o de política de
+   * privacidad más nueva que la última que este usuario aceptó. Opcional
+   * porque solo lo calcula `obtenerPerfil` (GET /usuarios/yo y
+   * GET /usuarios/:id); las respuestas de alta (registro, invitación desde
+   * el panel) no lo necesitan — un usuario recién creado no puede deberlo.
+   */
+  debeAceptarTerminos: z.boolean().optional(),
 });
 
 export type Ubicacion = z.infer<typeof ubicacionSchema>;

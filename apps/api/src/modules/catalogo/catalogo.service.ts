@@ -1,15 +1,22 @@
-import { asc, eq } from 'drizzle-orm';
-import { categoria } from '@foodhub/db';
-import type { CategoriaListado } from '@foodhub/shared';
+import { and, asc, eq, inArray } from 'drizzle-orm';
+import {
+  categoria,
+  motivoCancelacion,
+  tipoUsuarioCancelacion,
+} from '@foodhub/db';
+import type {
+  CategoriaResumen,
+  MotivoCancelacionRapido,
+  TerminosVigentesParaAceptar,
+  TipoUsuarioCancelacion,
+} from '@foodhub/shared';
 import { db } from '../../lib/db.js';
+import { obtenerVersionVigente } from '../configuracion/terminos.service.js';
 
 /**
- * Lectura de tablas de referencia que Publicaciones consume.
- *
- * Categoria es una entidad administrable del Modulo de configuracion y
- * parametros (alcance 2.2.2.2.3): el ABM completo es otro modulo, y este
- * servicio solo expone la proyeccion de solo lectura que necesita el
- * desplegable de categoria del formulario de plato (US-PUB-01).
+ * Lectura de tablas de referencia que otros modulos consumen.
+ * Ver `catalogo.router.ts` para el porque vive separado de Configuracion y
+ * de Publicaciones.
  */
 
 /**
@@ -19,7 +26,7 @@ import { db } from '../../lib/db.js';
  * gestiona a mano desde el panel), no un listado de negocio que crezca sin
  * límite como `publicacion` o `pedido`.
  */
-export async function listarCategoriasActivas(): Promise<CategoriaListado[]> {
+export async function listarCategoriasActivas(): Promise<CategoriaResumen[]> {
   return db
     .select({
       id: categoria.id,
@@ -29,4 +36,63 @@ export async function listarCategoriasActivas(): Promise<CategoriaListado[]> {
     .from(categoria)
     .where(eq(categoria.activo, true))
     .orderBy(asc(categoria.nombre));
+}
+
+/**
+ * US-CFG-02, RF056 (consumo) - Motivos habilitados que aplican al rol que
+ * cancela: los propios de ese rol y los de aplicabilidad "AMBOS".
+ */
+export async function listarMotivosCancelacionRapidos(
+  rol: Extract<TipoUsuarioCancelacion, 'COCINERO' | 'CLIENTE'>,
+): Promise<MotivoCancelacionRapido[]> {
+  const tiposAplicables = await db
+    .select({ id: tipoUsuarioCancelacion.id })
+    .from(tipoUsuarioCancelacion)
+    .where(
+      inArray(tipoUsuarioCancelacion.nombreTipoUsuarioCancelacion, [
+        rol,
+        'AMBOS',
+      ]),
+    );
+  const idsTipo = tiposAplicables.map((fila) => fila.id);
+
+  return db
+    .select({ id: motivoCancelacion.id, nombre: motivoCancelacion.nombre })
+    .from(motivoCancelacion)
+    .where(
+      and(
+        inArray(motivoCancelacion.tipoUsuarioCancelacionId, idsTipo),
+        eq(motivoCancelacion.activo, true),
+      ),
+    )
+    .orderBy(motivoCancelacion.nombre);
+}
+
+/**
+ * RF058 (consumo) - Los dos documentos vigentes juntos, para la pantalla de
+ * re-aceptación obligatoria de la app móvil (US-CFG-04). Reusa la lectura
+ * del módulo de Configuración en lugar de repetirla.
+ */
+export async function obtenerTerminosVigentesParaAceptar(): Promise<TerminosVigentesParaAceptar> {
+  const [terminos, privacidad] = await Promise.all([
+    obtenerVersionVigente('TERMINOS'),
+    obtenerVersionVigente('PRIVACIDAD'),
+  ]);
+
+  if (!terminos || !privacidad) {
+    throw new Error(
+      'Todavía no hay una versión vigente de términos y/o de política de privacidad.',
+    );
+  }
+
+  return {
+    terminos: {
+      contenidoHtml: terminos.contenidoHtml,
+      numeroVersion: terminos.numeroVersion,
+    },
+    privacidad: {
+      contenidoHtml: privacidad.contenidoHtml,
+      numeroVersion: privacidad.numeroVersion,
+    },
+  };
 }

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ESTADO_PUBLICACION } from '../constants/enums.js';
-import { categoriaListadoSchema } from './catalogo.schema.js';
+import { categoriaResumenSchema } from './catalogo.schema.js';
 
 /**
  * Contratos del modulo de Exploracion y busqueda (US-EXP-01 a US-EXP-07).
@@ -194,7 +194,7 @@ const publicacionResumenSchema = z.object({
   precio: z.string(),
   imagenUrl: z.url().nullable(),
   estadoPublicacion: z.enum(ESTADO_PUBLICACION),
-  categoria: categoriaListadoSchema,
+  categoria: categoriaResumenSchema,
 });
 
 // ---------------------------------------------------------------------------

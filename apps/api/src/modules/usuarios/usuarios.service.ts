@@ -4,12 +4,13 @@ import {
   desc,
   eq,
   ilike,
+  max,
   ne,
   or,
   sql,
   type SQL,
 } from 'drizzle-orm';
-import { cocinero, usuario } from '@foodhub/db';
+import { cocinero, usuario, versionTerminos } from '@foodhub/db';
 import {
   MENSAJES_USUARIO,
   type CambiarPasswordInput,
@@ -98,6 +99,29 @@ export function aPerfilUsuario(
   };
 }
 
+/**
+ * US-CFG-04 (RF058) - Si hay una versión de términos y/o de política de
+ * privacidad más nueva que la última que el usuario aceptó.
+ *
+ * Un solo checkbox acepta los dos documentos juntos (criterio de aceptación
+ * de US-CFG-04), así que alcanza con comparar `fecha_aceptacion_terminos`
+ * contra la publicación más reciente entre ambos tipos: no hace falta una
+ * columna de aceptación por documento.
+ */
+async function calcularDebeAceptarTerminos(
+  fechaAceptacionTerminos: Date | null,
+): Promise<boolean> {
+  const [fila] = await db
+    .select({ maxFecha: max(versionTerminos.fechaPublicacion) })
+    .from(versionTerminos)
+    .where(eq(versionTerminos.estadoVersionTerminos, 'VIGENTE'));
+
+  const ultimaPublicacion = fila?.maxFecha;
+  if (!ultimaPublicacion) return false; // todavia no se publico nada (bootstrap)
+  if (!fechaAceptacionTerminos) return true;
+  return fechaAceptacionTerminos < ultimaPublicacion;
+}
+
 /** US-GURP-01 y US-GURP-05 - Perfil completo, con los datos del cocinero si aplica. */
 export async function obtenerPerfil(usuarioId: string): Promise<PerfilUsuario> {
   const [fila] = await db
@@ -108,7 +132,28 @@ export async function obtenerPerfil(usuarioId: string): Promise<PerfilUsuario> {
     .limit(1);
 
   if (!fila) throw noEncontrado('el usuario');
-  return aPerfilUsuario(fila.usuario, fila.descripcionPublica);
+
+  const debeAceptarTerminos = await calcularDebeAceptarTerminos(
+    fila.usuario.fechaAceptacionTerminos,
+  );
+  return {
+    ...aPerfilUsuario(fila.usuario, fila.descripcionPublica),
+    debeAceptarTerminos,
+  };
+}
+
+/**
+ * US-CFG-04 (RF058) - Re-aceptación de los términos vigentes, sexto criterio
+ * de aceptación: el checkbox obligatorio de la app móvil al iniciar sesión
+ * después de una publicación nueva.
+ */
+export async function aceptarTerminosVigentes(
+  usuarioId: string,
+): Promise<void> {
+  await db
+    .update(usuario)
+    .set({ terminosAceptados: true, fechaAceptacionTerminos: sql`now()` })
+    .where(eq(usuario.id, usuarioId));
 }
 
 // ---------------------------------------------------------------------------

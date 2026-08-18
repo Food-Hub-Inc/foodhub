@@ -1,4 +1,4 @@
-import type { CategoriaListado } from '@foodhub/shared';
+import type { CategoriaResumen } from '@foodhub/shared';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { listarCategorias } from '../api/catalogo';
 import { useSesion } from './useSesion';
@@ -13,7 +13,7 @@ export const CLAVE_CATEGORIAS = ['catalogo', 'categorias'] as const;
  * `staleTime` largo: es una tabla de referencia que el administrador cambia
  * rara vez, no un dato de negocio que se invalide seguido.
  */
-export function useCategorias(): UseQueryResult<CategoriaListado[], Error> {
+export function useCategorias(): UseQueryResult<CategoriaResumen[], Error> {
   const sesion = useSesion((estado) => estado.sesion);
 
   return useQuery({

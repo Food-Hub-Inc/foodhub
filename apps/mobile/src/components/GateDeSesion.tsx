@@ -44,7 +44,8 @@ const INICIO_POR_ROL = {
   COCINERO: '/(cocinero)/platos',
 } as const;
 
-type GrupoDeRutas = '(auth)' | '(cliente)' | '(cocinero)' | undefined;
+type GrupoDeRutas =
+  '(auth)' | '(cliente)' | '(cocinero)' | 'aceptar-terminos' | undefined;
 
 export function GateDeSesion({ children }: { children: ReactNode }) {
   useEscucharSesion();
@@ -166,24 +167,40 @@ function calcularDestino({
   if (perfil.tipo === 'ADMINISTRADOR') return null;
 
   /**
-   * NO todas las pantallas de un rol viven anidadas bajo su grupo de rutas:
-   * `/publicaciones/nueva`, `/publicaciones/[id]` y `/notificaciones` son
-   * rutas de nivel superior a las que se llega empujando la pila desde
-   * adentro de `(cocinero)`/`(cliente)`, así que `segmentos[0]` deja de ser
-   * el grupo propio en cuanto el cocinero abre una de ellas. Redirigir a
-   * "casa" en ese momento (como hacía antes esta función, comparando
-   * `grupo === grupoPropio`) expulsaba al usuario de la pantalla recién
-   * abierta a los pocos milisegundos.
-   *
-   * Lo único que este guardián tiene que decidir es sacar al usuario de
-   * donde NO puede estar: sin sesión (ya resuelto arriba), en las pantallas
-   * de `(auth)` estando logueado, o en el grupo del OTRO rol. Cualquier otro
-   * segmento -el propio grupo o una ruta compartida de nivel superior- se
-   * deja en paz.
+   * US-CFG-04 (RF058) · el administrador publicó una versión nueva de los
+   * términos o de la política de privacidad. Hasta que este usuario la
+   * acepte, "aceptar-terminos" es el único destino posible: ni siquiera se
+   * lo deja volver a su propio grupo de tabs.
    */
-  const grupoAjeno = perfil.tipo === 'CLIENTE' ? '(cocinero)' : '(cliente)';
-  const debeIrACasa =
-    grupo === undefined || grupo === '(auth)' || grupo === grupoAjeno;
+  if (perfil.debeAceptarTerminos) {
+    return grupo === 'aceptar-terminos' ? null : '/aceptar-terminos';
+  }
 
-  return debeIrACasa ? INICIO_POR_ROL[perfil.tipo] : null;
+  return debeVolverACasa(perfil, grupo) ? INICIO_POR_ROL[perfil.tipo] : null;
+}
+
+/**
+ * NO todas las pantallas de un rol viven anidadas bajo su grupo de rutas:
+ * `/publicaciones/nueva`, `/publicaciones/[id]` y `/notificaciones` son
+ * rutas de nivel superior a las que se llega empujando la pila desde adentro
+ * de `(cocinero)`/`(cliente)`, así que `segmentos[0]` deja de ser el grupo
+ * propio en cuanto el cocinero abre una de ellas. Redirigir a "casa" en ese
+ * momento (como hacía antes `calcularDestino`, comparando
+ * `grupo === grupoPropio`) expulsaba al usuario de la pantalla recién abierta
+ * a los pocos milisegundos.
+ *
+ * Lo único que hace falta decidir acá es sacar al usuario de donde NO puede
+ * estar: en las pantallas de `(auth)` estando logueado, en "aceptar-terminos"
+ * cuando ya no hace falta (recién aceptó y `debeAceptarTerminos` cambió a
+ * `false`), o en el grupo del OTRO rol. Cualquier otro segmento -el propio
+ * grupo o una ruta compartida de nivel superior- se deja en paz.
+ */
+function debeVolverACasa(perfil: PerfilUsuario, grupo: GrupoDeRutas): boolean {
+  const grupoAjeno = perfil.tipo === 'CLIENTE' ? '(cocinero)' : '(cliente)';
+  return (
+    grupo === undefined ||
+    grupo === '(auth)' ||
+    grupo === grupoAjeno ||
+    grupo === 'aceptar-terminos'
+  );
 }

@@ -1,5 +1,5 @@
 {
-  "id": "7e02c517-b887-4d1a-a9e3-20f9937b86d2",
+  "id": "2068f0e2-30d3-478e-a97f-c81a75565800",
   "prevId": "369c79d1-6dfb-4570-aa29-6762f78a0035",
   "version": "7",
   "dialect": "postgresql",
@@ -175,6 +175,22 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "motivo_cancelacion_nombre_activo_uq": {
+          "name": "motivo_cancelacion_nombre_activo_uq",
+          "columns": [
+            {
+              "expression": "nombre",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"motivo_cancelacion\".\"activo\" = true",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -831,11 +847,17 @@
         }
       },
       "indexes": {
-        "carrito_cliente_uq": {
-          "name": "carrito_cliente_uq",
+        "carrito_cliente_cocinero_uq": {
+          "name": "carrito_cliente_cocinero_uq",
           "columns": [
             {
               "expression": "cliente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cocinero_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1879,6 +1901,12 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
+        "pedido_id": {
+          "name": "pedido_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "cocinero_evaluador_id": {
           "name": "cocinero_evaluador_id",
           "type": "uuid",
@@ -1918,27 +1946,6 @@
         }
       },
       "indexes": {
-        "calificacion_cocinero_uq": {
-          "name": "calificacion_cocinero_uq",
-          "columns": [
-            {
-              "expression": "cocinero_evaluador_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "cliente_evaluado_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "calificacion_cliente_idx": {
           "name": "calificacion_cliente_idx",
           "columns": [
@@ -1956,6 +1963,19 @@
         }
       },
       "foreignKeys": {
+        "calificacion_cocinero_pedido_id_pedido_id_fk": {
+          "name": "calificacion_cocinero_pedido_id_pedido_id_fk",
+          "tableFrom": "calificacion_cocinero",
+          "tableTo": "pedido",
+          "columnsFrom": [
+            "pedido_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "calificacion_cocinero_cocinero_evaluador_id_cocinero_usuario_id_fk": {
           "name": "calificacion_cocinero_cocinero_evaluador_id_cocinero_usuario_id_fk",
           "tableFrom": "calificacion_cocinero",
@@ -1984,7 +2004,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "calificacion_cocinero_pedido_id_unique": {
+          "name": "calificacion_cocinero_pedido_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "pedido_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "calificacion_cocinero_rango": {
@@ -2264,6 +2292,12 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
+        "pedido_id": {
+          "name": "pedido_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "cliente_res_id": {
           "name": "cliente_res_id",
           "type": "uuid",
@@ -2369,6 +2403,19 @@
         }
       },
       "foreignKeys": {
+        "resena_pedido_id_pedido_id_fk": {
+          "name": "resena_pedido_id_pedido_id_fk",
+          "tableFrom": "resena",
+          "tableTo": "pedido",
+          "columnsFrom": [
+            "pedido_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "resena_cliente_res_id_usuario_id_fk": {
           "name": "resena_cliente_res_id_usuario_id_fk",
           "tableFrom": "resena",
@@ -2397,7 +2444,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "resena_pedido_id_unique": {
+          "name": "resena_pedido_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "pedido_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "resena_calificacion_rango": {

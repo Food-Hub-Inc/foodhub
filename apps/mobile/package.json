@@ -16,6 +16,7 @@
     "@expo-google-fonts/plus-jakarta-sans": "0.4.2",
     "@foodhub/shared": "workspace:*",
     "@gorhom/bottom-sheet": "^5.2.9",
+    "@native-html/render": "1.0.3",
     "@supabase/supabase-js": "catalog:",
     "@tanstack/react-query": "5.101.4",
     "expo": "~57.0.12",

@@ -133,6 +133,13 @@ export const TEXTOS_FORMULARIO = {
   apellido: 'Apellido',
   correo: 'Correo electrónico',
   rol: 'Rol',
+  /**
+   * LITERAL - cancelar de una ventana de confirmación "Sí, X" / "No, volver"
+   * (US-CFG-01 al deshabilitar una categoría, US-CFG-03 al guardar
+   * parámetros). Es distinto de `cancelar`: ese cierra un formulario, este
+   * responde a una pregunta de sí/no.
+   */
+  noVolver: 'No, volver',
 } as const;
 
 /** PAN-ADM-01 · Gestión de usuarios. */
@@ -254,6 +261,213 @@ export const TEXTOS_AUDITORIA = {
     'Ingresá el identificador completo del usuario para aplicar este filtro.',
   /** [PROPIO] Rango de fechas imposible, antes de consultar al servidor. */
   rangoInvalido: 'La fecha de inicio no puede ser posterior a la de fin.',
+} as const;
+
+/** PAN-ADM-04 · Configuración del sistema, marco de pestañas. */
+export const TEXTOS_CONFIGURACION = {
+  titulo: 'Configuración del sistema',
+  /** [PROPIO] El módulo cubre cuatro áreas administrables sin desplegar código. */
+  subtitulo:
+    'Categorías, motivos de cancelación, parámetros generales y términos y condiciones.',
+  solapaCategorias: 'Categorías de platos',
+  solapaMotivos: 'Motivos de cancelación',
+  solapaParametros: 'Parámetros generales',
+  solapaTerminos: 'Términos y condiciones',
+} as const;
+
+/** PAN-ADM-04 · Categorías de platos — US-CFG-01. */
+export const TEXTOS_CATEGORIAS = {
+  /** LITERAL - US-CFG-01, título de la vista. */
+  titulo: 'Categorías de platos',
+  /** LITERAL - US-CFG-01, botón que abre el alta. */
+  nuevo: 'Crear',
+  /** [PROPIO] Placeholder de la barra de búsqueda por nombre. */
+  buscar: 'Buscar por nombre de categoría...',
+  buscarEtiqueta: 'Buscar categorías',
+  filtroEstado: 'Estado',
+  /** LITERAL - US-CFG-01, opción del filtro de estado que no filtra. */
+  todas: 'Todas',
+  /** LITERAL - US-CFG-01, opciones del filtro de estado de habilitación. */
+  habilitadas: 'Habilitadas',
+  deshabilitadas: 'Deshabilitadas',
+
+  columnaNombre: 'NOMBRE',
+  columnaDescripcion: 'DESCRIPCIÓN',
+  columnaPublicaciones: 'PUBLICACIONES ACTIVAS',
+  columnaEstado: 'ESTADO',
+  columnaAcciones: 'ACCIONES',
+
+  accionEditar: 'Editar categoría',
+  accionHabilitar: 'Habilitar categoría',
+  accionDeshabilitar: 'Deshabilitar categoría',
+  accionEliminar: 'Eliminar categoría',
+
+  /**
+   * LITERAL - US-CFG-01: "Botones: 'Sí, deshabilitar' y 'No, volver'." Es
+   * distinto de `accionDeshabilitar`, que rotula el botón de la fila
+   * (aria-label), no el de este diálogo.
+   */
+  confirmarDeshabilitarSi: 'Sí, deshabilitar',
+
+  /** [PROPIO] Título del diálogo de alta; el botón que lo abre dice "Crear". */
+  dialogoAltaTitulo: 'Crear categoría',
+  dialogoEdicionTitulo: 'Editar categoría',
+  dialogoHabilitacionTitulo: 'Habilitar categoría',
+  dialogoEliminacionTitulo: 'Eliminar categoría',
+
+  /** LITERAL - US-CFG-01, botón que confirma el alta (no es "Guardar cambios"). */
+  guardarAlta: 'Guardar',
+
+  campoNombre: 'Nombre',
+  campoDescripcion: 'Descripción',
+  campoImagen: 'Imagen representativa',
+  imagenAyuda: 'JPG, PNG o WEBP de hasta 2 MB.',
+  imagenQuitar: 'Quitar imagen',
+  imagenSubiendo: 'Subiendo imagen…',
+  imagenSeleccionar: 'Elegir imagen',
+
+  /** [PROPIO] Confirmación de habilitar, sin advertencia previa (US-CFG-01: "sin solicitar confirmación"). */
+  confirmarHabilitar:
+    'La categoría vuelve a estar disponible para que los cocineros la asignen a nuevas publicaciones.',
+  /** [PROPIO] Advertencia de la eliminación física, sin criterio de aceptación que la fije. */
+  confirmarEliminar:
+    'Esta acción no se puede deshacer. La categoría se elimina de forma permanente.',
+
+  /** [PROPIO] Estado vacío del listado sin filtros aplicados. */
+  vacioSinFiltros: 'Todavía no hay categorías cargadas.',
+  /** [PROPIO] Estado vacío del listado con filtros aplicados. */
+  vacioConFiltros:
+    'No se encontraron categorías con los filtros seleccionados.',
+  limpiarFiltros: 'Limpiar filtros',
+} as const;
+
+/** PAN-ADM-04 · Motivos de cancelación de pedido — US-CFG-02. */
+export const TEXTOS_MOTIVOS = {
+  titulo: 'Motivos de cancelación',
+  /** LITERAL - US-CFG-02, botón que abre el alta (RF056: "Presiono 'Crear'"). */
+  nuevo: 'Crear',
+  filtroAplicabilidad: 'Aplicabilidad',
+  filtroEstado: 'Estado',
+  todos: 'Todos',
+  habilitados: 'Habilitados',
+  deshabilitados: 'Deshabilitados',
+
+  columnaNombre: 'NOMBRE',
+  columnaAplicabilidad: 'APLICABILIDAD',
+  columnaPedidos: 'PEDIDOS ASOCIADOS',
+  columnaEstado: 'ESTADO',
+  columnaAcciones: 'ACCIONES',
+
+  accionEditar: 'Editar motivo',
+  accionHabilitar: 'Habilitar motivo',
+  accionDeshabilitar: 'Deshabilitar motivo',
+
+  dialogoAltaTitulo: 'Crear motivo',
+  dialogoEdicionTitulo: 'Editar motivo',
+  /** [PROPIO] Título corto; el texto completo de la advertencia es el literal de RF056. */
+  dialogoDeshabilitacionTitulo: 'Deshabilitar motivo',
+
+  /** LITERAL - US-CFG-02, RF056: "Los botones disponibles son 'Guardar' y 'Cancelar'." */
+  guardarAlta: 'Guardar',
+
+  campoNombre: 'Nombre del motivo',
+  campoAplicableA: 'Aplicable a',
+
+  /** [PROPIO] Estado vacío del listado sin filtros aplicados. */
+  vacioSinFiltros: 'Todavía no hay motivos de cancelación cargados.',
+  /** [PROPIO] Estado vacío del listado con filtros aplicados. */
+  vacioConFiltros: 'No se encontraron motivos con los filtros seleccionados.',
+  limpiarFiltros: 'Limpiar filtros',
+} as const;
+
+/** PAN-ADM-04 · Parámetros generales del sistema — US-CFG-03. */
+export const TEXTOS_PARAMETROS = {
+  /** LITERAL - US-CFG-03: "presiono sobre 'Configuración general'". */
+  titulo: 'Configuración general',
+  solapaBusqueda: 'Parámetros de búsqueda',
+  solapaPedidos: 'Parámetros de pedidos',
+  solapaResenas: 'Parámetros de reseñas',
+  solapaInstitucional: 'Información institucional',
+
+  campoRadioBusqueda: 'Radio de búsqueda por defecto (km)',
+  ayudaRadioBusqueda:
+    'Radio, en kilómetros, que usa el feed y el mapa para mostrar cocineros cercanos por defecto.',
+  campoDistanciaMaxima: 'Distancia máxima en filtros (km)',
+  ayudaDistanciaMaxima:
+    'Distancia máxima que un cliente puede seleccionar en el filtro de búsqueda.',
+  campoPublicacionesPorPagina: 'Publicaciones por página en el feed',
+  ayudaPublicacionesPorPagina:
+    'Cantidad de publicaciones que se cargan por página en el feed.',
+
+  campoTiempoCancelacion: 'Tiempo máximo para cancelar (minutos)',
+  ayudaTiempoCancelacion:
+    'Minutos que tiene el cliente para cancelar un pedido en estado "Creado".',
+  campoTiempoExpiracion: 'Tiempo de respuesta del cocinero (minutos)',
+  ayudaTiempoExpiracion:
+    'Minutos que tiene el cocinero para aceptar o rechazar un pedido antes de que expire automáticamente.',
+
+  campoMinimoResenas: 'Mínimo de reseñas para mostrar el promedio',
+  ayudaMinimoResenas:
+    'Cantidad mínima de reseñas que necesita un cocinero para mostrar su valoración promedio pública.',
+  campoLimiteDiasResena: 'Tiempo límite para reseñar (días)',
+  ayudaLimiteDiasResena:
+    'Días, tras completar un pedido, que tiene el cliente para dejar una reseña.',
+
+  campoNombrePlataforma: 'Nombre de la plataforma',
+  campoLogo: 'Logo de la plataforma',
+  logoAyuda: 'JPG, PNG o WEBP de hasta 2 MB.',
+  logoQuitar: 'Quitar logo',
+  logoSubiendo: 'Subiendo logo…',
+  logoSeleccionar: 'Elegir logo',
+  campoCorreoSoporte: 'Correo de contacto de soporte',
+
+  /** LITERAL - US-CFG-03, botón que abre la restauración de la sección. */
+  restaurar: 'Restaurar valores por defecto',
+
+  /** [PROPIO] Título corto del diálogo; el mensaje completo es el literal de RF057. */
+  dialogoGuardarTitulo: 'Guardar cambios',
+  /** LITERAL - US-CFG-03: "Botones 'Sí, guardar' y 'No, volver'". */
+  confirmarGuardarSi: 'Sí, guardar',
+
+  /** [PROPIO] La documentación no fija el texto de esta confirmación (a diferencia de la de guardar). */
+  dialogoRestaurarTitulo: 'Restaurar valores por defecto',
+  confirmarRestaurarSi: 'Restaurar',
+} as const;
+
+/** PAN-ADM-04 · Términos y condiciones — US-CFG-04. */
+export const TEXTOS_TERMINOS = {
+  /** LITERAL - US-CFG-04: "una pantalla con dos pestañas: 'Términos y condiciones' y 'Política de privacidad'". */
+  solapaTerminos: 'Términos y condiciones',
+  solapaPrivacidad: 'Política de privacidad',
+
+  fechaPublicacion: 'Fecha de publicación',
+  publicadoPor: 'Publicado por',
+  autorDesconocido: 'Administrador dado de baja',
+
+  /** LITERAL - US-CFG-04, botones de la vista vigente. */
+  accionEditar: 'Editar',
+  accionVerHistorial: 'Ver historial',
+
+  /** LITERAL - US-CFG-04, botones del editor. */
+  botonPublicar: 'Publicar nueva versión',
+  botonGuardarBorrador: 'Guardar borrador',
+
+  /** [PROPIO] Aviso de que se está retomando un borrador propio, no la versión vigente. */
+  editandoBorrador: 'Estás retomando el borrador que guardaste.',
+
+  dialogoPublicarTitulo: 'Publicar nueva versión',
+
+  historialTitulo: 'Historial de versiones',
+  columnaVersion: 'VERSIÓN',
+  columnaFecha: 'FECHA',
+  columnaAdmin: 'ADMINISTRADOR',
+  columnaAccion: '',
+  /** LITERAL - US-CFG-04, enlace de cada fila del historial. */
+  verContenido: 'Ver contenido',
+  dialogoContenidoTitulo: 'Contenido de la versión',
+
+  /** [PROPIO] Estado vacío antes de la primera publicación de este documento. */
+  sinVersionVigente: 'Todavía no se publicó ninguna versión de este documento.',
 } as const;
 
 /** Estados transversales de cualquier pantalla con datos. */

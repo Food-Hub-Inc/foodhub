@@ -4,7 +4,7 @@
 -- misma tabla una columna borrada y otra agregada, pregunta de forma
 -- interactiva si se trata de un rename. NO lo es: pedido_id y publicacion_id
 -- apuntan a tablas distintas y guardan cosas distintas. Separar el DROP (aca)
--- del ADD (0003) hace el diff inequivoco y deja el SQL correcto sin depender
+-- del ADD (0007) hace el diff inequivoco y deja el SQL correcto sin depender
 -- de lo que alguien conteste en una consola.
 --
 -- Incluye tambien el indice unico de carrito, que pasa de (cliente, cocinero) a

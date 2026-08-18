@@ -1,4 +1,4 @@
-import type { CategoriaListado, Ubicacion } from '@foodhub/shared';
+import type { CategoriaResumen, Ubicacion } from '@foodhub/shared';
 import type { FiltrosDelFeed } from '../../hooks/useExploracion';
 import { TEXTOS_EXPLORACION } from '../../lib/textos';
 
@@ -136,7 +136,7 @@ export interface ChipDeFiltro {
  */
 export function chipsDeFiltro(
   filtros: FiltrosDelFeedSeleccionados,
-  categorias: readonly CategoriaListado[],
+  categorias: readonly CategoriaResumen[],
 ): ChipDeFiltro[] {
   const chips: ChipDeFiltro[] = [];
 
