@@ -1,7 +1,6 @@
 import {
   and,
   asc,
-  avg,
   count,
   countDistinct,
   desc,
@@ -13,13 +12,7 @@ import {
   sql,
   type SQL,
 } from 'drizzle-orm';
-import {
-  categoria,
-  itemPedido,
-  pedido,
-  publicacion,
-  resena,
-} from '@foodhub/db';
+import { categoria, itemPedido, pedido, publicacion } from '@foodhub/db';
 import {
   MENSAJES_PUBLICACION,
   PUBLICACIONES_POR_PAGINA,
@@ -34,6 +27,10 @@ import {
   type PublicacionListado,
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
+import {
+  aValoracion,
+  subconsultaValoracionPorPublicacion,
+} from '../../lib/valoraciones.js';
 import { AppError, noEncontrado } from '../../middleware/error.middleware.js';
 import { limpiarFotoDePlatoAnterior } from '../almacenamiento/almacenamiento.service.js';
 
@@ -131,45 +128,6 @@ function subconsultaCantidadPedidos() {
 }
 
 // ---------------------------------------------------------------------------
-// Valoracion promedio por publicacion
-// ---------------------------------------------------------------------------
-
-/**
- * Subconsulta que promedia, por publicacion, sus resenas VISIBLE.
- *
- * Solo las visibles: la moderacion pasa una resena a OCULTA_MODERACION
- * justamente para que deje de pesar en la reputacion, y las que el autor
- * retira quedan en ELIMINADA_AUTOR. `resena_publicacion_idx` es un indice
- * parcial con esa misma condicion, asi que la cubre entera.
- *
- * Agrupa DENTRO de la subconsulta, antes del LEFT JOIN del llamador, por el
- * mismo motivo que `subconsultaCantidadPedidos`: asi el join nunca duplica una
- * fila de publicacion.
- *
- * El promedio se deja como viene -`numeric`, que Drizzle entrega como string, y
- * `null` si la publicacion no tiene resenas-. No se le aplica `.mapWith(Number)`
- * a proposito: `Number(null)` es 0, y un plato sin resenas quedaria mostrando
- * una valoracion de cero en vez de "sin calificaciones". La conversion la hace
- * `aPublicacionListado`, que si distingue los dos casos.
- */
-function subconsultaValoracion() {
-  const valoracionPorPublicacion = db
-    .select({
-      publicacionId: resena.publicacionId,
-      promedio: avg(resena.calificacion).as('valoracion_promedio'),
-    })
-    .from(resena)
-    .where(eq(resena.estadoResena, 'VISIBLE'))
-    .groupBy(resena.publicacionId)
-    .as('valoracion_por_publicacion');
-
-  return {
-    tabla: valoracionPorPublicacion,
-    promedio: valoracionPorPublicacion.promedio,
-  };
-}
-
-// ---------------------------------------------------------------------------
 // Orden del listado (US-PUB-05, desplegable "Ordenar por")
 // ---------------------------------------------------------------------------
 
@@ -234,10 +192,7 @@ function aPublicacionListado(fila: FilaListado): PublicacionListado {
       imagenPredeterminadaUrl: fila.categoriaImagenPredeterminadaUrl,
     },
     cantidadPedidos: fila.cantidadPedidos,
-    // `null` (sin resenas) y 0 son cosas distintas, por eso la comparacion
-    // explicita en vez de un `Number(fila.valoracionPromedio) || null`.
-    valoracionPromedio:
-      fila.valoracionPromedio === null ? null : Number(fila.valoracionPromedio),
+    valoracionPromedio: aValoracion(fila.valoracionPromedio),
     fechaCreacion: fila.fechaCreacion.toISOString(),
   };
 }
@@ -282,7 +237,7 @@ export async function listarPublicacionesPropias(
   const { tabla: pedidosPorPublicacion, cantidad: cantidadPedidos } =
     subconsultaCantidadPedidos();
   const { tabla: valoracionPorPublicacion, promedio: valoracionPromedio } =
-    subconsultaValoracion();
+    subconsultaValoracionPorPublicacion();
 
   const [filas, [totalizador]] = await Promise.all([
     db
@@ -326,7 +281,7 @@ export async function obtenerPublicacionPropia(
   const { tabla: pedidosPorPublicacion, cantidad: cantidadPedidos } =
     subconsultaCantidadPedidos();
   const { tabla: valoracionPorPublicacion, promedio: valoracionPromedio } =
-    subconsultaValoracion();
+    subconsultaValoracionPorPublicacion();
 
   const [fila] = await db
     .select({
