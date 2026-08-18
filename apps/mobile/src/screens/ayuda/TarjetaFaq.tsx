@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, {
+  FadeIn,
+  FadeOut,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -25,24 +27,13 @@ export function TarjetaFaq({
   onVotar: (util: boolean) => void;
 }) {
   const [expandida, setExpandida] = useState(false);
-  const [alturaContenido, setAlturaContenido] = useState(0);
-  const altura = useSharedValue(0);
-  const opacidad = useSharedValue(0);
   const rotacion = useSharedValue(0);
   const duracion = useDuracion(220);
 
   useEffect(() => {
-    altura.set(
-      withTiming(expandida ? alturaContenido : 0, { duration: duracion }),
-    );
-    opacidad.set(withTiming(expandida ? 1 : 0, { duration: duracion }));
     rotacion.set(withTiming(expandida ? 180 : 0, { duration: duracion }));
-  }, [alturaContenido, duracion, expandida, altura, opacidad, rotacion]);
+  }, [duracion, expandida, rotacion]);
 
-  const estiloRespuesta = useAnimatedStyle(() => ({
-    height: altura.get(),
-    opacity: opacidad.get(),
-  }));
   const estiloChevron = useAnimatedStyle(() => ({
     transform: [{ rotate: `${String(rotacion.get())}deg` }],
   }));
@@ -68,24 +59,27 @@ export function TarjetaFaq({
         </Animated.View>
       </Pressable>
 
-      <Animated.View className="overflow-hidden" style={estiloRespuesta}>
-        <View
-          className="border-t border-border px-4 pt-3 pb-4"
-          onLayout={(evento) => {
-            const nuevaAltura = evento.nativeEvent.layout.height;
-            if (nuevaAltura !== alturaContenido)
-              setAlturaContenido(nuevaAltura);
-          }}
+      {expandida ? (
+        <Animated.View
+          className="overflow-hidden border-t border-border"
+          entering={FadeIn.duration(duracion)}
+          exiting={FadeOut.duration(duracion)}
         >
-          <TextoResaltado
-            className="text-body leading-6 text-text-secondary"
-            consulta={consulta}
-            texto={faq.respuesta}
-          />
+          <View className="px-4 pt-3 pb-4">
+            <TextoResaltado
+              className="text-body leading-6 text-text-secondary"
+              consulta={consulta}
+              texto={faq.respuesta}
+            />
 
-          <ValoracionFaq onVotar={onVotar} votada={votada} votando={votando} />
-        </View>
-      </Animated.View>
+            <ValoracionFaq
+              onVotar={onVotar}
+              votada={votada}
+              votando={votando}
+            />
+          </View>
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
@@ -116,28 +110,32 @@ function ValoracionFaq({
         {MENSAJES_AYUDA.preguntaUtil}
       </Text>
       <View className="mt-3 flex-row gap-3">
-        <Boton
-          className="flex-1"
-          deshabilitado={votando}
-          onPress={() => {
-            onVotar(true);
-          }}
-          tamano="sm"
-          variante="secundario"
-        >
-          {MENSAJES_AYUDA.votoUtil}
-        </Boton>
-        <Boton
-          className="flex-1"
-          deshabilitado={votando}
-          onPress={() => {
-            onVotar(false);
-          }}
-          tamano="sm"
-          variante="secundario"
-        >
-          {MENSAJES_AYUDA.votoNoUtil}
-        </Boton>
+        <View className="flex-1">
+          <Boton
+            className="w-full"
+            deshabilitado={votando}
+            onPress={() => {
+              onVotar(true);
+            }}
+            tamano="sm"
+            variante="secundario"
+          >
+            {MENSAJES_AYUDA.votoUtil}
+          </Boton>
+        </View>
+        <View className="flex-1">
+          <Boton
+            className="w-full"
+            deshabilitado={votando}
+            onPress={() => {
+              onVotar(false);
+            }}
+            tamano="sm"
+            variante="secundario"
+          >
+            {MENSAJES_AYUDA.votoNoUtil}
+          </Boton>
+        </View>
       </View>
     </>
   );
