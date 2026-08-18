@@ -14,11 +14,17 @@ import { z } from 'zod';
  *
  * El ABM de categorias en si (alta, edicion, baja desde el panel) es otro
  * modulo y no forma parte de este contrato.
+ *
+ * Se llama "Resumen" y no "Listado" para no colisionar con
+ * `categoriaListadoSchema` de `categoria.schema.ts`: esa es la fila completa
+ * del listado de PAN-ADM-04 (con `activo`, `publicacionesActivas`, etc.), un
+ * contrato distinto del panel de administracion que esta proyeccion minima no
+ * reemplaza.
  */
-export const categoriaListadoSchema = z.object({
+export const categoriaResumenSchema = z.object({
   id: z.uuid(),
   nombre: z.string(),
   imagenPredeterminadaUrl: z.url().nullable(),
 });
 
-export type CategoriaListado = z.infer<typeof categoriaListadoSchema>;
+export type CategoriaResumen = z.infer<typeof categoriaResumenSchema>;

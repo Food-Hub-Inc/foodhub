@@ -19,7 +19,35 @@
     {
       "idx": 2,
       "version": "7",
-      "when": 1786992000000,
+      "when": 1787002227447,
+      "tag": "0002_bizarre_quentin_quire",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787002254371,
+      "tag": "0003_sembrar_tipos_usuario_cancelacion",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787004464035,
+      "tag": "0004_sembrar_configuracion_sistema",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787012536746,
+      "tag": "0005_sembrar_preferencias_notificacion",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787073572562,
       "tag": "0002_seed_ayuda",
       "breakpoints": true
     }

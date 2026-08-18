@@ -1,11 +1,16 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import {
+  solicitarUrlDeCargaCategoriaSchema,
   solicitarUrlDeCargaPlatoSchema,
   solicitarUrlDeCargaSchema,
 } from '@foodhub/shared';
 import { sesionDe } from '../../lib/request.js';
 import { requiereAutenticacion } from '../../middleware/auth.middleware.js';
-import { requiereRol } from '../../middleware/rbac.middleware.js';
+import {
+  requiereRol,
+  soloAdministrador,
+} from '../../middleware/rbac.middleware.js';
 import * as almacenamientoService from './almacenamiento.service.js';
 
 /**
@@ -22,6 +27,8 @@ import * as almacenamientoService from './almacenamiento.service.js';
  * otro usuario manipulando la request.
  */
 export const almacenamientoRouter: Router = Router();
+
+const idCategoriaSchema = z.uuid('El identificador de categoría no es válido.');
 
 almacenamientoRouter.use(requiereAutenticacion);
 
@@ -49,6 +56,51 @@ almacenamientoRouter.post(
       cocineroId: sesionDe(req).id,
       datos: solicitarUrlDeCargaPlatoSchema.parse(req.body),
     });
+    res.status(201).json(urlDeCarga);
+  },
+);
+
+/**
+ * US-CFG-01 - Imagen representativa de una categoria. Exclusivo del panel de
+ * administracion: a diferencia de la foto de perfil, no depende de la sesion
+ * del que sube el archivo sino de la categoria afectada.
+ */
+almacenamientoRouter.post(
+  '/imagen-categoria',
+  soloAdministrador,
+  async (req, res) => {
+    const urlDeCarga =
+      await almacenamientoService.crearUrlDeCargaDeImagenCategoria({
+        categoriaId: null,
+        datos: solicitarUrlDeCargaCategoriaSchema.parse(req.body),
+      });
+    res.status(201).json(urlDeCarga);
+  },
+);
+
+/** US-CFG-01 - Igual que arriba, pero reemplazando la imagen de una categoria existente. */
+almacenamientoRouter.post(
+  '/imagen-categoria/:categoriaId',
+  soloAdministrador,
+  async (req, res) => {
+    const urlDeCarga =
+      await almacenamientoService.crearUrlDeCargaDeImagenCategoria({
+        categoriaId: idCategoriaSchema.parse(req.params.categoriaId),
+        datos: solicitarUrlDeCargaCategoriaSchema.parse(req.body),
+      });
+    res.status(201).json(urlDeCarga);
+  },
+);
+
+/** US-CFG-03 - Logo de la plataforma (Información institucional). */
+almacenamientoRouter.post(
+  '/logo-plataforma',
+  soloAdministrador,
+  async (req, res) => {
+    const urlDeCarga =
+      await almacenamientoService.crearUrlDeCargaDeLogoPlataforma(
+        solicitarUrlDeCargaCategoriaSchema.parse(req.body),
+      );
     res.status(201).json(urlDeCarga);
   },
 );

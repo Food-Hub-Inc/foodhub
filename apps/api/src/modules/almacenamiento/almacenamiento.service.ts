@@ -2,6 +2,7 @@ import {
   MENSAJES_PUBLICACION,
   MENSAJES_USUARIO,
   type FormatoImagenPerfil,
+  type SolicitarUrlDeCargaCategoriaInput,
   type SolicitarUrlDeCargaInput,
   type SolicitarUrlDeCargaPlatoInput,
   type UrlDeCarga,
@@ -68,6 +69,60 @@ export async function crearUrlDeCargaDeFotoPerfil(entrada: {
   const ruta = `${carpetaDe(entrada.usuarioId)}${String(Date.now())}.${extension}`;
 
   const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_PERFILES);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
+}
+
+/**
+ * US-CFG-01 - Permiso para subir la imagen representativa de una categoria.
+ *
+ * Exclusivo del administrador (lo exige el router con `soloAdministrador`), a
+ * diferencia de la foto de perfil, que cualquier usuario autenticado sube
+ * sobre si mismo. La carpeta se arma con `categoriaId` cuando la categoria ya
+ * existe (edicion) y con `nueva` cuando todavia no (alta): el formulario sube
+ * la imagen antes de crear la fila, igual que la foto de perfil durante el
+ * registro.
+ */
+export async function crearUrlDeCargaDeImagenCategoria(entrada: {
+  categoriaId: string | null;
+  datos: SolicitarUrlDeCargaCategoriaInput;
+}): Promise<UrlDeCarga> {
+  const extension = EXTENSION[entrada.datos.mimeType];
+  const carpeta = entrada.categoriaId ? `${entrada.categoriaId}/` : 'nueva/';
+  const ruta = `${carpeta}${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_CONFIGURACION);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
+}
+
+/**
+ * US-CFG-03 - Permiso para subir el logo de la plataforma (Información
+ * institucional). Reusa el mismo contrato que la imagen de categoría
+ * (`SolicitarUrlDeCargaCategoriaInput`): RF057 fija el mismo tope de 2 MB, y
+ * son dos imágenes administradas por el mismo módulo.
+ */
+export async function crearUrlDeCargaDeLogoPlataforma(
+  datos: SolicitarUrlDeCargaCategoriaInput,
+): Promise<UrlDeCarga> {
+  const extension = EXTENSION[datos.mimeType];
+  const ruta = `plataforma/${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_CONFIGURACION);
   const { data, error } = await bucket.createSignedUploadUrl(ruta);
   if (error) throw error;
 

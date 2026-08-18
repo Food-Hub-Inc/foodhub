@@ -71,7 +71,14 @@ export const tipoUsuarioCancelacion = pgTable('tipo_usuario_cancelacion', {
     .unique(),
 }).enableRLS();
 
-/** Diagrama: MotivoCancelacion. ABM del administrador (US-CFG-02). */
+/**
+ * Diagrama: MotivoCancelacion. ABM del administrador (US-CFG-02).
+ *
+ * `nombre` es unico solo entre los activos (RF056: "Nombre del motivo...
+ * unico"), mismo criterio que `categoria`: permite reutilizar el nombre de un
+ * motivo deshabilitado sin chocar con el historico de pedidos que todavia lo
+ * referencian.
+ */
 export const motivoCancelacion = pgTable(
   'motivo_cancelacion',
   {
@@ -82,7 +89,12 @@ export const motivoCancelacion = pgTable(
       .references(() => tipoUsuarioCancelacion.id, { onDelete: 'restrict' }),
     activo: boolean('activo').notNull().default(true),
   },
-  (t) => [index('motivo_cancelacion_tipo_idx').on(t.tipoUsuarioCancelacionId)],
+  (t) => [
+    index('motivo_cancelacion_tipo_idx').on(t.tipoUsuarioCancelacionId),
+    uniqueIndex('motivo_cancelacion_nombre_activo_uq')
+      .on(t.nombre)
+      .where(sql`${t.activo} = true`),
+  ],
 ).enableRLS();
 
 /**

@@ -3,6 +3,7 @@ import type {
   OperacionAuditoria,
   TipoEventoSeguridad,
   TipoUsuario,
+  TipoUsuarioCancelacion,
 } from '@foodhub/shared';
 
 /**
@@ -49,6 +50,20 @@ export const ETIQUETA_OPERACION: Record<OperacionAuditoria, string> = {
 export const ETIQUETA_EVENTO_SEGURIDAD: Record<TipoEventoSeguridad, string> = {
   LOGIN_FALLIDO: 'LOGIN FALLIDO',
   ACCESO_DENEGADO: 'ACCESO DENEGADO',
+};
+
+/**
+ * Opciones del selector "Aplicable a" de motivos de cancelación (US-CFG-02,
+ * RF056): textos literales del criterio de aceptación, no el código interno
+ * (`COCINERO` / `CLIENTE` / `AMBOS`) que usa el contrato de la API.
+ */
+export const ETIQUETA_TIPO_USUARIO_CANCELACION: Record<
+  TipoUsuarioCancelacion,
+  string
+> = {
+  COCINERO: 'Cancelación por cocinero',
+  CLIENTE: 'Cancelación por cliente',
+  AMBOS: 'Ambos',
 };
 
 /**
