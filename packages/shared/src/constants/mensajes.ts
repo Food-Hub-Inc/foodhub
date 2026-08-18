@@ -319,6 +319,19 @@ export const MENSAJES_PUBLICACION = {
     'No se encontraron publicaciones con esos criterios. Probá modificar los filtros o la búsqueda.',
 } as const;
 
+/**
+ * Mensajes literales de US-AYU-02. Se comparten para que la app no altere la
+ * redacción que luego verifican las pruebas funcionales.
+ */
+export const MENSAJES_AYUDA = {
+  preguntaUtil: '¿Te resultó útil esta respuesta?',
+  votoUtil: 'Sí',
+  votoNoUtil: 'No',
+  graciasPorTuOpinion: 'Gracias por tu opinión',
+  sinResultados: 'No encontramos preguntas que coincidan con tu búsqueda.',
+  contactarSoporte: 'Contactar al soporte',
+} as const;
+
 /** Errores tecnicos, sin detalle del stack (requisito del modulo de seguridad). */
 export const MENSAJES_ERROR = {
   interno: 'Ocurrió un error inesperado. Intentá nuevamente en unos minutos.',

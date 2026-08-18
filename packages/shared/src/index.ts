@@ -7,6 +7,7 @@
  */
 
 export * from './constants/enums.js';
+export * from './constants/ayuda.js';
 export * from './constants/mensajes.js';
 export * from './schemas/almacenamiento.schema.js';
 export * from './schemas/auth.schema.js';
@@ -15,3 +16,4 @@ export * from './schemas/catalogo.schema.js';
 export * from './schemas/pedido.schema.js';
 export * from './schemas/publicacion.schema.js';
 export * from './schemas/usuario.schema.js';
+export * from './schemas/faq.schema.js';
