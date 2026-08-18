@@ -285,6 +285,38 @@ export const TEXTOS_ACEPTAR_TERMINOS = {
 } as const;
 
 /**
+ * Preferencias de notificación push (US-CFG-05, RF059, PAN-CFG-01).
+ *
+ * Las etiquetas de los switches y el texto del tooltip son literales de la
+ * tabla de criterios de aceptación. "Cambios de estado de..." tiene una
+ * redacción distinta para cliente y cocinero aunque controle el mismo grupo
+ * de tipos de notificación (`CAMBIO_ESTADO_PEDIDO`); por eso hay dos objetos
+ * de etiquetas y no uno solo indexado por grupo.
+ *
+ * "Publicaciones nuevas de cocineros favoritos" queda deliberadamente afuera:
+ * no hay un `TIPO_NOTIFICACION` para ese evento todavía. Ver
+ * `PENDIENTE_NOTIFICACIONES_COCINEROS_FAVORITOS.md` en la raíz del repo.
+ */
+export const TEXTOS_PREFERENCIAS_NOTIFICACION = {
+  /** [PROPIO] */
+  titulo: 'Notificaciones',
+  etiquetasCliente: {
+    CAMBIO_ESTADO_PEDIDO: 'Cambios de estado de mis pedidos',
+    MENSAJE_NUEVO: 'Mensajes nuevos en el chat',
+    AVISO_SISTEMA: 'Avisos generales del sistema',
+  },
+  etiquetasCocinero: {
+    PEDIDO_CREADO: 'Nuevos pedidos recibidos',
+    CAMBIO_ESTADO_PEDIDO: 'Cambios de estado de pedidos asociados a mí',
+    MENSAJE_NUEVO: 'Mensajes nuevos en el chat',
+    RESENA_RECIBIDA: 'Nuevas reseñas recibidas',
+    PUBLICACION_ELIMINADA_ADMIN:
+      'Eliminación de publicaciones por parte del administrador',
+    AVISO_SISTEMA: 'Avisos generales del sistema',
+  },
+} as const;
+
+/**
  * Pantallas todavía no codificadas.
  *
  * Cada una anuncia su código PAN, su módulo y qué va a hacer: un placeholder

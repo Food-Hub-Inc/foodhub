@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import {
+  actualizarPreferenciaNotificacionSchema,
   cambiarPasswordSchema,
   crearUsuarioPanelSchema,
   editarPerfilSchema,
@@ -9,12 +10,17 @@ import {
   eliminarUsuarioPanelSchema,
   filtrosUsuarioSchema,
   suspenderUsuarioSchema,
+  GRUPO_PREFERENCIA_NOTIFICACION,
   MENSAJES_CONFIGURACION,
   MENSAJES_USUARIO,
 } from '@foodhub/shared';
 import { extraerToken, obtenerIp, sesionDe } from '../../lib/request.js';
 import { requiereAutenticacion } from '../../middleware/auth.middleware.js';
-import { soloAdministrador } from '../../middleware/rbac.middleware.js';
+import {
+  requiereRol,
+  soloAdministrador,
+} from '../../middleware/rbac.middleware.js';
+import * as preferenciasNotificacionService from './preferenciasNotificacion.service.js';
 import * as usuariosService from './usuarios.service.js';
 
 /**
@@ -36,6 +42,9 @@ import * as usuariosService from './usuarios.service.js';
 export const usuariosRouter: Router = Router();
 
 const idUsuarioSchema = z.uuid('El identificador de usuario no es válido.');
+const grupoPreferenciaSchema = z.enum(GRUPO_PREFERENCIA_NOTIFICACION, {
+  message: 'El grupo de preferencia no es válido.',
+});
 
 usuariosRouter.use(requiereAutenticacion);
 
@@ -62,6 +71,37 @@ usuariosRouter.post('/yo/aceptar-terminos', async (req, res) => {
   await usuariosService.aceptarTerminosVigentes(sesionDe(req).id);
   res.json({ mensaje: MENSAJES_CONFIGURACION.terminosAceptados });
 });
+
+/** US-CFG-05 (RF059) - Preferencias de notificación push. Exclusivo de cliente y cocinero. */
+usuariosRouter.get(
+  '/yo/preferencias-notificacion',
+  requiereRol('CLIENTE', 'COCINERO'),
+  async (req, res) => {
+    const sesion = sesionDe(req);
+    const preferencias =
+      await preferenciasNotificacionService.obtenerPreferencias({
+        usuarioId: sesion.id,
+        tipoUsuario: sesion.tipo,
+      });
+    res.json(preferencias);
+  },
+);
+
+usuariosRouter.patch(
+  '/yo/preferencias-notificacion/:grupo',
+  requiereRol('CLIENTE', 'COCINERO'),
+  async (req, res) => {
+    const sesion = sesionDe(req);
+    const preferencia =
+      await preferenciasNotificacionService.actualizarPreferencia({
+        usuarioId: sesion.id,
+        tipoUsuario: sesion.tipo,
+        grupo: grupoPreferenciaSchema.parse(req.params.grupo),
+        activa: actualizarPreferenciaNotificacionSchema.parse(req.body).activa,
+      });
+    res.json(preferencia);
+  },
+);
 
 usuariosRouter.post('/yo/password', async (req, res) => {
   const sesion = sesionDe(req);

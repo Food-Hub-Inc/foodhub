@@ -36,6 +36,13 @@
       "when": 1787004464035,
       "tag": "0004_sembrar_configuracion_sistema",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787012536746,
+      "tag": "0005_sembrar_preferencias_notificacion",
+      "breakpoints": true
     }
   ]
 }

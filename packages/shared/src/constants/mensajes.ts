@@ -311,6 +311,18 @@ export const MENSAJES_CONFIGURACION = {
 
   /** PROPIO - US-CFG-04, sexto criterio: confirmación tras aceptar (RF058 no fija un texto). */
   terminosAceptados: 'Aceptaste los nuevos términos y condiciones.',
+
+  // --- US-CFG-05 · Preferencias de notificaciones --------------------------
+
+  /**
+   * LITERAL - US-CFG-05, RF059: tooltip del ícono informativo junto a un
+   * switch deshabilitado (notificación esencial).
+   */
+  notificacionEsencial:
+    'Esta notificación es esencial para la operación de la plataforma y no puede desactivarse.',
+
+  /** LITERAL - US-CFG-05, RF059: toast al cambiar cualquier switch habilitado. */
+  preferenciaActualizada: 'Preferencia actualizada',
 } as const;
 
 /** Errores tecnicos, sin detalle del stack (requisito del modulo de seguridad). */

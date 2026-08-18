@@ -28,6 +28,8 @@ const rutasProtegidas = [
   ['patch', '/api/v1/usuarios/yo'],
   ['post', '/api/v1/usuarios/yo/password'],
   ['post', '/api/v1/usuarios/yo/aceptar-terminos'],
+  ['get', '/api/v1/usuarios/yo/preferencias-notificacion'],
+  ['patch', '/api/v1/usuarios/yo/preferencias-notificacion/AVISO_SISTEMA'],
   ['delete', '/api/v1/usuarios/yo'],
   ['get', '/api/v1/usuarios'],
   ['post', '/api/v1/usuarios'],
