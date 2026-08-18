@@ -18,6 +18,7 @@ import { auditoriaRouter } from './modules/auditoria/auditoria.router.js';
 import { catalogoRouter } from './modules/catalogo/catalogo.router.js';
 import { publicacionesRouter } from './modules/publicaciones/publicaciones.router.js';
 import { seguridadRouter } from './modules/seguridad/seguridad.router.js';
+import { soporteRouter } from './modules/soporte/soporte.router.js';
 import { usuariosRouter } from './modules/usuarios/usuarios.router.js';
 
 /**
@@ -119,6 +120,7 @@ export function crearApp(): Express {
   app.use(`${PREFIJO_API}/almacenamiento`, almacenamientoRouter);
   app.use(`${PREFIJO_API}/catalogo`, catalogoRouter);
   app.use(`${PREFIJO_API}/publicaciones`, publicacionesRouter);
+  app.use(`${PREFIJO_API}/soporte`, soporteRouter);
 
   // A medida que avance la Etapa 6 se montan aca los routers de cada modulo:
   //   app.use(`${PREFIJO_API}/pedidos`, pedidosRouter);
