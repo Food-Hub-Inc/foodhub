@@ -35,25 +35,48 @@ body de las requests.
 
 Cómo el cliente descubre qué comer.
 
-| Historia  | Pantalla   | Qué hace                                                      |
-| --------- | ---------- | ------------------------------------------------------------- |
-| US-EXP-01 | PAN-EXP-01 | feed dinámico de publicaciones recientes                      |
-| US-EXP-02 | PAN-EXP-02 | mapa geolocalizado de cocineros cercanos                      |
-| US-EXP-03 | PAN-EXP-03 | filtros combinables: categoría, precio, distancia, valoración |
-| US-EXP-04 | PAN-EXP-04 | perfil público del cocinero                                   |
-| US-EXP-05 | PAN-EXP-05 | detalle de la publicación                                     |
-| US-EXP-06 | —          | favoritos de cocinero y de publicación                        |
-| US-EXP-07 | PAN-PED-01 | carrito                                                       |
+| Historia  | Pantalla     | Qué hace                                                      |
+| --------- | ------------ | ------------------------------------------------------------- |
+| US-EXP-01 | PAN-EXP-01   | feed ordenado por cercanía, con scroll infinito               |
+| US-EXP-02 | PAN-EXP-02   | mapa geolocalizado de cocineros cercanos                      |
+| US-EXP-03 | PAN-EXP-03   | filtros combinables: categoría, precio, distancia, valoración |
+| US-EXP-04 | PAN-EXP-04   | perfil público del cocinero                                   |
+| US-EXP-05 | PAN-EXP-05   | detalle de la publicación                                     |
+| US-EXP-06 | (sin código) | favoritos de cocinero y de publicación + "Mis favoritos"      |
+| US-EXP-07 | PAN-PED-01   | carrito                                                       |
 
-**Proximidad.** Se resuelve en el backend con PostGIS. El backend devuelve las
-coordenadas de los cocineros dentro del radio configurado; el cliente dibuja los
-marcadores sobre Google Maps y, al tocar uno, navega al perfil. Con zoom bajo se
-agrupan los marcadores cercanos (clustering).
+**El feed no tiene radio.** Trae todas las publicaciones activas en estado
+`DISPONIBLE` o `ULTIMAS_UNIDADES`, ordenadas por distancia ascendente; el que
+acota es el filtro de distancia de US-EXP-03. El mapa, en cambio, consulta por la
+**zona visible**, porque su criterio de aceptación habla de "la zona visible del
+mapa".
 
-**Carrito.** Índice único sobre `(cliente_id, cocinero_id)`: agregar un plato de
-otro cocinero abre un carrito separado. Los ítems guardan snapshot de nombre,
-precio e imagen, así el cliente ve lo que agregó aunque el cocinero edite el
-plato mientras tanto.
+**La ubicación del cliente no se persiste.** El cliente no la declara al
+registrarse (`usuario.ubicacion` queda `null`; el CHECK solo se la exige al
+cocinero), así que la app la pide al GPS y la manda como query params `lat`/`lng`
+en cada consulta. Sin permiso, el feed cae a orden por fecha y sin distancia.
+
+**Proximidad.** Se resuelve en el backend con PostGIS (`ST_Distance` sobre
+`geography` para la distancia y el orden, `ST_MakeEnvelope` para la zona visible).
+El cliente dibuja los marcadores sobre Google Maps y, al tocar uno, abre la
+tarjeta con "Ver perfil". Con zoom bajo se agrupan los marcadores cercanos
+(clustering) con un contador visible.
+
+**"Mis favoritos"** no tiene código PAN en la maquetación. Se entra por un ícono
+de corazón en el encabezado del feed, al lado de la campana de notificaciones
+(decisión del equipo, 2026-08-18), y tiene dos pestañas: Cocineros y
+Publicaciones. Un cocinero dado de baja desaparece de la lista sin error: se
+filtra al leer, la fila del favorito no se borra.
+
+**Carrito.** Índice único sobre `(cliente_id)`: hay **un solo carrito activo por
+cliente**. Agregar un plato de otro cocinero abre el diálogo "Tu carrito tiene
+platos de otro cocinero. ¿Querés vaciarlo y comenzar uno nuevo?" y, si el cliente
+confirma, reemplaza el carrito. Los ítems guardan snapshot de nombre, precio e
+imagen, así el cliente ve lo que agregó aunque el cocinero edite el plato
+mientras tanto.
+
+Al abrir el carrito, los platos que pasaron a `NO_DISPONIBLE` se quitan solos y
+se avisa con "Este plato ya no está disponible y fue quitado de tu carrito."
 
 ---
 
@@ -103,14 +126,14 @@ antes de tocar la base.
 
 ## RES · Reseñas y calificaciones (6 historias)
 
-Reputación **bidireccional**: el cliente califica al cocinero y el cocinero
-califica al cliente.
+Reputación **bidireccional**: el cliente reseña los platos que pidió y el
+cocinero califica al cliente.
 
-| Historia  | Quién califica a quién / qué hace                           |
-| --------- | ----------------------------------------------------------- |
-| US-RES-01 | cliente → cocinero, sobre un pedido completado (PAN-RES-01) |
-| US-RES-02 | cocinero → cliente                                          |
-| US-RES-03 | ver reseñas y promedio en el perfil público                 |
+| Historia  | Quién califica a quién / qué hace                            |
+| --------- | ------------------------------------------------------------ |
+| US-RES-01 | cliente → **un plato** de un pedido completado (PAN-RES-01)   |
+| US-RES-02 | cocinero → cliente, tras un pedido que llegó a aceptado       |
+| US-RES-03 | ver reseñas y promedio en el perfil público                   |
 | US-RES-04 | reaccionar a una reseña (me gusta / no me gusta)            |
 | US-RES-05 | el cocinero responde una reseña                             |
 | US-RES-06 | reportar una reseña inapropiada                             |
@@ -118,8 +141,14 @@ califica al cliente.
 Reglas:
 
 - Calificación de **1 a 5** (CHECK en la base).
-- **Una reseña por pedido** en cada dirección (`pedido_id` UNIQUE).
-- Solo se reseñan pedidos **completados**.
+- **La reseña es por plato, no por pedido.** Una por cliente y publicación
+  (`resena_cliente_publicacion_uq`); si el cliente vuelve a pedir el mismo plato,
+  edita la que ya tiene. Ninguna de las dos tablas referencia `pedido`.
+- Solo se reseña un plato que el cliente pidió en un pedido **completado**, y solo
+  se califica a un cliente que hizo un pedido que llegó a **aceptado**. Las dos
+  condiciones se validan por consulta contra `pedido`/`item_pedido`.
+- Una calificación por par cocinero-cliente (`calificacion_cocinero_uq`),
+  editable.
 - Solo las reseñas `VISIBLE` promedian en el perfil público. La moderación las
   pasa a `OCULTA_MODERACION`; el autor puede pasarlas a `ELIMINADA_AUTOR`.
 - **Una reacción por usuario y reseña**: cambiar de opinión es un UPDATE, no una

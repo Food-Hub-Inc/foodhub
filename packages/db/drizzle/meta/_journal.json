@@ -15,6 +15,20 @@
       "when": 1786665087684,
       "tag": "0001_habilitar_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787070414311,
+      "tag": "0002_quitar_pedido_de_resenas",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787070432625,
+      "tag": "0003_resena_por_plato",
+      "breakpoints": true
     }
   ]
 }

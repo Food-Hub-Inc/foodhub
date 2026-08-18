@@ -136,11 +136,19 @@ export const favoritoPublicacion = pgTable(
 ).enableRLS();
 
 /**
- * Diagrama: Carrito. Un carrito por cliente y por cocinero.
+ * Diagrama: Carrito. UN carrito activo por cliente.
  *
- * El indice unico sobre (clienteId, cocineroId) implementa a nivel de base la
- * regla de negocio "un pedido no puede mezclar platos de cocineros distintos":
- * si el cliente agrega un plato de otro cocinero, se abre un carrito separado.
+ * El indice unico sobre `clienteId` implementa a nivel de base la regla de
+ * negocio "un pedido no puede mezclar platos de cocineros distintos":
+ * `cocineroId` queda como columna del carrito y, mientras exista, todo lo que
+ * se agregue tiene que ser de ese cocinero.
+ *
+ * CORREGIDO EL 2026-08-18. Antes el indice era sobre (clienteId, cocineroId) y
+ * este comentario decia que agregar un plato de otro cocinero "abre un carrito
+ * separado". El criterio de aceptacion de US-EXP-05 dice lo contrario: hay que
+ * preguntarle al cliente "Tu carrito tiene platos de otro cocinero. Queres
+ * vaciarlo y comenzar uno nuevo?" y, si confirma, VACIAR el anterior. Con dos
+ * carritos conviviendo esa pregunta no tendria sentido.
  */
 export const carrito = pgTable(
   'carrito',
@@ -161,9 +169,7 @@ export const carrito = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (t) => [
-    uniqueIndex('carrito_cliente_cocinero_uq').on(t.clienteId, t.cocineroId),
-  ],
+  (t) => [uniqueIndex('carrito_cliente_uq').on(t.clienteId)],
 ).enableRLS();
 
 /**

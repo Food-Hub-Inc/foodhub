@@ -1,6 +1,7 @@
 import {
   and,
   asc,
+  avg,
   count,
   countDistinct,
   desc,
@@ -12,7 +13,13 @@ import {
   sql,
   type SQL,
 } from 'drizzle-orm';
-import { categoria, itemPedido, pedido, publicacion } from '@foodhub/db';
+import {
+  categoria,
+  itemPedido,
+  pedido,
+  publicacion,
+  resena,
+} from '@foodhub/db';
 import {
   MENSAJES_PUBLICACION,
   PUBLICACIONES_POR_PAGINA,
@@ -124,6 +131,45 @@ function subconsultaCantidadPedidos() {
 }
 
 // ---------------------------------------------------------------------------
+// Valoracion promedio por publicacion
+// ---------------------------------------------------------------------------
+
+/**
+ * Subconsulta que promedia, por publicacion, sus resenas VISIBLE.
+ *
+ * Solo las visibles: la moderacion pasa una resena a OCULTA_MODERACION
+ * justamente para que deje de pesar en la reputacion, y las que el autor
+ * retira quedan en ELIMINADA_AUTOR. `resena_publicacion_idx` es un indice
+ * parcial con esa misma condicion, asi que la cubre entera.
+ *
+ * Agrupa DENTRO de la subconsulta, antes del LEFT JOIN del llamador, por el
+ * mismo motivo que `subconsultaCantidadPedidos`: asi el join nunca duplica una
+ * fila de publicacion.
+ *
+ * El promedio se deja como viene -`numeric`, que Drizzle entrega como string, y
+ * `null` si la publicacion no tiene resenas-. No se le aplica `.mapWith(Number)`
+ * a proposito: `Number(null)` es 0, y un plato sin resenas quedaria mostrando
+ * una valoracion de cero en vez de "sin calificaciones". La conversion la hace
+ * `aPublicacionListado`, que si distingue los dos casos.
+ */
+function subconsultaValoracion() {
+  const valoracionPorPublicacion = db
+    .select({
+      publicacionId: resena.publicacionId,
+      promedio: avg(resena.calificacion).as('valoracion_promedio'),
+    })
+    .from(resena)
+    .where(eq(resena.estadoResena, 'VISIBLE'))
+    .groupBy(resena.publicacionId)
+    .as('valoracion_por_publicacion');
+
+  return {
+    tabla: valoracionPorPublicacion,
+    promedio: valoracionPorPublicacion.promedio,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Orden del listado (US-PUB-05, desplegable "Ordenar por")
 // ---------------------------------------------------------------------------
 
@@ -165,6 +211,8 @@ interface FilaListado {
   categoriaNombre: string;
   categoriaImagenPredeterminadaUrl: string | null;
   cantidadPedidos: number;
+  /** `numeric` de PostgreSQL: llega como string, o `null` si no hay resenas. */
+  valoracionPromedio: string | null;
 }
 
 interface FilaDetalle extends FilaListado {
@@ -186,10 +234,10 @@ function aPublicacionListado(fila: FilaListado): PublicacionListado {
       imagenPredeterminadaUrl: fila.categoriaImagenPredeterminadaUrl,
     },
     cantidadPedidos: fila.cantidadPedidos,
-    // Siempre null: ver el comentario de `publicacionListadoSchema` en
-    // packages/shared (defecto de diseno del modelo de datos, fuera de
-    // alcance del modulo de Publicaciones).
-    valoracionPromedio: null,
+    // `null` (sin resenas) y 0 son cosas distintas, por eso la comparacion
+    // explicita en vez de un `Number(fila.valoracionPromedio) || null`.
+    valoracionPromedio:
+      fila.valoracionPromedio === null ? null : Number(fila.valoracionPromedio),
     fechaCreacion: fila.fechaCreacion.toISOString(),
   };
 }
@@ -233,15 +281,21 @@ export async function listarPublicacionesPropias(
   const filtro = armarFiltroPublicaciones(cocineroId, filtros);
   const { tabla: pedidosPorPublicacion, cantidad: cantidadPedidos } =
     subconsultaCantidadPedidos();
+  const { tabla: valoracionPorPublicacion, promedio: valoracionPromedio } =
+    subconsultaValoracion();
 
   const [filas, [totalizador]] = await Promise.all([
     db
-      .select({ ...columnasComunes, cantidadPedidos })
+      .select({ ...columnasComunes, cantidadPedidos, valoracionPromedio })
       .from(publicacion)
       .innerJoin(categoria, eq(categoria.id, publicacion.categoriaId))
       .leftJoin(
         pedidosPorPublicacion,
         eq(pedidosPorPublicacion.publicacionId, publicacion.id),
+      )
+      .leftJoin(
+        valoracionPorPublicacion,
+        eq(valoracionPorPublicacion.publicacionId, publicacion.id),
       )
       .where(filtro)
       .orderBy(...ordenarPor(filtros.orden, cantidadPedidos))
@@ -271,6 +325,8 @@ export async function obtenerPublicacionPropia(
 ): Promise<PublicacionDetalle> {
   const { tabla: pedidosPorPublicacion, cantidad: cantidadPedidos } =
     subconsultaCantidadPedidos();
+  const { tabla: valoracionPorPublicacion, promedio: valoracionPromedio } =
+    subconsultaValoracion();
 
   const [fila] = await db
     .select({
@@ -279,12 +335,17 @@ export async function obtenerPublicacionPropia(
       tiempoEstimadoPreparacion: publicacion.tiempoEstimadoPreparacion,
       fechaUltimaEdicion: publicacion.fechaUltimaEdicion,
       cantidadPedidos,
+      valoracionPromedio,
     })
     .from(publicacion)
     .innerJoin(categoria, eq(categoria.id, publicacion.categoriaId))
     .leftJoin(
       pedidosPorPublicacion,
       eq(pedidosPorPublicacion.publicacionId, publicacion.id),
+    )
+    .leftJoin(
+      valoracionPorPublicacion,
+      eq(valoracionPorPublicacion.publicacionId, publicacion.id),
     )
     .where(
       and(

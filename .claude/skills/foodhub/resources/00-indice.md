@@ -84,7 +84,7 @@ que usan las pantallas (`PAN-`) y los mensajes de commit.
 
 | Código    | Historia                                                          |
 | --------- | ----------------------------------------------------------------- |
-| US-RES-01 | Dejar calificación con estrellas y reseña de un pedido completado |
+| US-RES-01 | Dejar calificación con estrellas y reseña de un plato pedido       |
 | US-RES-02 | Calificar al cliente (cocinero)                                   |
 | US-RES-03 | Ver reseñas y promedio en el perfil público del cocinero          |
 | US-RES-04 | Reaccionar a una reseña                                           |
