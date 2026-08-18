@@ -24,6 +24,7 @@ import { motivosCancelacionRouter } from './modules/configuracion/motivosCancela
 import { parametrosSistemaRouter } from './modules/configuracion/parametrosSistema.router.js';
 import { terminosRouter } from './modules/configuracion/terminos.router.js';
 import { seguridadRouter } from './modules/seguridad/seguridad.router.js';
+import { soporteRouter } from './modules/soporte/soporte.router.js';
 import { usuariosRouter } from './modules/usuarios/usuarios.router.js';
 
 /**
@@ -125,6 +126,7 @@ export function crearApp(): Express {
   app.use(`${PREFIJO_API}/almacenamiento`, almacenamientoRouter);
   app.use(`${PREFIJO_API}/catalogo`, catalogoRouter);
   app.use(`${PREFIJO_API}/publicaciones`, publicacionesRouter);
+  app.use(`${PREFIJO_API}/soporte`, soporteRouter);
 
   // Modulo de Configuracion y parametros (US-CFG-01 a US-CFG-04, PAN-ADM-04).
   app.use(`${PREFIJO_API}/configuracion/categorias`, categoriasRouter);

@@ -402,3 +402,17 @@ export function IconoInformacion(props: PropsIcono) {
     </Lienzo>
   );
 }
+
+/** Fuera de la guía: acceso al hub de Ayuda y soporte. */
+export function IconoAyuda(props: PropsIcono) {
+  return (
+    <Lienzo {...props}>
+      <Circle cx={12} cy={12} r={8.25} {...TRAZO} />
+      <Path
+        d="M9.75 9.25a2.35 2.35 0 1 1 3.55 2.03c-.8.47-1.3 1-1.3 2.22"
+        {...TRAZO}
+      />
+      <Path d="M12 16.75h.01" {...TRAZO} />
+    </Lienzo>
+  );
+}

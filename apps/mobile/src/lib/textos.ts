@@ -204,6 +204,26 @@ export const TEXTOS_PERFIL = {
   reintentar: 'Reintentar',
 } as const;
 
+/** US-AYU-02 · Hub y pantalla de preguntas frecuentes. */
+export const TEXTOS_AYUDA = {
+  titulo: 'Ayuda y soporte',
+  preguntasFrecuentes: 'Preguntas frecuentes',
+  manual: 'Manual de usuario',
+  contacto: 'Contactar al soporte',
+  legal: 'Información legal',
+  buscar: 'Buscar preguntas',
+  buscarPlaceholder: 'Escribí una palabra o frase',
+  sinPreguntasTitulo: 'Todavía no hay preguntas frecuentes',
+  sinPreguntasSubtitulo:
+    'Estamos preparando contenido de ayuda para resolver tus dudas.',
+  manualPendiente:
+    'El manual reúne instrucciones paso a paso para usar FoodHub según tu rol.',
+  contactoPendiente:
+    'El formulario permite enviar una consulta, sugerencia o reporte al equipo.',
+  legalPendiente:
+    'Esta sección reúne los términos, condiciones y datos de contacto de FoodHub.',
+} as const;
+
 /** Textos del shell de navegación (barras de tabs y header). */
 export const TEXTOS_NAVEGACION = {
   inicio: 'Inicio',
@@ -594,5 +614,23 @@ export const PANTALLAS_PENDIENTES = {
     titulo: 'Notificaciones',
     descripcion:
       'El historial de avisos de la aplicación: cambios de estado de tus pedidos, mensajes nuevos y reseñas recibidas.',
+  },
+  manualAyuda: {
+    codigo: 'PAN-AYU-01',
+    modulo: 'Ayuda y soporte',
+    titulo: 'Manual de usuario',
+    descripcion: TEXTOS_AYUDA.manualPendiente,
+  },
+  contactoAyuda: {
+    codigo: 'PAN-AYU-03',
+    modulo: 'Ayuda y soporte',
+    titulo: 'Contactar al soporte',
+    descripcion: TEXTOS_AYUDA.contactoPendiente,
+  },
+  legalAyuda: {
+    codigo: 'PAN-AYU-04',
+    modulo: 'Ayuda y soporte',
+    titulo: 'Información legal',
+    descripcion: TEXTOS_AYUDA.legalPendiente,
   },
 } as const;

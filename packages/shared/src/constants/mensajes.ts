@@ -320,6 +320,19 @@ export const MENSAJES_PUBLICACION = {
 } as const;
 
 /**
+ * Mensajes literales de US-AYU-02. Se comparten para que la app no altere la
+ * redacción que luego verifican las pruebas funcionales.
+ */
+export const MENSAJES_AYUDA = {
+  preguntaUtil: '¿Te resultó útil esta respuesta?',
+  votoUtil: 'Sí',
+  votoNoUtil: 'No',
+  graciasPorTuOpinion: 'Gracias por tu opinión',
+  sinResultados: 'No encontramos preguntas que coincidan con tu búsqueda.',
+  contactarSoporte: 'Contactar al soporte',
+} as const;
+
+/**
  * Modulo de Exploracion y busqueda (US-EXP-01 a US-EXP-07).
  *
  * Los estados vacios de las cinco pantallas, los tres dialogos de confirmacion
