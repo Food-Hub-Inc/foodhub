@@ -361,6 +361,129 @@ export const TEXTOS_PUBLICACIONES = {
 } as const;
 
 /**
+ * Módulo de Exploración y búsqueda (US-EXP-01 a US-EXP-07) · PAN-EXP-01 a
+ * PAN-EXP-05 y PAN-PED-01.
+ *
+ * Los estados vacíos, los diálogos de confirmación del carrito, las
+ * confirmaciones de favorito y los avisos de disponibilidad son LITERALES de los
+ * criterios de aceptación y viven en `MENSAJES_EXPLORACION` (`@foodhub/shared`),
+ * no acá. Lo que sigue es el resto de la copia: títulos, rótulos de filtro,
+ * etiquetas de accesibilidad y las tres o cuatro frases que la documentación
+ * describe sin fijar ("advertencia visual indicando stock reducido", "botón de
+ * acceso al feed", "acceso directo a la configuración del dispositivo").
+ */
+export const TEXTOS_EXPLORACION = {
+  // --- Feed (PAN-EXP-01) -----------------------------------------------------
+  /** [PROPIO] La documentación no fija el placeholder del buscador. */
+  buscarPlaceholder: 'Buscar platos o categorías',
+  /** [PROPIO] Título de la hoja de filtros y etiqueta accesible de su ícono. */
+  filtros: 'Filtros',
+  cerrar: 'Cerrar',
+  /**
+   * [PROPIO] US-EXP-01 pide "distancia aproximada" en la tarjeta sin fijar el
+   * formato. Se abrevia porque compite por el ancho con el nombre del cocinero.
+   */
+  distancia: (km: number) => `a ${km.toLocaleString('es-AR')} km`,
+
+  // --- Filtros (PAN-EXP-03) --------------------------------------------------
+  categoria: 'Categoría',
+  rangoDePrecio: 'Rango de precio',
+  precioMinimo: 'Mínimo',
+  precioMaximo: 'Máximo',
+  /** [PROPIO] Rótulos de los dos filtros que US-EXP-03 nombra sin dar etiqueta. */
+  distanciaMaxima: 'Distancia máxima',
+  valoracionMinima: 'Valoración mínima',
+  /** [PROPIO] Opciones del filtro de distancia, en kilómetros. */
+  distanciaOpcion: (km: number) => `${String(km)} km`,
+  /** [PROPIO] Opciones del filtro de valoración. */
+  valoracionOpcion: (estrellas: number) => `${String(estrellas)}+`,
+  /** [PROPIO] Etiqueta accesible del chip que quita un filtro. */
+  quitarFiltro: (filtro: string) => `Quitar filtro ${filtro}`,
+  /** [PROPIO] Cómo se nombra cada filtro activo en su chip. */
+  chipPrecio: (minimo: string, maximo: string) => `$${minimo} – $${maximo}`,
+  chipPrecioDesde: (minimo: string) => `desde $${minimo}`,
+  chipPrecioHasta: (maximo: string) => `hasta $${maximo}`,
+
+  // --- Mapa (PAN-EXP-02) -----------------------------------------------------
+  etiquetaMapa: 'Mapa de cocineros cercanos',
+  /**
+   * [PROPIO] US-EXP-02 pide "acceso directo a la configuración del dispositivo"
+   * cuando el permiso está denegado, sin fijar el texto del botón.
+   */
+  abrirConfiguracion: 'Abrir configuración',
+  /** [PROPIO] Contenido de la tarjeta emergente del marcador. */
+  platosDisponibles: (cantidad: number) =>
+    `${String(cantidad)} plato${cantidad === 1 ? '' : 's'} disponible${cantidad === 1 ? '' : 's'}`,
+  /** [PROPIO] Etiqueta accesible de un grupo de marcadores (clustering). */
+  cocinerosAgrupados: (cantidad: number) =>
+    `${String(cantidad)} cocineros en esta zona`,
+
+  // --- Perfil del cocinero (PAN-EXP-04) --------------------------------------
+  /** [PROPIO] Título de la pantalla; la maquetación muestra el nombre, no un rótulo. */
+  tituloPerfil: 'Perfil del cocinero',
+  sobreElCocinero: 'Sobre el cocinero',
+  susPlatos: 'Sus platos',
+  /** [PROPIO] Acompaña al promedio de estrellas del perfil. */
+  cantidadResenas: (cantidad: number) =>
+    `${String(cantidad)} reseña${cantidad === 1 ? '' : 's'}`,
+  /** [PROPIO] Etiquetas accesibles del botón de favorito, en sus dos estados. */
+  guardarFavorito: 'Guardar en favoritos',
+  quitarFavorito: 'Quitar de favoritos',
+
+  // --- Detalle del plato (PAN-EXP-05) ----------------------------------------
+  descripcion: 'Descripción',
+  tiempoEstimado: 'Tiempo estimado de preparación',
+  tiempoEstimadoMinutos: (minutos: number) => `${String(minutos)} min`,
+  /**
+   * [PROPIO] US-EXP-05 pide, para "Últimas unidades", "una advertencia visual
+   * indicando stock reducido" sin fijar el texto.
+   */
+  advertenciaUltimasUnidades: 'Quedan pocas unidades de este plato.',
+  /** [PROPIO] Botón único de `DialogoExito`, igual que en Publicaciones. */
+  aceptar: 'Aceptar',
+
+  // --- Favoritos ------------------------------------------------------------
+  /** [PROPIO] Etiqueta accesible del acceso a "Mis favoritos" desde el feed. */
+  irAFavoritos: 'Ver mis favoritos',
+} as const;
+
+/**
+ * Carrito (US-EXP-07) · PAN-PED-01.
+ *
+ * Bloque propio y no parte de `TEXTOS_EXPLORACION`: la pantalla pertenece al
+ * módulo de Pedidos en la maquetación, y US-PED-01 va a sumar su copia acá al
+ * lado en lugar de dentro de la de exploración.
+ */
+export const TEXTOS_CARRITO = {
+  /** [PROPIO] Título de la pantalla. */
+  titulo: 'Tu pedido',
+  total: 'Total',
+  /**
+   * [PROPIO] US-EXP-07 muestra el tiempo estimado "como referencia (ej. 'Listo
+   * en 25–30 min')". El ejemplo del documento usa un rango; con un solo valor no
+   * tiene sentido repetirlo dos veces, así que hay dos formas.
+   */
+  listoEn: (minutos: number) => `Listo en ${String(minutos)} min`,
+  listoEnRango: (minimo: number, maximo: number) =>
+    `Listo en ${String(minimo)}–${String(maximo)} min`,
+  /**
+   * [PROPIO] US-EXP-07 pide, en el estado vacío, "un botón de acceso al feed"
+   * sin fijar su texto.
+   */
+  explorarPlatos: 'Explorar platos',
+  /** [PROPIO] Etiquetas accesibles del selector de cantidad. */
+  sumarUnidad: 'Sumar una unidad',
+  restarUnidad: 'Restar una unidad',
+  quitarDelCarrito: 'Quitar del carrito',
+  /** [PROPIO] Etiqueta accesible del botón flotante y su contador. */
+  irAlCarrito: 'Ir al carrito',
+  unidadesEnCarrito: (cantidad: number) =>
+    `${String(cantidad)} unidad${cantidad === 1 ? '' : 'es'} en el carrito`,
+  /** [PROPIO] Placeholder del campo de notas, cuyo rótulo sí es literal. */
+  notasPlaceholder: 'Ej.: sin sal, tocar el timbre del 2.º B',
+} as const;
+
+/**
  * Pantallas todavía no codificadas.
  *
  * Cada una anuncia su código PAN, su módulo y qué va a hacer: un placeholder
@@ -382,20 +505,6 @@ export const TEXTOS_PENDIENTE = {
  * "pendiente" porque en la Etapa 5 todas las pantallas se dibujan terminadas.
  */
 export const PANTALLAS_PENDIENTES = {
-  feed: {
-    codigo: 'PAN-EXP-01',
-    modulo: 'Exploración y búsqueda',
-    titulo: 'Inicio',
-    descripcion:
-      'El feed de platos cerca tuyo, con buscador, chips de categoría y las publicaciones disponibles ordenadas por cercanía.',
-  },
-  mapa: {
-    codigo: 'PAN-EXP-02',
-    modulo: 'Exploración y búsqueda',
-    titulo: 'Mapa',
-    descripcion:
-      'El mapa de cocineros de tu zona, con su distancia y el acceso a su perfil público.',
-  },
   pedidosCliente: {
     codigo: 'PAN-PED-05',
     modulo: 'Pedidos',
