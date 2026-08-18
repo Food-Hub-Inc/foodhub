@@ -16,6 +16,8 @@ import { almacenamientoRouter } from './modules/almacenamiento/almacenamiento.ro
 import { authRouter } from './modules/auth/auth.router.js';
 import { auditoriaRouter } from './modules/auditoria/auditoria.router.js';
 import { catalogoRouter } from './modules/catalogo/catalogo.router.js';
+import { carritoRouter } from './modules/exploracion/carrito.router.js';
+import { exploracionRouter } from './modules/exploracion/exploracion.router.js';
 import { publicacionesRouter } from './modules/publicaciones/publicaciones.router.js';
 import { seguridadRouter } from './modules/seguridad/seguridad.router.js';
 import { usuariosRouter } from './modules/usuarios/usuarios.router.js';
@@ -119,6 +121,13 @@ export function crearApp(): Express {
   app.use(`${PREFIJO_API}/almacenamiento`, almacenamientoRouter);
   app.use(`${PREFIJO_API}/catalogo`, catalogoRouter);
   app.use(`${PREFIJO_API}/publicaciones`, publicacionesRouter);
+
+  // Modulos funcionales: exploracion y busqueda (US-EXP-01 a US-EXP-07).
+  // El carrito va en su propio prefijo y no bajo /exploracion: es un recurso
+  // del cliente, no un resultado de explorar, y su pantalla (PAN-PED-01)
+  // pertenece al modulo de Pedidos, que va a leer de estas mismas rutas.
+  app.use(`${PREFIJO_API}/exploracion`, exploracionRouter);
+  app.use(`${PREFIJO_API}/carrito`, carritoRouter);
 
   // A medida que avance la Etapa 6 se montan aca los routers de cada modulo:
   //   app.use(`${PREFIJO_API}/pedidos`, pedidosRouter);
