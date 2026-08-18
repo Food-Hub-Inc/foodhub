@@ -319,6 +319,143 @@ export const MENSAJES_PUBLICACION = {
     'No se encontraron publicaciones con esos criterios. Probá modificar los filtros o la búsqueda.',
 } as const;
 
+/**
+ * Modulo de Exploracion y busqueda (US-EXP-01 a US-EXP-07).
+ *
+ * Los estados vacios de las cinco pantallas, los tres dialogos de confirmacion
+ * del carrito, las dos confirmaciones de favorito y los avisos de
+ * disponibilidad transcriben caracter por caracter la tabla de criterios de
+ * aceptacion de la seccion 2.2.1.3.3 del documento de proyecto.
+ *
+ * Un texto que este bloque NO repite: "No se encontraron platos con esos
+ * criterios..." es propio de este modulo y distinto de
+ * `MENSAJES_PUBLICACION.sinResultados` (que habla de publicaciones y de
+ * filtros del cocinero), asi que van separados a proposito.
+ */
+export const MENSAJES_EXPLORACION = {
+  // --- Feed (US-EXP-01) ------------------------------------------------------
+  /** LITERAL - US-EXP-01, no hay publicaciones activas en la zona del cliente. */
+  feedVacio: 'No hay publicaciones disponibles cerca de vos por ahora.',
+
+  // --- Mapa (US-EXP-02) -----------------------------------------------------
+  /**
+   * LITERAL - US-EXP-02, el cliente no otorgo permisos de ubicacion. Sin punto
+   * final: asi esta escrito en el criterio de aceptacion.
+   */
+  sinPermisoUbicacion: 'Activá la ubicación para ver cocineros cerca tuyo',
+
+  /** LITERAL - US-EXP-02, no hay cocineros en la zona visible del mapa. */
+  mapaSinCocineros: 'No hay cocineros disponibles en esta área.',
+
+  /** LITERAL - US-EXP-02, boton de la tarjeta emergente del marcador. */
+  verPerfil: 'Ver perfil',
+
+  // --- Filtros y busqueda (US-EXP-03) ---------------------------------------
+  /** LITERAL - US-EXP-03, busqueda o filtros combinados sin coincidencias. */
+  sinResultados:
+    'No se encontraron platos con esos criterios. Probá ajustando los filtros.',
+
+  /** LITERAL - US-EXP-03, boton que borra los filtros y el texto del buscador. */
+  limpiarFiltros: 'Limpiar filtros',
+
+  // --- Perfil publico del cocinero (US-EXP-04) ------------------------------
+  /** LITERAL - US-EXP-04, el cocinero no tiene publicaciones activas. */
+  cocineroSinPlatos: 'Este cocinero no tiene platos disponibles por ahora.',
+
+  /**
+   * LITERAL - US-EXP-04, el cocinero todavia no tiene resenas. Reemplaza al
+   * promedio de estrellas; no se muestra junto a un 0.
+   */
+  cocineroSinResenas: 'Sin calificaciones aún',
+
+  /** LITERAL - US-EXP-04, boton que abre la mensajeria con el cocinero. */
+  enviarMensaje: 'Enviar mensaje',
+
+  // --- Detalle de la publicacion (US-EXP-05) --------------------------------
+  /** LITERAL - US-EXP-05, boton principal del detalle. */
+  agregarAlCarrito: 'Agregar al carrito',
+
+  /**
+   * LITERAL - US-EXP-05, indicacion que acompana al boton deshabilitado cuando
+   * el plato esta "No disponible".
+   */
+  sinUnidadesDisponibles: 'Sin unidades disponibles',
+
+  /** LITERAL - US-EXP-05, el carrito vigente es de otro cocinero. */
+  carritoDeOtroCocinero:
+    'Tu carrito tiene platos de otro cocinero. ¿Querés vaciarlo y comenzar uno nuevo?',
+
+  /** LITERAL - US-EXP-05, boton que vacia el carrito anterior y agrega el plato. */
+  carritoDeOtroCocineroConfirmar: 'Sí, vaciar',
+
+  /** LITERAL - US-EXP-05, boton que no realiza ningun cambio. */
+  carritoDeOtroCocineroCancelar: 'No, cancelar',
+
+  /**
+   * LITERAL - US-EXP-05, el plato ya estaba en el carrito y se incremento en 1.
+   * El criterio escribe el placeholder como "[nro Cant actual en el carrito]";
+   * esta funcion interpola el valor real en ese lugar.
+   */
+  cantidadActualizada: (cantidad: number) =>
+    `Cantidad actualizada en tu carrito. Cantidad actual ${String(cantidad)}.`,
+
+  // --- Favoritos (US-EXP-06) ------------------------------------------------
+  /** LITERAL - US-EXP-06, confirmacion breve al guardar un favorito. */
+  favoritoAgregado: 'Guardado en favoritos',
+
+  /** LITERAL - US-EXP-06, confirmacion al quitar un favorito. */
+  favoritoQuitado: 'Eliminado de favoritos',
+
+  /** LITERAL - US-EXP-06, titulo de la seccion y de sus dos pestanas. */
+  misFavoritos: 'Mis favoritos',
+  pestanaCocineros: 'Cocineros',
+  pestanaPublicaciones: 'Publicaciones',
+
+  /**
+   * LITERAL - US-EXP-06, pestana sin favoritos guardados.
+   *
+   * El criterio lo escribe como "Todavía no guardaste ningún cocinero/plato
+   * como favorito.": la barra es la notacion de las dos pestanas, no texto a
+   * mostrar, asi que se transcribe una variante por pestana. Es la unica
+   * interpretacion de este bloque y queda anotada como tal.
+   */
+  sinCocinerosFavoritos: 'Todavía no guardaste ningún cocinero como favorito.',
+  sinPublicacionesFavoritas: 'Todavía no guardaste ningún plato como favorito.',
+
+  /** LITERAL - US-EXP-06, filtro "Mis favoritos" sin cocineros guardados. */
+  sinFavoritosParaFiltrar:
+    'Guardá cocineros como favoritos para filtrar el feed.',
+
+  // --- Carrito (US-EXP-07) --------------------------------------------------
+  /** LITERAL - US-EXP-07, campo de texto opcional de la pantalla del carrito. */
+  notasParaElCocinero: 'Notas para el cocinero',
+
+  /** LITERAL - US-EXP-07, confirmacion al quitar un item (boton "x" o "-" en 1). */
+  quitarItemMensaje: '¿Querés quitar este plato del carrito?',
+  quitarItemConfirmar: 'Sí, quitar',
+  quitarItemCancelar: 'Cancelar',
+
+  /** LITERAL - US-EXP-07, estado vacio del carrito (PAN-PED-01.1). */
+  carritoVacio: 'Tu carrito está vacío. Explorá los platos disponibles.',
+
+  /** LITERAL - US-EXP-07, boton y confirmacion de vaciado total. */
+  vaciarCarrito: 'Vaciar carrito',
+  vaciarCarritoMensaje: '¿Querés vaciar todo el carrito?',
+  vaciarCarritoConfirmar: 'Sí, vaciar',
+  vaciarCarritoCancelar: 'Cancelar',
+
+  /** LITERAL - US-EXP-07, boton que lleva a la confirmacion del pedido. */
+  confirmarPedido: 'Confirmar pedido',
+
+  /**
+   * LITERAL - US-EXP-07, un plato del carrito paso a "No disponible" y se
+   * quito solo. El criterio lo redacta en singular; la interfaz lo repite por
+   * cada plato afectado en vez de pluralizarlo por su cuenta.
+   */
+  itemQuitadoPorNoDisponible:
+    'Este plato ya no está disponible y fue quitado de tu carrito.',
+} as const;
+
 /** Modulo de Configuracion y parametros (US-CFG-01 a US-CFG-06). */
 export const MENSAJES_CONFIGURACION = {
   /** LITERAL - US-CFG-01, campo obligatorio del formulario de categoria. */

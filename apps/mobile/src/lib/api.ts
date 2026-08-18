@@ -196,7 +196,7 @@ async function leerCuerpo(respuesta: Response): Promise<unknown> {
 }
 
 async function conCuerpo<T>(
-  metodo: 'POST' | 'PATCH' | 'DELETE',
+  metodo: 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   ruta: string,
   datos?: unknown,
   token?: string,
@@ -226,6 +226,19 @@ export const api = {
 
   enviar<T>(ruta: string, datos?: unknown, token?: string): Promise<T> {
     return conCuerpo<T>('POST', ruta, datos, token);
+  },
+
+  /**
+   * PUT. Lo usan las altas IDEMPOTENTES: marcar un favorito (US-EXP-06) deja el
+   * mismo estado la primera vez y la quinta, y el indice unico de la base lo
+   * garantiza. Con POST, un doble toque del corazon tendria que responder un
+   * error que al usuario no le dice nada.
+   *
+   * Sin cuerpo en el caso normal: el id del recurso va en la ruta y el del
+   * cliente sale de la sesion, asi que no queda nada que mandar.
+   */
+  reemplazar<T>(ruta: string, datos?: unknown): Promise<T> {
+    return conCuerpo<T>('PUT', ruta, datos);
   },
 
   modificar<T>(ruta: string, datos: unknown, token?: string): Promise<T> {

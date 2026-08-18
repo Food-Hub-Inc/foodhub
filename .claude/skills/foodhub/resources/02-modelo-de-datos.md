@@ -109,8 +109,11 @@ ninguna distancia real.
 
 - `Favorito` (abstracta) se traduce a **dos tablas concretas**, así cada FK
   puede ser `NOT NULL` y la base impide por sí sola un favorito huérfano.
-- `carrito` tiene índice único sobre `(cliente_id, cocinero_id)`: es la regla
-  "un pedido, un cocinero" implementada a nivel de base.
+- `carrito` tiene índice único sobre `(cliente_id)`: **un solo carrito activo por
+  cliente**. Es la regla "un pedido, un cocinero" implementada a nivel de base —
+  mientras el carrito exista, todo lo que se agregue tiene que ser de
+  `carrito.cocinero_id`. Agregar un plato de otro cocinero pide confirmación y
+  reemplaza el carrito (US-EXP-05).
 
 ### Pedidos — `schema/pedidos.ts`
 
@@ -135,11 +138,28 @@ CREADO ──→ ACEPTADO ──→ LISTO ──→ COMPLETADO
 `resena` · `calificacion_cocinero` · `reaccion_resena` · `respuesta_cocinero` ·
 `reporte_resena`
 
-- `resena.pedido_id` y `calificacion_cocinero.pedido_id` son **UNIQUE**: una
-  reseña por pedido en cada dirección. Sin eso se podría inflar o hundir la
-  reputación de alguien repitiendo la reseña sobre la misma transacción.
+- **Ninguna de las dos tablas referencia `pedido`.** La reseña del cliente cuelga
+  de `publicacion` (`resena.publicacion_id`): es **por plato**. La calificación
+  del cocinero cuelga solo del par de usuarios. El derecho a opinar se valida por
+  consulta, no por FK.
+- `resena_cliente_publicacion_uq` sobre `(cliente_res_id, publicacion_id)`: una
+  reseña por cliente y plato. Si vuelve a pedirlo, **edita** la que ya tiene.
+- `calificacion_cocinero_uq` sobre `(cocinero_evaluador_id, cliente_evaluado_id)`:
+  una calificación por par, editable.
+- Sin esas dos restricciones se podría inflar o hundir la reputación de alguien
+  repitiendo la reseña.
+- `resena.cocinero_res_id` está desnormalizado respecto de
+  `publicacion.cocinero_id`: sostiene el promedio del perfil público sin un join
+  extra, y una publicación no se transfiere de cocinero.
 - Calificación entre 1 y 5, verificado por CHECK.
-- Solo las reseñas `VISIBLE` promedian en el perfil público.
+- Solo las reseñas `VISIBLE` promedian, tanto en el perfil público del cocinero
+  (`resena_cocinero_idx`) como en el plato (`resena_publicacion_idx`).
+
+> **Cambio del 2026-08-18.** Antes la reseña era por pedido. Se cambió porque
+> US-EXP-03 (filtro por valoración mínima) y US-EXP-05 (promedio en el detalle
+> del plato) exigen la valoración de UNA publicación, y con `resena` colgada de
+> `pedido` era imposible: un pedido puede incluir varios platos del mismo
+> cocinero. El diagrama `DG12082026_V5` refleja este cambio.
 
 ### Mensajería — `schema/mensajeria.ts`
 

@@ -27,6 +27,10 @@ import {
   type PublicacionListado,
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
+import {
+  aValoracion,
+  subconsultaValoracionPorPublicacion,
+} from '../../lib/valoraciones.js';
 import { AppError, noEncontrado } from '../../middleware/error.middleware.js';
 import { limpiarFotoDePlatoAnterior } from '../almacenamiento/almacenamiento.service.js';
 
@@ -165,6 +169,8 @@ interface FilaListado {
   categoriaNombre: string;
   categoriaImagenPredeterminadaUrl: string | null;
   cantidadPedidos: number;
+  /** `numeric` de PostgreSQL: llega como string, o `null` si no hay resenas. */
+  valoracionPromedio: string | null;
 }
 
 interface FilaDetalle extends FilaListado {
@@ -186,10 +192,7 @@ function aPublicacionListado(fila: FilaListado): PublicacionListado {
       imagenPredeterminadaUrl: fila.categoriaImagenPredeterminadaUrl,
     },
     cantidadPedidos: fila.cantidadPedidos,
-    // Siempre null: ver el comentario de `publicacionListadoSchema` en
-    // packages/shared (defecto de diseno del modelo de datos, fuera de
-    // alcance del modulo de Publicaciones).
-    valoracionPromedio: null,
+    valoracionPromedio: aValoracion(fila.valoracionPromedio),
     fechaCreacion: fila.fechaCreacion.toISOString(),
   };
 }
@@ -233,15 +236,21 @@ export async function listarPublicacionesPropias(
   const filtro = armarFiltroPublicaciones(cocineroId, filtros);
   const { tabla: pedidosPorPublicacion, cantidad: cantidadPedidos } =
     subconsultaCantidadPedidos();
+  const { tabla: valoracionPorPublicacion, promedio: valoracionPromedio } =
+    subconsultaValoracionPorPublicacion();
 
   const [filas, [totalizador]] = await Promise.all([
     db
-      .select({ ...columnasComunes, cantidadPedidos })
+      .select({ ...columnasComunes, cantidadPedidos, valoracionPromedio })
       .from(publicacion)
       .innerJoin(categoria, eq(categoria.id, publicacion.categoriaId))
       .leftJoin(
         pedidosPorPublicacion,
         eq(pedidosPorPublicacion.publicacionId, publicacion.id),
+      )
+      .leftJoin(
+        valoracionPorPublicacion,
+        eq(valoracionPorPublicacion.publicacionId, publicacion.id),
       )
       .where(filtro)
       .orderBy(...ordenarPor(filtros.orden, cantidadPedidos))
@@ -271,6 +280,8 @@ export async function obtenerPublicacionPropia(
 ): Promise<PublicacionDetalle> {
   const { tabla: pedidosPorPublicacion, cantidad: cantidadPedidos } =
     subconsultaCantidadPedidos();
+  const { tabla: valoracionPorPublicacion, promedio: valoracionPromedio } =
+    subconsultaValoracionPorPublicacion();
 
   const [fila] = await db
     .select({
@@ -279,12 +290,17 @@ export async function obtenerPublicacionPropia(
       tiempoEstimadoPreparacion: publicacion.tiempoEstimadoPreparacion,
       fechaUltimaEdicion: publicacion.fechaUltimaEdicion,
       cantidadPedidos,
+      valoracionPromedio,
     })
     .from(publicacion)
     .innerJoin(categoria, eq(categoria.id, publicacion.categoriaId))
     .leftJoin(
       pedidosPorPublicacion,
       eq(pedidosPorPublicacion.publicacionId, publicacion.id),
+    )
+    .leftJoin(
+      valoracionPorPublicacion,
+      eq(valoracionPorPublicacion.publicacionId, publicacion.id),
     )
     .where(
       and(
