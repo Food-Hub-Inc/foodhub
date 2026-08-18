@@ -3,6 +3,7 @@ import { RutaProtegida } from './components/RutaProtegida.js';
 import { LayoutPanel } from './components/layout/LayoutPanel.js';
 import { RUTAS } from './lib/rutas.js';
 import { Auditoria } from './pages/auditoria/Auditoria.js';
+import { Configuracion } from './pages/configuracion/Configuracion.js';
 import { Login } from './pages/Login.js';
 import { NuevaPassword } from './pages/NuevaPassword.js';
 import { Proximamente } from './pages/Proximamente.js';
@@ -30,7 +31,8 @@ import { Usuarios } from './pages/usuarios/Usuarios.js';
  *   /                inicio del panel                             por codificar
  *   /moderacion      PAN-ADM-02 · moderación de contenido         por codificar
  *   /metricas        PAN-ADM-03 · métricas generales              por codificar
- *   /configuracion   PAN-ADM-04 · configuración del sistema       por codificar
+ *   /configuracion   PAN-ADM-04 · configuración del sistema       US-CFG-01 implementada;
+ *                    (categorías, motivos, parámetros, términos)  02 a 04 por codificar
  */
 export function App() {
   return (
@@ -97,17 +99,6 @@ function Metricas() {
       modulo="ADM · Panel de administración"
       pantalla="PAN-ADM-03"
       titulo="Métricas generales"
-    />
-  );
-}
-
-function Configuracion() {
-  return (
-    <Proximamente
-      historias="US-CFG-01 a US-CFG-04"
-      modulo="CFG · Configuración y parámetros"
-      pantalla="PAN-ADM-04"
-      titulo="Configuración del sistema"
     />
   );
 }

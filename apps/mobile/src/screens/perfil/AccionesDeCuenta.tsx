@@ -75,7 +75,7 @@ export function AccionesDeCuenta() {
         etiqueta={TEXTOS_PERFIL.configurarNotificaciones}
         icono={<IconoCampana className="text-text-secondary" size={20} />}
         onPress={() => {
-          router.push('/notificaciones');
+          router.push('/preferencias-notificaciones');
         }}
       />
 

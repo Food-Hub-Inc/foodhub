@@ -4,7 +4,7 @@ import {
   MENSAJES_PUBLICACION,
   MENSAJES_VALIDACION,
 } from '../constants/mensajes.js';
-import { categoriaListadoSchema } from './catalogo.schema.js';
+import { categoriaResumenSchema } from './catalogo.schema.js';
 
 /**
  * Contratos del modulo de Publicaciones (US-PUB-01 a US-PUB-05).
@@ -201,7 +201,7 @@ const publicacionBaseSchema = z.object({
   precio: z.string(),
   imagenUrl: z.url().nullable(),
   estadoPublicacion: z.enum(ESTADO_PUBLICACION),
-  categoria: categoriaListadoSchema,
+  categoria: categoriaResumenSchema,
 
   /**
    * Cuenta de pedidos con `estadoPedidoActual = 'COMPLETADO'` únicamente

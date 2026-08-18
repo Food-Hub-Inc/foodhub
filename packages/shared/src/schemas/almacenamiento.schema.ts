@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  MENSAJES_CONFIGURACION,
   MENSAJES_PUBLICACION,
   MENSAJES_USUARIO,
 } from '../constants/mensajes.js';
@@ -72,8 +73,33 @@ export const urlDeCargaSchema = z.object({
   urlPublica: z.url(),
 });
 
+/**
+ * Formatos e imagen de categoria (US-CFG-01, RF054): "Imagen representativa
+ * [Archivo de imagen] (maximo 2 MB, opcional)". El RF no acota los formatos
+ * admitidos, asi que se reutilizan los mismos tres que el resto de la
+ * plataforma en lugar de inventar una lista nueva.
+ */
+export const MAXIMO_IMAGEN_CATEGORIA_BYTES = 2 * 1024 * 1024;
+
+export const solicitarUrlDeCargaCategoriaSchema = z.object({
+  mimeType: z.enum(FORMATOS_IMAGEN_PERFIL, {
+    message: MENSAJES_CONFIGURACION.imagenCategoriaInvalida,
+  }),
+  tamano: z
+    .number()
+    .int()
+    .positive(MENSAJES_CONFIGURACION.imagenCategoriaInvalida)
+    .max(
+      MAXIMO_IMAGEN_CATEGORIA_BYTES,
+      MENSAJES_CONFIGURACION.imagenCategoriaInvalida,
+    ),
+});
+
 export type SolicitarUrlDeCargaInput = z.infer<
   typeof solicitarUrlDeCargaSchema
+>;
+export type SolicitarUrlDeCargaCategoriaInput = z.infer<
+  typeof solicitarUrlDeCargaCategoriaSchema
 >;
 export type UrlDeCarga = z.infer<typeof urlDeCargaSchema>;
 

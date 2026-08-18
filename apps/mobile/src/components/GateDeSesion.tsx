@@ -44,7 +44,8 @@ const INICIO_POR_ROL = {
   COCINERO: '/(cocinero)/platos',
 } as const;
 
-type GrupoDeRutas = '(auth)' | '(cliente)' | '(cocinero)' | undefined;
+type GrupoDeRutas =
+  '(auth)' | '(cliente)' | '(cocinero)' | 'aceptar-terminos' | undefined;
 
 export function GateDeSesion({ children }: { children: ReactNode }) {
   useEscucharSesion();
@@ -166,6 +167,16 @@ function calcularDestino({
   if (perfil.tipo === 'ADMINISTRADOR') return null;
 
   /**
+   * US-CFG-04 (RF058) · el administrador publicó una versión nueva de los
+   * términos o de la política de privacidad. Hasta que este usuario la
+   * acepte, "aceptar-terminos" es el único destino posible: ni siquiera se
+   * lo deja volver a su propio grupo de tabs.
+   */
+  if (perfil.debeAceptarTerminos) {
+    return grupo === 'aceptar-terminos' ? null : '/aceptar-terminos';
+  }
+
+  /**
    * NO todas las pantallas de un rol viven anidadas bajo su grupo de rutas:
    * `/publicaciones/nueva`, `/publicaciones/[id]` y `/notificaciones` son
    * rutas de nivel superior a las que se llega empujando la pila desde
@@ -177,13 +188,17 @@ function calcularDestino({
    *
    * Lo único que este guardián tiene que decidir es sacar al usuario de
    * donde NO puede estar: sin sesión (ya resuelto arriba), en las pantallas
-   * de `(auth)` estando logueado, o en el grupo del OTRO rol. Cualquier otro
-   * segmento -el propio grupo o una ruta compartida de nivel superior- se
-   * deja en paz.
+   * de `(auth)` estando logueado, en "aceptar-terminos" cuando ya no hace
+   * falta (recién aceptó y `debeAceptarTerminos` cambió a `false`), o en el
+   * grupo del OTRO rol. Cualquier otro segmento -el propio grupo o una ruta
+   * compartida de nivel superior- se deja en paz.
    */
   const grupoAjeno = perfil.tipo === 'CLIENTE' ? '(cocinero)' : '(cliente)';
   const debeIrACasa =
-    grupo === undefined || grupo === '(auth)' || grupo === grupoAjeno;
+    grupo === undefined ||
+    grupo === '(auth)' ||
+    grupo === grupoAjeno ||
+    grupo === 'aceptar-terminos';
 
   return debeIrACasa ? INICIO_POR_ROL[perfil.tipo] : null;
 }

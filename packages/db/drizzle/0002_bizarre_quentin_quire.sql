@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "motivo_cancelacion_nombre_activo_uq" ON "motivo_cancelacion" USING btree ("nombre") WHERE "motivo_cancelacion"."activo" = true;

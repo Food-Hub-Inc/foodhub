@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
-import { cocinero, usuario } from '@foodhub/db';
+import { cocinero, preferenciaNotificacion, usuario } from '@foodhub/db';
 import {
   MENSAJES_AUTH,
+  preferenciasIniciales,
   type PerfilUsuario,
   type RegistroClienteInput,
   type RegistroCocineroInput,
@@ -104,6 +105,21 @@ async function crearCuentaEnGoTrue(entrada: {
   return data.user.id;
 }
 
+/**
+ * US-CFG-05 (RF059) - Filas de `preferencia_notificacion` a insertar para el
+ * usuario recién creado, con todas las notificaciones activas por defecto.
+ * Van en la misma transacción que el alta: un usuario sin preferencias no
+ * puede distinguir un aviso esencial de uno que sí puede apagar.
+ */
+function filasDePreferencias(usuarioId: string, tipoUsuario: TipoUsuario) {
+  return preferenciasIniciales(tipoUsuario).map((fila) => ({
+    usuarioId,
+    tipoNotificacion: fila.tipoNotificacion,
+    activa: true,
+    modificable: fila.modificable,
+  }));
+}
+
 function auditarAlta(perfil: PerfilUsuario, ipOrigen: string | null): void {
   void registrarOperacion({
     usuarioId: perfil.id,
@@ -132,15 +148,25 @@ export async function registrarCliente(entrada: {
     mensajeCorreoDuplicado: MENSAJES_AUTH.correoDuplicadoCliente,
   });
 
-  const perfil = await conCompensacionDeCuenta(idCuenta, async () => {
-    const [fila] = await db
-      .insert(usuario)
-      .values({ id: idCuenta, ...camposComunes(datos), tipo: 'CLIENTE' })
-      .returning();
+  const perfil = await conCompensacionDeCuenta(idCuenta, () =>
+    // El alta y las preferencias de notificación van en una transacción: un
+    // cliente sin ellas no puede distinguir un aviso esencial de uno que sí
+    // puede apagar (US-CFG-05).
+    db.transaction(async (tx) => {
+      const [fila] = await tx
+        .insert(usuario)
+        .values({ id: idCuenta, ...camposComunes(datos), tipo: 'CLIENTE' })
+        .returning();
 
-    if (!fila) throw new Error('el alta del perfil no devolvió ninguna fila');
-    return aPerfilUsuario(fila, null);
-  });
+      if (!fila) throw new Error('el alta del perfil no devolvió ninguna fila');
+
+      await tx
+        .insert(preferenciaNotificacion)
+        .values(filasDePreferencias(idCuenta, 'CLIENTE'));
+
+      return aPerfilUsuario(fila, null);
+    }),
+  );
 
   auditarAlta(perfil, entrada.ipOrigen);
   return perfil;
@@ -187,6 +213,10 @@ export async function registrarCocinero(entrada: {
         usuarioId: idCuenta,
         descripcionPublica,
       });
+
+      await tx
+        .insert(preferenciaNotificacion)
+        .values(filasDePreferencias(idCuenta, 'COCINERO'));
 
       return aPerfilUsuario(fila, descripcionPublica);
     }),

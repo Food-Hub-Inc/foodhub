@@ -361,6 +361,61 @@ export const TEXTOS_PUBLICACIONES = {
 } as const;
 
 /**
+ * Re-aceptación obligatoria de términos y condiciones y política de
+ * privacidad (US-CFG-04, RF058, último criterio de aceptación).
+ *
+ * El checkbox y el botón "Continuar" son literales del criterio; el resto —
+ * título y bajada de la pantalla— es [PROPIO]: el criterio pide "una pantalla
+ * con el texto actualizado" pero no fija esas palabras.
+ */
+export const TEXTOS_ACEPTAR_TERMINOS = {
+  /** [PROPIO] */
+  titulo: 'Términos y condiciones',
+  /** [PROPIO] */
+  bajada:
+    'Actualizamos nuestros términos y condiciones y nuestra política de privacidad. Leé el contenido antes de continuar.',
+  /** [PROPIO] Encabezado de cada documento dentro del scroll. */
+  solapaTerminos: 'Términos y condiciones',
+  /** [PROPIO] Encabezado de cada documento dentro del scroll. */
+  solapaPrivacidad: 'Política de privacidad',
+  continuar: 'Continuar',
+  /** [PROPIO] Estado del botón mientras se registra la aceptación. */
+  continuando: 'Continuando…',
+} as const;
+
+/**
+ * Preferencias de notificación push (US-CFG-05, RF059, PAN-CFG-01).
+ *
+ * Las etiquetas de los switches y el texto del tooltip son literales de la
+ * tabla de criterios de aceptación. "Cambios de estado de..." tiene una
+ * redacción distinta para cliente y cocinero aunque controle el mismo grupo
+ * de tipos de notificación (`CAMBIO_ESTADO_PEDIDO`); por eso hay dos objetos
+ * de etiquetas y no uno solo indexado por grupo.
+ *
+ * "Publicaciones nuevas de cocineros favoritos" queda deliberadamente afuera:
+ * no hay un `TIPO_NOTIFICACION` para ese evento todavía. Ver
+ * `PENDIENTE_NOTIFICACIONES_COCINEROS_FAVORITOS.md` en la raíz del repo.
+ */
+export const TEXTOS_PREFERENCIAS_NOTIFICACION = {
+  /** [PROPIO] */
+  titulo: 'Notificaciones',
+  etiquetasCliente: {
+    CAMBIO_ESTADO_PEDIDO: 'Cambios de estado de mis pedidos',
+    MENSAJE_NUEVO: 'Mensajes nuevos en el chat',
+    AVISO_SISTEMA: 'Avisos generales del sistema',
+  },
+  etiquetasCocinero: {
+    PEDIDO_CREADO: 'Nuevos pedidos recibidos',
+    CAMBIO_ESTADO_PEDIDO: 'Cambios de estado de pedidos asociados a mí',
+    MENSAJE_NUEVO: 'Mensajes nuevos en el chat',
+    RESENA_RECIBIDA: 'Nuevas reseñas recibidas',
+    PUBLICACION_ELIMINADA_ADMIN:
+      'Eliminación de publicaciones por parte del administrador',
+    AVISO_SISTEMA: 'Avisos generales del sistema',
+  },
+} as const;
+
+/**
  * Pantallas todavía no codificadas.
  *
  * Cada una anuncia su código PAN, su módulo y qué va a hacer: un placeholder
