@@ -34,3 +34,14 @@ catalogoRouter.get('/motivos-cancelacion', async (req, res) => {
   const motivos = await catalogoService.listarMotivosCancelacionRapidos(rol);
   res.json(motivos);
 });
+
+/**
+ * US-CFG-04, RF058 (consumo) - Documentos vigentes para la pantalla de
+ * re-aceptación obligatoria. Cualquier usuario autenticado: es la misma
+ * pantalla que se le muestra a cualquiera con `debeAceptarTerminos`, sin
+ * distinción de rol.
+ */
+catalogoRouter.get('/terminos-vigentes', async (_req, res) => {
+  const vigentes = await catalogoService.obtenerTerminosVigentesParaAceptar();
+  res.json(vigentes);
+});

@@ -434,6 +434,42 @@ export const TEXTOS_PARAMETROS = {
   confirmarRestaurarSi: 'Restaurar',
 } as const;
 
+/** PAN-ADM-04 · Términos y condiciones — US-CFG-04. */
+export const TEXTOS_TERMINOS = {
+  /** LITERAL - US-CFG-04: "una pantalla con dos pestañas: 'Términos y condiciones' y 'Política de privacidad'". */
+  solapaTerminos: 'Términos y condiciones',
+  solapaPrivacidad: 'Política de privacidad',
+
+  fechaPublicacion: 'Fecha de publicación',
+  publicadoPor: 'Publicado por',
+  autorDesconocido: 'Administrador dado de baja',
+
+  /** LITERAL - US-CFG-04, botones de la vista vigente. */
+  accionEditar: 'Editar',
+  accionVerHistorial: 'Ver historial',
+
+  /** LITERAL - US-CFG-04, botones del editor. */
+  botonPublicar: 'Publicar nueva versión',
+  botonGuardarBorrador: 'Guardar borrador',
+
+  /** [PROPIO] Aviso de que se está retomando un borrador propio, no la versión vigente. */
+  editandoBorrador: 'Estás retomando el borrador que guardaste.',
+
+  dialogoPublicarTitulo: 'Publicar nueva versión',
+
+  historialTitulo: 'Historial de versiones',
+  columnaVersion: 'VERSIÓN',
+  columnaFecha: 'FECHA',
+  columnaAdmin: 'ADMINISTRADOR',
+  columnaAccion: '',
+  /** LITERAL - US-CFG-04, enlace de cada fila del historial. */
+  verContenido: 'Ver contenido',
+  dialogoContenidoTitulo: 'Contenido de la versión',
+
+  /** [PROPIO] Estado vacío antes de la primera publicación de este documento. */
+  sinVersionVigente: 'Todavía no se publicó ninguna versión de este documento.',
+} as const;
+
 /** Estados transversales de cualquier pantalla con datos. */
 export const TEXTOS_ESTADO = {
   reintentar: 'Reintentar',

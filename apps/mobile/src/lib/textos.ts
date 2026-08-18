@@ -262,6 +262,29 @@ export const TEXTOS_FOTO = {
 } as const;
 
 /**
+ * Re-aceptación obligatoria de términos y condiciones y política de
+ * privacidad (US-CFG-04, RF058, último criterio de aceptación).
+ *
+ * El checkbox y el botón "Continuar" son literales del criterio; el resto —
+ * título y bajada de la pantalla— es [PROPIO]: el criterio pide "una pantalla
+ * con el texto actualizado" pero no fija esas palabras.
+ */
+export const TEXTOS_ACEPTAR_TERMINOS = {
+  /** [PROPIO] */
+  titulo: 'Términos y condiciones',
+  /** [PROPIO] */
+  bajada:
+    'Actualizamos nuestros términos y condiciones y nuestra política de privacidad. Leé el contenido antes de continuar.',
+  /** [PROPIO] Encabezado de cada documento dentro del scroll. */
+  solapaTerminos: 'Términos y condiciones',
+  /** [PROPIO] Encabezado de cada documento dentro del scroll. */
+  solapaPrivacidad: 'Política de privacidad',
+  continuar: 'Continuar',
+  /** [PROPIO] Estado del botón mientras se registra la aceptación. */
+  continuando: 'Continuando…',
+} as const;
+
+/**
  * Pantallas todavía no codificadas.
  *
  * Cada una anuncia su código PAN, su módulo y qué va a hacer: un placeholder

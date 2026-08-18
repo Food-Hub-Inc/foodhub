@@ -9,6 +9,7 @@ import {
   eliminarUsuarioPanelSchema,
   filtrosUsuarioSchema,
   suspenderUsuarioSchema,
+  MENSAJES_CONFIGURACION,
   MENSAJES_USUARIO,
 } from '@foodhub/shared';
 import { extraerToken, obtenerIp, sesionDe } from '../../lib/request.js';
@@ -54,6 +55,12 @@ usuariosRouter.patch('/yo', async (req, res) => {
     ipOrigen: obtenerIp(req),
   });
   res.json(perfil);
+});
+
+/** US-CFG-04 (RF058) - Re-aceptación de los términos vigentes tras una nueva publicación. */
+usuariosRouter.post('/yo/aceptar-terminos', async (req, res) => {
+  await usuariosService.aceptarTerminosVigentes(sesionDe(req).id);
+  res.json({ mensaje: MENSAJES_CONFIGURACION.terminosAceptados });
 });
 
 usuariosRouter.post('/yo/password', async (req, res) => {

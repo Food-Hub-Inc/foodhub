@@ -284,6 +284,33 @@ export const MENSAJES_CONFIGURACION = {
 
   /** PROPIO - US-CFG-03, confirmación de la restauración. */
   parametrosRestaurados: 'Restauramos los valores predefinidos de fábrica.',
+
+  // --- US-CFG-04 · Términos y condiciones ----------------------------------
+
+  /** PROPIO - US-CFG-04, confirmación de "Guardar borrador". */
+  borradorGuardado: 'Guardamos el borrador.',
+
+  /**
+   * LITERAL - US-CFG-04, RF058: ventana de confirmación al publicar una
+   * nueva versión.
+   */
+  confirmarPublicarTerminos:
+    'Al publicar esta nueva versión, todos los usuarios deberán aceptar nuevamente los términos en su próximo inicio de sesión. Esta acción no se puede deshacer. ¿Confirma la publicación?',
+  /** LITERAL - US-CFG-04: "Botones 'Sí, publicar' y 'No, volver'". */
+  confirmarPublicarSi: 'Sí, publicar',
+
+  /** PROPIO - US-CFG-04, confirmación de la publicación. */
+  versionPublicada: 'La nueva versión quedó publicada.',
+
+  /**
+   * LITERAL - US-CFG-04, sexto criterio: checkbox obligatorio de la app móvil
+   * al iniciar sesión después de una publicación nueva.
+   */
+  aceptoNuevosTerminos:
+    'Acepto los nuevos términos y condiciones y la política de privacidad',
+
+  /** PROPIO - US-CFG-04, sexto criterio: confirmación tras aceptar (RF058 no fija un texto). */
+  terminosAceptados: 'Aceptaste los nuevos términos y condiciones.',
 } as const;
 
 /** Errores tecnicos, sin detalle del stack (requisito del modulo de seguridad). */

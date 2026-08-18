@@ -15,4 +15,5 @@ export * from './schemas/categoria.schema.js';
 export * from './schemas/configuracionSistema.schema.js';
 export * from './schemas/motivoCancelacion.schema.js';
 export * from './schemas/pedido.schema.js';
+export * from './schemas/terminos.schema.js';
 export * from './schemas/usuario.schema.js';

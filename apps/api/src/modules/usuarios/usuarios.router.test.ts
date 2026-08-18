@@ -27,6 +27,7 @@ const rutasProtegidas = [
   ['get', '/api/v1/usuarios/yo'],
   ['patch', '/api/v1/usuarios/yo'],
   ['post', '/api/v1/usuarios/yo/password'],
+  ['post', '/api/v1/usuarios/yo/aceptar-terminos'],
   ['delete', '/api/v1/usuarios/yo'],
   ['get', '/api/v1/usuarios'],
   ['post', '/api/v1/usuarios'],

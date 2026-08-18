@@ -44,7 +44,8 @@ const INICIO_POR_ROL = {
   COCINERO: '/(cocinero)/platos',
 } as const;
 
-type GrupoDeRutas = '(auth)' | '(cliente)' | '(cocinero)' | undefined;
+type GrupoDeRutas =
+  '(auth)' | '(cliente)' | '(cocinero)' | 'aceptar-terminos' | undefined;
 
 export function GateDeSesion({ children }: { children: ReactNode }) {
   useEscucharSesion();
@@ -164,6 +165,16 @@ function calcularDestino({
 
   if (!perfil) return null;
   if (perfil.tipo === 'ADMINISTRADOR') return null;
+
+  /**
+   * US-CFG-04 (RF058) · el administrador publicó una versión nueva de los
+   * términos o de la política de privacidad. Hasta que este usuario la
+   * acepte, "aceptar-terminos" es el único destino posible: ni siquiera se
+   * lo deja volver a su propio grupo de tabs.
+   */
+  if (perfil.debeAceptarTerminos) {
+    return grupo === 'aceptar-terminos' ? null : '/aceptar-terminos';
+  }
 
   const grupoPropio = perfil.tipo === 'CLIENTE' ? '(cliente)' : '(cocinero)';
   if (grupo === grupoPropio) return null;
