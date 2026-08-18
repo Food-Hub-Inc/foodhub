@@ -12,6 +12,7 @@ export * from './schemas/almacenamiento.schema.js';
 export * from './schemas/auth.schema.js';
 export * from './schemas/auditoria.schema.js';
 export * from './schemas/catalogo.schema.js';
+export * from './schemas/exploracion.schema.js';
 export * from './schemas/pedido.schema.js';
 export * from './schemas/publicacion.schema.js';
 export * from './schemas/usuario.schema.js';
