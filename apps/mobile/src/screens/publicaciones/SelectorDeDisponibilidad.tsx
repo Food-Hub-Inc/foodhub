@@ -3,28 +3,12 @@ import { Pressable, Text, View } from 'react-native';
 import type { EstadoPublicacion } from '@foodhub/shared';
 import { IconoChevronAbajo, IconoTilde } from '../../components/iconos';
 import { HojaInferior } from '../../components/ui/HojaInferior';
+// El mapa de colores se movio a `lib/disponibilidad.ts`: lo comparte con la
+// tarjeta del feed y el detalle del plato del modulo de Exploracion, donde el
+// segundo criterio de US-EXP-01 exige la misma diferenciacion cromatica.
+import { ESTILO_DISPONIBILIDAD } from '../../lib/disponibilidad';
 import { TEXTOS_PUBLICACIONES } from '../../lib/textos';
 import { OPCIONES_ESTADO } from './listado';
-
-/**
- * Representación cromática de la disponibilidad (guía visual, badges de
- * `EstadoPublicacion`): éxito para disponible, advertencia para últimas
- * unidades y el gris de texto deshabilitado -nunca el rojo de error, reservado
- * a acciones destructivas- para no disponible. El color nunca es el único
- * canal: cada opción lleva además su etiqueta en texto, no solo el punto.
- *
- * Vive acá y no en `listado.ts` -a diferencia de `OPCIONES_ESTADO`, que sí
- * comparten esta hoja y `HojaDeFiltros`- porque este mapa de colores hoy solo
- * lo consume este componente.
- */
-const ESTILO_ESTADO: Record<
-  EstadoPublicacion,
-  { punto: string; texto: string }
-> = {
-  DISPONIBLE: { punto: 'bg-success', texto: 'text-success' },
-  ULTIMAS_UNIDADES: { punto: 'bg-warning', texto: 'text-warning' },
-  NO_DISPONIBLE: { punto: 'bg-text-disabled', texto: 'text-text-disabled' },
-};
 
 /**
  * Selector visual e interactivo del estado de disponibilidad (US-PUB-04),
@@ -48,7 +32,7 @@ export function SelectorDeDisponibilidad({
   onCambiar: (estado: EstadoPublicacion) => void;
 }) {
   const [abierta, setAbierta] = useState(false);
-  const estado = ESTILO_ESTADO[valor];
+  const estado = ESTILO_DISPONIBILIDAD[valor];
   const etiqueta =
     OPCIONES_ESTADO.find((opcion) => opcion.valor === valor)?.etiqueta ?? '';
 
@@ -83,7 +67,7 @@ export function SelectorDeDisponibilidad({
 
         {OPCIONES_ESTADO.map((opcion) => {
           const seleccionada = opcion.valor === valor;
-          const estiloOpcion = ESTILO_ESTADO[opcion.valor];
+          const estiloOpcion = ESTILO_DISPONIBILIDAD[opcion.valor];
           return (
             <Pressable
               key={opcion.valor}
