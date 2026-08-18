@@ -6,6 +6,7 @@ import { cerrarSesion } from '../../api/auth';
 import {
   IconoCampana,
   IconoCandado,
+  IconoAyuda,
   IconoSalir,
   IconoTacho,
 } from '../../components/iconos';
@@ -15,7 +16,11 @@ import { FilaDeNavegacion } from '../../components/ui/FilaDeNavegacion';
 import { FondoTenue } from '../../components/ui/FondoTenue';
 import { HojaInferior } from '../../components/ui/HojaInferior';
 import { useEliminarCuenta } from '../../hooks/usePerfil';
-import { TEXTOS_CERRAR_SESION, TEXTOS_PERFIL } from '../../lib/textos';
+import {
+  TEXTOS_AYUDA,
+  TEXTOS_CERRAR_SESION,
+  TEXTOS_PERFIL,
+} from '../../lib/textos';
 import { CambiarContrasena } from './CambiarContrasena';
 
 /**
@@ -79,6 +84,8 @@ export function AccionesDeCuenta() {
         }}
       />
 
+      <FilaDeAyuda />
+
       <FilaDeNavegacion
         etiqueta={TEXTOS_PERFIL.cerrarSesion}
         icono={<IconoSalir className="text-text-secondary" size={20} />}
@@ -117,6 +124,18 @@ export function AccionesDeCuenta() {
         titulo={TEXTOS_PERFIL.tituloEliminarCuenta}
       />
     </View>
+  );
+}
+
+function FilaDeAyuda() {
+  return (
+    <FilaDeNavegacion
+      etiqueta={TEXTOS_AYUDA.titulo}
+      icono={<IconoAyuda className="text-text-secondary" size={20} />}
+      onPress={() => {
+        router.push('/ayuda');
+      }}
+    />
   );
 }
 
