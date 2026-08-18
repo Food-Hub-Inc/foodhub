@@ -15,6 +15,13 @@
       "when": 1786665087684,
       "tag": "0001_habilitar_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786992000000,
+      "tag": "0002_seed_ayuda",
+      "breakpoints": true
     }
   ]
 }
