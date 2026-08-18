@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import MapView, { type Region } from 'react-native-maps';
-import * as Location from 'expo-location';
 import type { Ubicacion } from '@foodhub/shared';
+import { consultarGps, type ResultadoGps } from '../../lib/gps';
 import { TEXTOS_REGISTRO, TEXTOS_UBICACION } from '../../lib/textos';
 import { IconoUbicacion } from '../iconos';
 import { Boton } from './Boton';
@@ -29,38 +29,11 @@ const AMPLITUD = 0.01;
 
 type Estado = 'pidiendo' | 'denegado' | 'sinPosicion' | 'listo';
 
-/** Lo que devuelve una consulta al GPS: o falló por un motivo, o hay punto. */
-type ResultadoGps =
-  | { estado: 'denegado' | 'sinPosicion' }
-  | { estado: 'listo'; punto: Ubicacion };
-
-/**
- * Pide permiso y posición al sistema operativo.
- *
- * No conoce React: devuelve un valor y no toca ningún estado. Vive fuera del
- * componente porque no depende de sus props, así que no hace falta recrearla
- * en cada render.
- */
-async function consultarGps(): Promise<ResultadoGps> {
-  const permiso = await Location.requestForegroundPermissionsAsync();
-  if (!permiso.granted) return { estado: 'denegado' };
-
-  try {
-    const posicion = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
-    return {
-      estado: 'listo',
-      punto: {
-        lat: posicion.coords.latitude,
-        lng: posicion.coords.longitude,
-      },
-    };
-  } catch {
-    // El GPS apagado, el modo avión o un fix que no llega terminan acá.
-    return { estado: 'sinPosicion' };
-  }
-}
+// `consultarGps` vive en `lib/gps.ts`: la comparte con `useUbicacionActual`, que
+// la necesita para el feed y el mapa del módulo de Exploración. Lo que NO se
+// comparte es lo de abajo: acá el punto se persiste como ubicación del cocinero
+// y el permiso denegado bloquea el registro, mientras que en Exploración es
+// opcional y solo degrada el orden del feed.
 
 export function SelectorDeUbicacion({
   ubicacion,

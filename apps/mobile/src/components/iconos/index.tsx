@@ -113,6 +113,30 @@ export function IconoCorazon(props: PropsIcono) {
   );
 }
 
+/**
+ * El mismo corazón, relleno.
+ *
+ * US-EXP-06 fija los dos estados del botón de favorito: "corazón relleno"
+ * cuando el elemento está guardado y "corazón vacío" cuando no. Es el único
+ * ícono del sistema con variante rellena, y comparte el path exacto de
+ * `IconoCorazon` para que el contorno no se corra un píxel al alternar.
+ *
+ * El relleno se declara en el `Path` y no en el `Svg`: `Lienzo` fija
+ * `fill="none"` en la raíz, y `currentColor` acá hereda el token que resuelve la
+ * clase, así que el ícono sigue sin contener un literal de color.
+ */
+export function IconoCorazonRelleno(props: PropsIcono) {
+  return (
+    <Lienzo {...props}>
+      <Path
+        d="M19.5 12.57 12 20l-7.5-7.43a4.75 4.75 0 1 1 7.5-5.7 4.75 4.75 0 1 1 7.5 5.7Z"
+        {...TRAZO}
+        fill="currentColor"
+      />
+    </Lienzo>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Acciones y estado
 // ---------------------------------------------------------------------------

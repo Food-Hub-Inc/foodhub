@@ -1,15 +1,5 @@
-import { Tabs } from 'expo-router';
-import {
-  IconoBolsa,
-  IconoInicio,
-  IconoMapa,
-  IconoMensaje,
-  IconoUsuario,
-} from '../../src/components/iconos';
-import {
-  iconoDeTab,
-  useOpcionesDeTabs,
-} from '../../src/components/navegacion/opcionesDeTabs';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { useOpcionesDeTabs } from '../../src/components/navegacion/opcionesDeTabs';
 import { TEXTOS_NAVEGACION } from '../../src/lib/textos';
 
 /**
@@ -32,42 +22,49 @@ export default function LayoutCliente() {
   const opciones = useOpcionesDeTabs();
 
   return (
-    <Tabs screenOptions={opciones}>
-      <Tabs.Screen
-        name="inicio"
-        options={{
-          title: TEXTOS_NAVEGACION.inicio,
-          tabBarIcon: iconoDeTab(IconoInicio),
-        }}
-      />
-      <Tabs.Screen
-        name="mapa"
-        options={{
-          title: TEXTOS_NAVEGACION.mapa,
-          tabBarIcon: iconoDeTab(IconoMapa),
-        }}
-      />
-      <Tabs.Screen
-        name="pedidos"
-        options={{
-          title: TEXTOS_NAVEGACION.pedidos,
-          tabBarIcon: iconoDeTab(IconoBolsa),
-        }}
-      />
-      <Tabs.Screen
-        name="mensajes"
-        options={{
-          title: TEXTOS_NAVEGACION.mensajes,
-          tabBarIcon: iconoDeTab(IconoMensaje),
-        }}
-      />
-      <Tabs.Screen
-        name="perfil"
-        options={{
-          title: TEXTOS_NAVEGACION.perfil,
-          tabBarIcon: iconoDeTab(IconoUsuario),
-        }}
-      />
-    </Tabs>
+    <NativeTabs {...opciones}>
+      <NativeTabs.Trigger name="inicio">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'house', selected: 'house.fill' }}
+          md="home"
+        />
+        <NativeTabs.Trigger.Label>
+          {TEXTOS_NAVEGACION.inicio}
+        </NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="mapa">
+        <NativeTabs.Trigger.Icon sf="map.fill" md="map" />
+        <NativeTabs.Trigger.Label>
+          {TEXTOS_NAVEGACION.mapa}
+        </NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="pedidos">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'bag', selected: 'bag.fill' }}
+          md="shopping_bag"
+        />
+        <NativeTabs.Trigger.Label>
+          {TEXTOS_NAVEGACION.pedidos}
+        </NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="mensajes">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'message', selected: 'message.fill' }}
+          md="chat"
+        />
+        <NativeTabs.Trigger.Label>
+          {TEXTOS_NAVEGACION.mensajes}
+        </NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="perfil">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'person', selected: 'person.fill' }}
+          md="person"
+        />
+        <NativeTabs.Trigger.Label>
+          {TEXTOS_NAVEGACION.perfil}
+        </NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }

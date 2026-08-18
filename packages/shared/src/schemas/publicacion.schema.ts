@@ -212,15 +212,16 @@ const publicacionBaseSchema = z.object({
   cantidadPedidos: z.number().int().min(0),
 
   /**
-   * Siempre `null` hoy. El modelo de datos no permite calcular la valoración
-   * promedio de UN plato: `resena` se relaciona con `pedido` (una reseña por
-   * pedido), y un pedido puede incluir varios platos de un mismo cocinero, así
-   * que no hay forma de atribuir la reseña a una publicación puntual. Es un
-   * defecto de diseño del modelo de datos (probablemente resuelto agregando
-   * `publicacionId` a `resena`, o modelando reseña-por-ítem) que otro
-   * integrante del equipo debe corregir; no se toca `packages/db/src/schema/`
-   * para esto en el módulo de Publicaciones. Cuando se corrija el modelo, el
-   * cálculo real se conecta acá.
+   * Promedio de las reseñas `VISIBLE` de ESTE plato, o `null` si todavía no
+   * tiene ninguna.
+   *
+   * Hasta el 2026-08-18 era siempre `null`: `resena` colgaba de `pedido`, y un
+   * pedido puede incluir varios platos del mismo cocinero, así que no había
+   * forma de atribuir la reseña a una publicación puntual. El módulo de
+   * Exploración necesitaba el dato en dos criterios de aceptación (el filtro
+   * por valoración mínima de US-EXP-03 y el detalle de US-EXP-05), así que el
+   * equipo corrigió el modelo: `resena` ahora referencia `publicacion`. Este es
+   * el cálculo real que aquel comentario anticipaba.
    */
   valoracionPromedio: z.number().nullable(),
 
