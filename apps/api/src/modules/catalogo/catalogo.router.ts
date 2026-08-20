@@ -78,6 +78,28 @@ catalogoRouter.get('/terminos-vigentes/:tipo', async (req, res) => {
 });
 
 /**
+ * US-AYU-04, CA5 - Descarga del documento legal vigente en formato PDF.
+ * Pensado para el boton "Descargar PDF" de la barra superior de PAN-AYU-04.
+ *
+ * Responde binario (application/pdf) con `Content-Disposition: attachment`
+ * para que el navegador/dispositivo abra el dialogo de guardar y no intente
+ * mostrarlo inline.
+ */
+catalogoRouter.get('/terminos-vigentes/:tipo/pdf', async (req, res) => {
+  const { tipo } = tipoVersionTerminosParamsSchema.parse(req.params);
+  const { buffer, nombreArchivo } =
+    await catalogoService.generarPdfDeDocumentoLegal(tipo);
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="${nombreArchivo}"`,
+  );
+  res.setHeader('Content-Length', String(buffer.byteLength));
+  res.send(buffer);
+});
+
+/**
  * US-AYU-04 - Correo electronico y horario de atencion del equipo de
  * soporte, para "Contacto del soporte" de PAN-AYU-04. Se leen de
  * `configuracion_sistema` (claves plataforma_correo_soporte y

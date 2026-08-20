@@ -22,6 +22,7 @@ const rutasProtegidas = [
   '/api/v1/catalogo/motivos-cancelacion',
   '/api/v1/catalogo/terminos-vigentes',
   '/api/v1/catalogo/terminos-vigentes/TERMINOS',
+  '/api/v1/catalogo/terminos-vigentes/TERMINOS/pdf',
   '/api/v1/catalogo/informacion-de-contacto',
 ] as const;
 

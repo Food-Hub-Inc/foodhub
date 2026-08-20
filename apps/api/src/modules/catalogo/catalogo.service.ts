@@ -18,6 +18,7 @@ import {
   type VersionVigenteTerminos,
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
+import { armarPdfDeDocumentoLegal } from '../../lib/pdf.js';
 import { noEncontrado } from '../../middleware/error.middleware.js';
 import { obtenerVersionVigente } from '../configuracion/terminos.service.js';
 
@@ -217,4 +218,50 @@ export async function obtenerInformacionDeContacto(): Promise<InformacionDeConta
     correo,
     horarioAtencion: horario,
   });
+}
+
+/**
+ * US-AYU-04, CA5 - Genera el PDF en memoria de un documento legal vigente
+ * para el boton "Descargar PDF" de PAN-AYU-04.
+ *
+ * Reusa `obtenerVersionVigente` por la misma razon que
+ * `obtenerDocumentoLegalVigente`: la lectura del documento es la misma, lo
+ * unico que cambia es como se serializa (JSON vs PDF).
+ *
+ * Devuelve ademas el `Content-Disposition` sugerido y el titulo legible para
+ * que el router pueda armar la respuesta sin repetir logica de filenames.
+ */
+export async function generarPdfDeDocumentoLegal(
+  tipo: TipoVersionTerminos,
+): Promise<{
+  buffer: Buffer;
+  nombreArchivo: string;
+  titulo: string;
+}> {
+  const vigente = await obtenerVersionVigente(tipo);
+  if (!vigente) {
+    throw noEncontrado(
+      tipo === 'TERMINOS'
+        ? 'una version vigente de los terminos y condiciones'
+        : 'una version vigente de la politica de privacidad',
+    );
+  }
+
+  const titulo =
+    tipo === 'TERMINOS'
+      ? 'Términos y condiciones de FoodHub'
+      : 'Política de privacidad de FoodHub';
+
+  const buffer = await armarPdfDeDocumentoLegal({
+    titulo,
+    fechaPublicacion: new Date(vigente.fechaPublicacion),
+    contenidoHtml: vigente.contenidoHtml,
+  });
+
+  const version = vigente.numeroVersion;
+  const baseNombre =
+    tipo === 'TERMINOS' ? 'terminos-foodhub' : 'privacidad-foodhub';
+  const nombreArchivo = `${baseNombre}-v${String(version)}.pdf`;
+
+  return { buffer, nombreArchivo, titulo };
 }
