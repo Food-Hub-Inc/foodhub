@@ -69,6 +69,28 @@ export async function listarMotivosCancelacionRapidos(
 }
 
 /**
+ * US-CFG-02, RF056 (consumo) - El motivo elegido existe, esta habilitado y
+ * aplica al rol de quien lo eligio.
+ *
+ * Lo usa el modulo de Pedidos antes de rechazar (US-PED-04) o cancelar
+ * (US-PED-09). Sin esta verificacion, un cliente podria cancelar con el motivo
+ * "No tengo ingredientes" -pensado para el cocinero- mandando su id a mano, y el
+ * historial del pedido quedaria diciendo algo que nunca paso.
+ *
+ * Reusa `listarMotivosCancelacionRapidos` en lugar de repetir el join con
+ * `tipo_usuario_cancelacion`: la lista es corta -son datos de referencia que el
+ * administrador carga a mano- y asi la regla de aplicabilidad queda escrita una
+ * sola vez.
+ */
+export async function motivoCancelacionAplicable(
+  rol: Extract<TipoUsuarioCancelacion, 'COCINERO' | 'CLIENTE'>,
+  motivoId: string,
+): Promise<boolean> {
+  const aplicables = await listarMotivosCancelacionRapidos(rol);
+  return aplicables.some((motivo) => motivo.id === motivoId);
+}
+
+/**
  * RF058 (consumo) - Los dos documentos vigentes juntos, para la pantalla de
  * re-aceptación obligatoria de la app móvil (US-CFG-04). Reusa la lectura
  * del módulo de Configuración en lugar de repetirla.
