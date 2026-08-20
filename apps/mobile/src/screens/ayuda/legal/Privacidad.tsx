@@ -62,31 +62,15 @@ export function Privacidad() {
     [documento.data],
   );
 
-  const accionEncabezado = (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={
-        descargar.isPending
-          ? MENSAJES_AYUDA.documentoLegal.descargandoPdf
-          : MENSAJES_AYUDA.documentoLegal.descargarPdf
-      }
-      accessibilityState={{
-        busy: descargar.isPending,
-        disabled: descargar.isPending,
-      }}
-      className="h-11 w-11 items-center justify-center"
-      onPress={() => {
-        if (!descargar.isPending) descargar.mutate('PRIVACIDAD');
-      }}
-    >
-      <IconoDescargar size={22} className="text-primary" />
-    </Pressable>
-  );
-
   return (
     <SafeAreaView className="flex-1 bg-background">
       <EncabezadoPantalla
-        accion={accionEncabezado}
+        accion={
+          <AccionDescargarPdf
+            cargando={descargar.isPending}
+            tipo="PRIVACIDAD"
+          />
+        }
         destinoAlternativo="/ayuda/legal"
         titulo={TEXTOS_LEGAL.pantallaPrivacidad.titulo}
       />
@@ -112,48 +96,119 @@ export function Privacidad() {
           ) : null}
 
           {documento.data ? (
-            <>
-              <Text className="text-caption text-text-secondary">
-                {MENSAJES_AYUDA.documentoLegal.ultimaActualizacion(
-                  fechaFormateada,
-                )}
-              </Text>
-              {secciones.length === 0 ? (
-                <View className="mt-3 rounded-md border border-border bg-surface p-3">
-                  <RenderHtml
-                    baseStyle={ESTILO_BASE}
-                    contentWidth={anchoContenido}
-                    source={{ html: documento.data.contenidoHtml }}
-                    tagsStyles={ESTILOS_POR_ETIQUETA}
-                  />
-                </View>
-              ) : (
-                <View className="mt-3">
-                  {secciones.map((seccion, indice) => (
-                    <SeccionColapsable
-                      inicialAbierta={indice === 0}
-                      key={`${String(indice)}-${seccion.titulo}`}
-                      titulo={
-                        seccion.titulo || TEXTOS_LEGAL.pantallaPrivacidad.titulo
-                      }
-                    >
-                      <RenderHtml
-                        baseStyle={ESTILO_BASE}
-                        contentWidth={anchoContenido}
-                        source={{ html: seccion.html }}
-                        tagsStyles={ESTILOS_POR_ETIQUETA}
-                      />
-                    </SeccionColapsable>
-                  ))}
-                </View>
-              )}
-            </>
+            <CuerpoDocumento
+              anchoContenido={anchoContenido}
+              fechaFormateada={fechaFormateada}
+              html={documento.data.contenidoHtml}
+              secciones={secciones}
+            />
           ) : (
             <EsqueletoPrivacidad />
           )}
         </ScrollView>
       )}
     </SafeAreaView>
+  );
+}
+
+function AccionDescargarPdf({
+  tipo,
+  cargando,
+}: {
+  tipo: 'TERMINOS' | 'PRIVACIDAD';
+  cargando: boolean;
+}) {
+  const descargar = useDescargarPdfLegal();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={
+        cargando
+          ? MENSAJES_AYUDA.documentoLegal.descargandoPdf
+          : MENSAJES_AYUDA.documentoLegal.descargarPdf
+      }
+      accessibilityState={{ busy: cargando, disabled: cargando }}
+      className="h-11 w-11 items-center justify-center"
+      onPress={() => {
+        if (!cargando) descargar.mutate(tipo);
+      }}
+    >
+      <IconoDescargar size={22} className="text-primary" />
+    </Pressable>
+  );
+}
+
+function CuerpoDocumento({
+  html,
+  secciones,
+  anchoContenido,
+  fechaFormateada,
+}: {
+  html: string;
+  secciones: ReturnType<typeof dividirHtmlEnSecciones>;
+  anchoContenido: number;
+  fechaFormateada: string;
+}) {
+  return (
+    <>
+      <Text className="text-caption text-text-secondary">
+        {MENSAJES_AYUDA.documentoLegal.ultimaActualizacion(fechaFormateada)}
+      </Text>
+      {secciones.length === 0 ? (
+        <DocumentoPlano anchoContenido={anchoContenido} html={html} />
+      ) : (
+        <DocumentoSecciones
+          anchoContenido={anchoContenido}
+          secciones={secciones}
+        />
+      )}
+    </>
+  );
+}
+
+function DocumentoPlano({
+  html,
+  anchoContenido,
+}: {
+  html: string;
+  anchoContenido: number;
+}) {
+  return (
+    <View className="mt-3 rounded-md border border-border bg-surface p-3">
+      <RenderHtml
+        baseStyle={ESTILO_BASE}
+        contentWidth={anchoContenido}
+        source={{ html }}
+        tagsStyles={ESTILOS_POR_ETIQUETA}
+      />
+    </View>
+  );
+}
+
+function DocumentoSecciones({
+  secciones,
+  anchoContenido,
+}: {
+  secciones: ReturnType<typeof dividirHtmlEnSecciones>;
+  anchoContenido: number;
+}) {
+  return (
+    <View className="mt-3">
+      {secciones.map((seccion, indice) => (
+        <SeccionColapsable
+          inicialAbierta={indice === 0}
+          key={`${String(indice)}-${seccion.titulo}`}
+          titulo={seccion.titulo || TEXTOS_LEGAL.pantallaPrivacidad.titulo}
+        >
+          <RenderHtml
+            baseStyle={ESTILO_BASE}
+            contentWidth={anchoContenido}
+            source={{ html: seccion.html }}
+            tagsStyles={ESTILOS_POR_ETIQUETA}
+          />
+        </SeccionColapsable>
+      ))}
+    </View>
   );
 }
 

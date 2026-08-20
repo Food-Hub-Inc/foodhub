@@ -52,51 +52,63 @@ class ConstructorDeBloques {
 
   abrir(nombre: string, attribs: Record<string, string>): void {
     this.flushBuffer();
-    switch (nombre) {
-      case 'h1':
-        this.pila.push({ tag: 'h1', nivel: 1, segmentos: [] });
-        return;
-      case 'h2':
-        this.pila.push({ tag: 'h2', nivel: 2, segmentos: [] });
-        return;
-      case 'h3':
-        this.pila.push({ tag: 'h3', nivel: 3, segmentos: [] });
-        return;
-      case 'p':
-        this.pila.push({ tag: 'p', segmentos: [] });
-        return;
-      case 'ul':
-      case 'ol':
-        this.pila.push({ tag: nombre, items: [] });
-        return;
-      case 'li':
-        this.pila.push({ tag: 'li', items: [] });
-        return;
-      case 'strong':
-      case 'b':
-        this.pila.push({ tag: 'strong' });
-        return;
-      case 'em':
-      case 'i':
-        this.pila.push({ tag: 'em' });
-        return;
-      case 'br':
-        this.bufferTexto += '\n';
-        return;
-      case 'a': {
-        const href = attribs.href;
-        this.pila.push(
-          href !== undefined ? { tag: 'a', hrefActual: href } : { tag: 'a' },
-        );
-        return;
-      }
-      default:
-        // <u> no se modela: pdfkit no tiene underline inline por segmento y
-        // el texto sigue siendo legible sin el subrayado. Tags fuera de la
-        // allowlist (incluido <script>) caen como texto literal (defensa
-        // en profundidad).
-        this.pila.push({ tag: 'texto' });
+    if (this.esEncabezado(nombre)) {
+      this.pila.push({
+        tag: nombre,
+        nivel: this.nivelDe(nombre),
+        segmentos: [],
+      });
+      return;
     }
+    if (nombre === 'p') {
+      this.pila.push({ tag: 'p', segmentos: [] });
+      return;
+    }
+    if (nombre === 'ul' || nombre === 'ol') {
+      this.pila.push({ tag: nombre, items: [] });
+      return;
+    }
+    if (nombre === 'li') {
+      this.pila.push({ tag: 'li', items: [] });
+      return;
+    }
+    if (nombre === 'strong' || nombre === 'b') {
+      this.pila.push({ tag: 'strong' });
+      return;
+    }
+    if (nombre === 'em' || nombre === 'i') {
+      this.pila.push({ tag: 'em' });
+      return;
+    }
+    if (nombre === 'br') {
+      this.bufferTexto += '\n';
+      return;
+    }
+    if (nombre === 'a') {
+      this.apilarAncla(attribs.href);
+      return;
+    }
+    // <u> no se modela: pdfkit no tiene underline inline por segmento y el
+    // texto sigue siendo legible sin el subrayado. Tags fuera de la
+    // allowlist (incluido <script>) caen como texto literal (defensa en
+    // profundidad).
+    this.pila.push({ tag: 'texto' });
+  }
+
+  private esEncabezado(nombre: string): nombre is 'h1' | 'h2' | 'h3' {
+    return nombre === 'h1' || nombre === 'h2' || nombre === 'h3';
+  }
+
+  private nivelDe(nombre: 'h1' | 'h2' | 'h3'): 1 | 2 | 3 {
+    if (nombre === 'h1') return 1;
+    if (nombre === 'h2') return 2;
+    return 3;
+  }
+
+  private apilarAncla(href: string | undefined): void {
+    this.pila.push(
+      href !== undefined ? { tag: 'a', hrefActual: href } : { tag: 'a' },
+    );
   }
 
   texto(texto: string): void {
@@ -108,11 +120,7 @@ class ConstructorDeBloques {
     const marco = this.pila.pop();
     if (!marco) return;
     if (marco.tag === 'h1' || marco.tag === 'h2' || marco.tag === 'h3') {
-      this.bloques.push({
-        tipo: 'titulo',
-        nivel: marco.nivel,
-        texto: marco.segmentos.map((s) => s.texto).join(''),
-      });
+      this.emitirTitulo(marco);
       return;
     }
     if (marco.tag === 'p') {
@@ -123,11 +131,25 @@ class ConstructorDeBloques {
       this.bloques.push({ tipo: 'lista', items: marco.items });
       return;
     }
-    if (marco.tag === 'li') {
-      const padre = this.pila[this.pila.length - 1];
-      if (padre?.tag === 'ul' || padre?.tag === 'ol') {
-        padre.items.push(marco.items);
-      }
+    if (marco.tag === 'li') this.consolidarItem(marco);
+  }
+
+  private emitirTitulo(marco: {
+    tag: 'h1' | 'h2' | 'h3';
+    nivel: 1 | 2 | 3;
+    segmentos: Segmento[];
+  }): void {
+    this.bloques.push({
+      tipo: 'titulo',
+      nivel: marco.nivel,
+      texto: marco.segmentos.map((s) => s.texto).join(''),
+    });
+  }
+
+  private consolidarItem(marco: { tag: 'li'; items: Segmento[] }): void {
+    const padre = this.pila[this.pila.length - 1];
+    if (padre?.tag === 'ul' || padre?.tag === 'ol') {
+      padre.items.push(marco.items);
     }
   }
 
@@ -154,32 +176,40 @@ class ConstructorDeBloques {
   }
 
   private adjuntarSegmento(segmento: Segmento): void {
-    const marco = this.pila[this.pila.length - 1];
-    if (marco?.tag === 'h1' || marco?.tag === 'h2' || marco?.tag === 'h3') {
-      marco.segmentos.push(segmento);
+    const actual = this.pila[this.pila.length - 1];
+    if (!actual) return;
+    if (actual.tag === 'h1' || actual.tag === 'h2' || actual.tag === 'h3') {
+      actual.segmentos.push(segmento);
       return;
     }
-    if (marco?.tag === 'p') {
-      marco.segmentos.push(segmento);
+    if (actual.tag === 'p') {
+      actual.segmentos.push(segmento);
       return;
     }
-    if (marco?.tag === 'li') {
-      marco.items.push(segmento);
+    if (actual.tag === 'li') {
+      actual.items.push(segmento);
       return;
     }
-    if (marco?.tag === 'a') {
-      const padre = this.pila[this.pila.length - 2];
-      if (
-        padre?.tag === 'h1' ||
-        padre?.tag === 'h2' ||
-        padre?.tag === 'h3' ||
-        padre?.tag === 'p'
-      ) {
-        padre.segmentos.push(segmento);
-      } else if (padre?.tag === 'li') {
-        padre.items.push(segmento);
-      }
+    if (actual.tag === 'a') this.adjuntarHijoDeAncla(segmento);
+  }
+
+  /**
+   * El texto dentro de `<a>` se acumula contra el abuelo: un `<a>` solo
+   * lleva marcas inline, no acumula por si mismo.
+   */
+  private adjuntarHijoDeAncla(segmento: Segmento): void {
+    const abuelo = this.pila[this.pila.length - 2];
+    if (!abuelo) return;
+    if (
+      abuelo.tag === 'h1' ||
+      abuelo.tag === 'h2' ||
+      abuelo.tag === 'h3' ||
+      abuelo.tag === 'p'
+    ) {
+      abuelo.segmentos.push(segmento);
+      return;
     }
+    if (abuelo.tag === 'li') abuelo.items.push(segmento);
   }
 }
 
