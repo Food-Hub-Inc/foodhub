@@ -37,7 +37,7 @@ const {
 
 const ADMIN_ID = '11111111-1111-1111-1111-111111111111';
 
-/** Las 10 filas que siembra la migración 0004, con valores de ejemplo. */
+/** Las 11 filas que siembran las migraciones 0004 y 0011, con valores de ejemplo. */
 const FILAS_SEMBRADAS = [
   { clave: 'radio_busqueda_defecto_km', valor: '5' },
   { clave: 'distancia_maxima_filtro_km', valor: '20' },
@@ -49,6 +49,10 @@ const FILAS_SEMBRADAS = [
   { clave: 'plataforma_nombre', valor: 'FoodHub' },
   { clave: 'plataforma_logo_url', valor: '' },
   { clave: 'plataforma_correo_soporte', valor: 'soporte@foodhub.com' },
+  {
+    clave: 'plataforma_horario_atencion_soporte',
+    valor: 'Lunes a viernes de 9 a 18 hs',
+  },
 ];
 
 describe('obtenerParametrosSistema', () => {
@@ -76,6 +80,7 @@ describe('obtenerParametrosSistema', () => {
         nombrePlataforma: 'FoodHub',
         logoPlataformaUrl: null,
         correoSoporte: 'soporte@foodhub.com',
+        horarioAtencionSoporte: 'Lunes a viernes de 9 a 18 hs',
       },
     });
   });

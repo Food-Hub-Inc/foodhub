@@ -25,6 +25,7 @@ export const CLAVE_PARAMETRO = {
   plataformaNombre: 'plataforma_nombre',
   plataformaLogoUrl: 'plataforma_logo_url',
   plataformaCorreoSoporte: 'plataforma_correo_soporte',
+  plataformaHorarioAtencionSoporte: 'plataforma_horario_atencion_soporte',
 } as const;
 
 export const SECCION_PARAMETROS_SISTEMA = [
@@ -127,6 +128,16 @@ export const parametrosInstitucionalesSchema = z.object({
     .max(80, 'No puede superar los 80 caracteres.'),
   logoPlataformaUrl: z.url().nullable(),
   correoSoporte: emailSchema,
+  /**
+   * US-AYU-04 - Horario de atencion que la pantalla de Contacto del soporte
+   * muestra al usuario. Se guarda como texto libre porque el formato ("Lun a
+   * Vie 9 a 18 hs", "24/7", etc.) lo decide el administrador.
+   */
+  horarioAtencionSoporte: z
+    .string()
+    .trim()
+    .min(1, MENSAJES_CONFIGURACION.campoObligatorio)
+    .max(200, 'No puede superar los 200 caracteres.'),
 });
 export type ParametrosInstitucionales = z.infer<
   typeof parametrosInstitucionalesSchema
@@ -136,6 +147,7 @@ export const PARAMETROS_INSTITUCIONALES_DEFAULT: ParametrosInstitucionales = {
   nombrePlataforma: 'FoodHub',
   logoPlataformaUrl: null,
   correoSoporte: 'soporte@foodhub.com',
+  horarioAtencionSoporte: 'Lunes a viernes de 9 a 18 hs',
 };
 
 // ---------------------------------------------------------------------------

@@ -417,6 +417,8 @@ export const TEXTOS_PARAMETROS = {
   campoLogo: 'Logo de la plataforma',
   logoAyuda: 'JPG, PNG o WEBP de hasta 2 MB.',
   logoQuitar: 'Quitar logo',
+  /** [PROPIO] US-AYU-04, horario que se muestra al usuario en "Contacto del soporte". */
+  campoHorarioAtencionSoporte: 'Horario de atención del soporte',
   logoSubiendo: 'Subiendo logo…',
   logoSeleccionar: 'Elegir logo',
   campoCorreoSoporte: 'Correo de contacto de soporte',

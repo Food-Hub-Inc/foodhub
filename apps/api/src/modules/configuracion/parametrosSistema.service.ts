@@ -107,6 +107,10 @@ export async function obtenerParametrosSistema(): Promise<ParametrosSistema> {
       logoPlataformaUrl:
         textoDe(mapa, CLAVE_PARAMETRO.plataformaLogoUrl) || null,
       correoSoporte: textoDe(mapa, CLAVE_PARAMETRO.plataformaCorreoSoporte),
+      horarioAtencionSoporte: textoDe(
+        mapa,
+        CLAVE_PARAMETRO.plataformaHorarioAtencionSoporte,
+      ),
     },
   };
 }
@@ -333,6 +337,8 @@ export async function actualizarParametrosInstitucionales(
       [CLAVE_PARAMETRO.plataformaLogoUrl]:
         entrada.datos.logoPlataformaUrl ?? '',
       [CLAVE_PARAMETRO.plataformaCorreoSoporte]: entrada.datos.correoSoporte,
+      [CLAVE_PARAMETRO.plataformaHorarioAtencionSoporte]:
+        entrada.datos.horarioAtencionSoporte,
     },
     seccion: 'INSTITUCIONAL',
     origen: 'guardado',
@@ -354,6 +360,8 @@ export async function restaurarParametrosInstitucionales(
         PARAMETROS_INSTITUCIONALES_DEFAULT.logoPlataformaUrl ?? '',
       [CLAVE_PARAMETRO.plataformaCorreoSoporte]:
         PARAMETROS_INSTITUCIONALES_DEFAULT.correoSoporte,
+      [CLAVE_PARAMETRO.plataformaHorarioAtencionSoporte]:
+        PARAMETROS_INSTITUCIONALES_DEFAULT.horarioAtencionSoporte,
     },
     seccion: 'INSTITUCIONAL',
     origen: 'restauracion',

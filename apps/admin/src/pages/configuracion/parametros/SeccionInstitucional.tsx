@@ -64,6 +64,15 @@ export function SeccionInstitucional({
         valor={valores.correoSoporte}
       />
 
+      <CampoDeTexto
+        alCambiar={(horarioAtencionSoporte) => {
+          setValores((previo) => ({ ...previo, horarioAtencionSoporte }));
+        }}
+        error={errores.horarioAtencionSoporte}
+        etiqueta={TEXTOS_PARAMETROS.campoHorarioAtencionSoporte}
+        valor={valores.horarioAtencionSoporte}
+      />
+
       <BotonesDeSeccion
         alAbrirGuardar={formulario.abrirGuardar}
         alAbrirRestaurar={formulario.abrirRestaurar}
