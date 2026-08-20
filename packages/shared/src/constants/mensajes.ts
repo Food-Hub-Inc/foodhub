@@ -330,6 +330,79 @@ export const MENSAJES_AYUDA = {
   graciasPorTuOpinion: 'Gracias por tu opinión',
   sinResultados: 'No encontramos preguntas que coincidan con tu búsqueda.',
   contactarSoporte: 'Contactar al soporte',
+
+  /**
+   * US-AYU-04 - Informacion legal y datos de contacto (PAN-AYU-04).
+   *
+   * No todos los textos son literales de la tabla de criterios: la
+   * documentacion describe el comportamiento sin fijar cada palabra, asi que
+   * los que el equipo tuvo que redactar quedan marcados con [PROPIO]. Los que
+   * si lo son llevan el comentario "LITERAL - ..." que sigue el mismo formato
+   * que el resto del archivo.
+   */
+  indiceLegal: {
+    /** [PROPIO] Titulo del sub-hub "Informacion legal" dentro del hub AYU. */
+    titulo: 'Información legal',
+    /** [PROPIO] Bajada del sub-hub. */
+    bajada:
+      'Accedé a los términos y condiciones, la política de privacidad y los datos de contacto de FoodHub.',
+    terminos: {
+      /** [PROPIO] Etiqueta de la fila del sub-hub. */
+      titulo: 'Términos y condiciones',
+      /** [PROPIO] Descripcion breve de la fila del sub-hub. */
+      descripcion: 'El texto vigente que rige tu uso de la plataforma.',
+    },
+    privacidad: {
+      /** [PROPIO] */
+      titulo: 'Política de privacidad',
+      /** [PROPIO] */
+      descripcion:
+        'Cómo tratamos tus datos personales y tu información en FoodHub.',
+    },
+    contacto: {
+      /** [PROPIO] Etiqueta de la fila del sub-hub. */
+      titulo: 'Contacto del soporte',
+      /** [PROPIO] */
+      descripcion:
+        'El correo oficial, los horarios de atención y el formulario de contacto.',
+    },
+  },
+  documentoLegal: {
+    /**
+     * Leyenda del encabezado de PAN-AYU-04 cuando el documento tiene una
+     * fecha de publicacion. Es [PROPIO] porque el criterio pide "fecha de
+     * ultima actualizacion" sin fijar el formato.
+     */
+    ultimaActualizacion: (fecha: string) => `Última actualización: ${fecha}`,
+    /** [PROPIO] Etiqueta accesible del boton "Descargar PDF" en la barra superior. */
+    descargarPdf: 'Descargar PDF',
+    /** [PROPIO] Estado del boton mientras se genera y descarga el PDF. */
+    descargandoPdf: 'Descargando…',
+    /**
+     * LITERAL - US-AYU-04, error al no poder generar o descargar el PDF.
+     * Coherente con el resto de los mensajes de error: explica que paso
+     * sin detalle tecnico y ofrece una salida (reintentar).
+     */
+    errorPdf:
+      'No pudimos generar el PDF. Revisá tu conexión e intentá nuevamente.',
+  },
+  contacto: {
+    /** [PROPIO] Titulo de la pantalla de contacto. */
+    titulo: 'Contacto del soporte',
+    /** [PROPIO] Etiqueta del bloque con el correo electronico oficial. */
+    correoTitulo: 'Correo electrónico',
+    /** [PROPIO] Etiqueta del bloque con los horarios de atencion. */
+    horarioTitulo: 'Horarios de atención',
+    /**
+     * LITERAL - US-AYU-04, accion que abre el formulario de contacto
+     * interno (US-AYU-03). Reaprovecha la cadena que ya define
+     * `contactarSoporte` para que las pruebas funcionales no verifiquen dos
+     * copias del mismo texto.
+     */
+    irAlFormulario: 'Contactar al soporte',
+    /** [PROPIO] Validacion server-side: el horario no puede estar vacio. */
+    horarioVacio: 'El horario de atención no puede estar vacío.',
+  },
 } as const;
 
 /**
