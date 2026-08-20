@@ -39,3 +39,51 @@ export function formatearPrecio(precio: string): string {
 export function formatearFecha(iso: string): string {
   return formatoFecha.format(new Date(iso));
 }
+
+/**
+ * Hora sin fecha, para la línea de tiempo del pedido y el rango estimado
+ * (US-PED-02 y US-PED-07: "nombre del evento, horario").
+ *
+ * "2026-08-14T18:30:00.000Z" → "15:30" en la zona horaria del dispositivo. Las
+ * pantallas le agregan el " hs" cuando corresponde, porque el rango lo escribe
+ * una sola vez ("Estimado 14:05 – 14:15 hs") y no una por extremo.
+ */
+const formatoHora = new Intl.DateTimeFormat(LOCALE, {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+});
+
+export function formatearHora(fecha: Date | string): string {
+  return formatoHora.format(
+    typeof fecha === 'string' ? new Date(fecha) : fecha,
+  );
+}
+
+/**
+ * Cuánto pasó desde un momento dado, en la forma que pide US-PED-03: "tiempo
+ * transcurrido desde que el pedido fue recibido (ej. 'hace 3 min')".
+ *
+ * Se corta en días: un pedido que lleva más de una semana esperando respuesta no
+ * existe -la expiración automática lo cierra a los quince minutos (US-PED-10)- y
+ * en las pestañas de historial la tarjeta muestra la fecha, no el relativo.
+ *
+ * Función PURA salvo por el reloj, que se puede inyectar para probarla.
+ */
+export function tiempoTranscurrido(
+  desde: string,
+  ahora: Date = new Date(),
+): string {
+  const minutos = Math.floor(
+    (ahora.getTime() - new Date(desde).getTime()) / 60_000,
+  );
+
+  if (minutos < 1) return 'recién';
+  if (minutos < 60) return `hace ${String(minutos)} min`;
+
+  const horas = Math.floor(minutos / 60);
+  if (horas < 24) return `hace ${String(horas)} h`;
+
+  const dias = Math.floor(horas / 24);
+  return `hace ${String(dias)} ${dias === 1 ? 'día' : 'días'}`;
+}
