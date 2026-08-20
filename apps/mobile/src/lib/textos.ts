@@ -220,8 +220,6 @@ export const TEXTOS_AYUDA = {
     'El manual reúne instrucciones paso a paso para usar FoodHub según tu rol.',
   contactoPendiente:
     'El formulario permite enviar una consulta, sugerencia o reporte al equipo.',
-  legalPendiente:
-    'Esta sección reúne los términos, condiciones y datos de contacto de FoodHub.',
 } as const;
 
 /**
@@ -676,12 +674,6 @@ export const PANTALLAS_PENDIENTES = {
     modulo: 'Ayuda y soporte',
     titulo: 'Contactar al soporte',
     descripcion: TEXTOS_AYUDA.contactoPendiente,
-  },
-  legalAyuda: {
-    codigo: 'PAN-AYU-04',
-    modulo: 'Ayuda y soporte',
-    titulo: 'Información legal',
-    descripcion: TEXTOS_AYUDA.legalPendiente,
   },
 } as const;
 
