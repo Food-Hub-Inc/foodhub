@@ -13,25 +13,34 @@
  * casteada a texto.
  *
  * Con un cocinero inexistente el resultado esperado es todo en cero, las dos
- * listas vacias y la valoracion en null.
+ * listas vacias y la valoracion en null. Se le puede pasar el id de un cocinero
+ * real como argumento para leer sus metricas y contrastarlas a mano:
+ *
+ *   pnpm --filter @foodhub/api exec tsx src/scripts/humo-dashboard.ts <uuid>
  */
 import { rangoDePeriodo } from '@foodhub/shared';
 import { obtenerActividad } from '../modules/dashboard/dashboard.service.js';
 
 const ID_INEXISTENTE = '00000000-0000-4000-8000-000000000000';
 
+const cocineroId = process.argv[2] ?? ID_INEXISTENTE;
+
 // "Este ano": el rango mas ancho de US-DASH-05, para que ninguna de las cuatro
 // consultas se ahorre trabajo por quedarse sin filas antes de tiempo.
 const { desde, hasta } = rangoDePeriodo('ANIO');
 
-const actividad = await obtenerActividad(ID_INEXISTENTE, {
+const actividad = await obtenerActividad(cocineroId, {
   desde: desde.toISOString(),
   hasta: hasta.toISOString(),
 });
 
+console.log('cocinero:', cocineroId);
 console.log('resumen:', JSON.stringify(actividad.resumen));
 console.log('distribucion:', JSON.stringify(actividad.distribucion));
-console.log('platos mas pedidos:', actividad.platosMasPedidos.length);
-console.log('clientes recurrentes:', actividad.clientesRecurrentes.length);
+console.log('platos mas pedidos:', JSON.stringify(actividad.platosMasPedidos));
+console.log(
+  'clientes recurrentes:',
+  JSON.stringify(actividad.clientesRecurrentes),
+);
 
 process.exit(0);
