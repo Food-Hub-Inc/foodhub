@@ -1,4 +1,10 @@
 import { MENSAJES_AUTH, MENSAJES_ERROR } from '@foodhub/shared';
+import {
+  Directory,
+  DownloadTask,
+  File as ExpoFile,
+  Paths,
+} from 'expo-file-system';
 import { obtenerToken, supabase } from './supabase';
 
 /**
@@ -247,5 +253,39 @@ export const api = {
 
   eliminar<T>(ruta: string, datos?: unknown): Promise<T> {
     return conCuerpo<T>('DELETE', ruta, datos);
+  },
+
+  /**
+   * Descarga un binario (PDF u otro) autentificado con el token de la sesion
+   * y lo guarda en el directorio cache del dispositivo.
+   *
+   * Devuelve la URI local del archivo para que el caller la use con
+   * `expo-sharing`, `Linking.openURL` o el visor que corresponda.
+   *
+   * Usa `DownloadTask` de expo-file-system (no `fetch`+`blob`): en RN un
+   * blob no tiene URL estable para abrir desde otra app, y descargar directo
+   * a cache esquiva ese problema. Los headers de auth se envian como
+   * `headers` de la tarea.
+   */
+  async descargarBinario(ruta: string, nombreArchivo: string): Promise<string> {
+    const token = await obtenerToken();
+    const urlCompleta = `${BASE}${ruta}`;
+    const destino = new Directory(Paths.cache, 'foodhub');
+    if (!destino.exists) destino.create();
+
+    const archivoDestino = new ExpoFile(destino, nombreArchivo);
+    const tarea = new DownloadTask(urlCompleta, archivoDestino, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    try {
+      const resultado = await tarea.downloadAsync();
+      if (!resultado) {
+        throw new Error('La descarga del archivo no devolvió un archivo.');
+      }
+      return resultado.uri;
+    } finally {
+      tarea.release();
+    }
   },
 };
