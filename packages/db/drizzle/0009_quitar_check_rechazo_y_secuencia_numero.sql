@@ -1,0 +1,31 @@
+-- Modulo de Pedidos, parte 1 de 2: correcciones de esquema previas al alta de
+-- pedidos (US-PED-01 a US-PED-10).
+--
+-- 1. SECUENCIA DEL NUMERO DE PEDIDO
+--    RF022 fija el formato "FH-" + secuencial de cinco digitos con ceros a la
+--    izquierda. El secuencial lo entrega la base con `nextval`, que es atomico:
+--    resolverlo en la aplicacion con un max()+1 abriria una condicion de carrera
+--    entre dos clientes que confirman al mismo tiempo, y el indice unico de
+--    `numero_pedido` la convertiria en un error visible para el usuario.
+--
+-- 2. BAJA DEL CHECK `pedido_rechazo_con_motivo`
+--    Exigia `motivo_cancelacion_id` en todo pedido RECHAZADO, pero los tres
+--    caminos que llevan a ese estado lo contradicen: el cliente cancela "con o
+--    sin motivo ingresado" (US-PED-09), el cocinero puede rechazar con solo
+--    texto libre de cinco palabras sin elegir un motivo del catalogo (US-PED-04)
+--    y la expiracion automatica no tiene motivo alguno (US-PED-10). La
+--    obligatoriedad real -motivo cuando quien rechaza es el cocinero- es
+--    condicional y vive en `rechazarPedidoSchema` y en el servicio de pedidos.
+--
+--    El diagrama de clases DG12082026_V5 no cambia: no modela restricciones
+--    CHECK, solo atributos y relaciones.
+--
+-- LAS DOS SENTENCIAS SON IDEMPOTENTES A PROPOSITO. El CHECK ya se elimino a
+-- mano en el ambiente de desarrollo desde el editor SQL de Supabase, antes de
+-- que existiera esta migracion; sin `IF EXISTS`, aplicarla ahi fallaria y
+-- dejaria la tabla de migraciones de drizzle desincronizada con el resto de los
+-- ambientes. Con `IF EXISTS` el paso es un no-op en desarrollo y hace el trabajo
+-- en produccion.
+
+CREATE SEQUENCE IF NOT EXISTS "public"."pedido_numero_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 1 CACHE 1;--> statement-breakpoint
+ALTER TABLE "pedido" DROP CONSTRAINT IF EXISTS "pedido_rechazo_con_motivo";
