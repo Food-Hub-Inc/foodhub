@@ -628,12 +628,26 @@ export const PANTALLAS_PENDIENTES = {
     descripcion:
       'Tu calificación del cliente después de un pedido, con estrellas y un comentario opcional.',
   },
-  actividad: {
-    codigo: 'PAN-DASH-01',
+  /**
+   * El perfil publico del cliente, cuarto criterio de US-DASH-03.
+   *
+   * "El cocinero presiona sobre un cliente del listado -> navegue al perfil
+   * publico del cliente mostrando su informacion basica y el historial de
+   * pedidos realizados a ese cocinero."
+   *
+   * NO TIENE CODIGO PAN: el inventario de la Etapa 5 dibuja el perfil publico
+   * del COCINERO (PAN-EXP-04) y no el del cliente, y ninguna US lo define.
+   * Codificarlo seria inventar una pantalla entera -layout, textos y
+   * navegacion- sin respaldo en la documentacion, asi que el destino existe y
+   * se anuncia como pendiente, igual que se hizo con las dos pantallas de
+   * resenas en el sprint de Pedidos (decision del equipo, 20/08/2026).
+   */
+  perfilCliente: {
+    codigo: 'PAN-?',
     modulo: 'Dashboard del cocinero',
-    titulo: 'Mi actividad',
+    titulo: 'Perfil del cliente',
     descripcion:
-      'Tus métricas propias: pedidos del período, calificación promedio y platos más pedidos.',
+      'La información básica del cliente y el historial de pedidos que te hizo.',
   },
   notificaciones: {
     codigo: 'PAN-NOT-01',
@@ -708,4 +722,64 @@ export const TEXTOS_PEDIDOS = {
 
   /** [PROPIO] Rótulo del campo de texto libre de la cancelación. */
   motivoDeLaCancelacion: 'Motivo de la cancelación',
+} as const;
+
+/**
+ * Textos de PAN-DASH-01 que NO salen de un criterio de aceptacion.
+ *
+ * Los literales del modulo -los rotulos de las tarjetas, los nombres de los
+ * cuatro estados, las opciones del selector y los cuatro estados vacios- viven
+ * en `MENSAJES_DASHBOARD` (`@foodhub/shared`). Aca queda solo lo que es de esta
+ * interfaz y de nadie mas: etiquetas accesibles, los rotulos de apoyo del
+ * ranking y el vocabulario del calendario, que la documentacion no dibuja.
+ */
+export const TEXTOS_DASHBOARD = {
+  /**
+   * [PROPIO] Etiqueta accesible del disparador del selector.
+   *
+   * Anuncia el periodo vigente ademas de la accion: un lector de pantalla sobre
+   * un boton que dice solo "Este mes" no deja claro que se puede cambiar.
+   */
+  cambiarPeriodo: (rango: string) => `Período: ${rango}. Cambiar el período`,
+
+  /** [PROPIO] Etiqueta accesible de la hoja de periodos. */
+  opcionesDePeriodo: 'Opciones de período',
+
+  /** [PROPIO] Vuelve del panel personalizado a la lista de periodos. */
+  volverALosPeriodos: 'Volver a los períodos',
+
+  /**
+   * [PROPIO] Unidades vendidas de un plato del ranking (US-DASH-02, "cantidad
+   * de veces pedido en el periodo"). El criterio pide el dato, no el texto.
+   */
+  vecesPedido: (unidades: number) =>
+    `${String(unidades)} ${unidades === 1 ? 'vez' : 'veces'}`,
+
+  /** [PROPIO] Etiqueta accesible de la posicion en el ranking. */
+  puestoEnElRanking: (puesto: number) => `Puesto ${String(puesto)}`,
+
+  /** [PROPIO] Etiqueta accesible de la fila de un cliente recurrente. */
+  abrirPerfilDelCliente: (nombre: string) => `Ver el perfil de ${nombre}`,
+
+  /**
+   * [PROPIO] Etiqueta accesible del grafico de US-DASH-04.
+   *
+   * El grafico en si queda oculto para el lector de pantalla: el listado que va
+   * debajo ya dice cada estado con su cantidad y su porcentaje, y anunciarlo dos
+   * veces solo alarga la lectura.
+   */
+  distribucionDePedidos: 'Distribución de pedidos por estado',
+
+  /** [PROPIO] Porcentaje de un estado en el listado del grafico. */
+  porcentaje: (valor: number) => `${String(valor)} %`,
+
+  /**
+   * [PROPIO] Iniciales de los dias en la grilla del calendario, de lunes a
+   * domingo. Miercoles va con X para no repetir la M de martes.
+   */
+  diasDeLaSemana: ['L', 'M', 'X', 'J', 'V', 'S', 'D'],
+
+  /** [PROPIO] Etiquetas accesibles de la navegacion del calendario. */
+  mesAnterior: 'Mes anterior',
+  mesSiguiente: 'Mes siguiente',
 } as const;

@@ -16,6 +16,7 @@ import { almacenamientoRouter } from './modules/almacenamiento/almacenamiento.ro
 import { authRouter } from './modules/auth/auth.router.js';
 import { auditoriaRouter } from './modules/auditoria/auditoria.router.js';
 import { catalogoRouter } from './modules/catalogo/catalogo.router.js';
+import { dashboardRouter } from './modules/dashboard/dashboard.router.js';
 import { carritoRouter } from './modules/exploracion/carrito.router.js';
 import { exploracionRouter } from './modules/exploracion/exploracion.router.js';
 import { pedidosRouter } from './modules/pedidos/pedidos.router.js';
@@ -148,6 +149,10 @@ export function crearApp(): Express {
   // Modulo de Pedidos (US-PED-01 a US-PED-09). US-PED-10, la expiracion
   // automatica, no tiene ruta: corre con pg_cron dentro de la base.
   app.use(`${PREFIJO_API}/pedidos`, pedidosRouter);
+
+  // Modulo de Dashboard del cocinero (US-DASH-01 a US-DASH-05). Solo lectura y
+  // solo sobre los datos del cocinero de la sesion.
+  app.use(`${PREFIJO_API}/dashboard`, dashboardRouter);
 
   // A medida que avance la Etapa 6 se montan aca los routers de cada modulo:
   //   app.use(`${PREFIJO_API}/resenas`, resenasRouter);
