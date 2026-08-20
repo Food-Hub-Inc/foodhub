@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { useResolveClassNames } from 'uniwind';
 
 /**
@@ -20,13 +21,18 @@ export function useOpcionesDeTabs() {
   const borde = useResolveClassNames('border-border');
   const colorActivo = comoColor(activo.color);
   const colorInactivo = comoColor(inactivo.color);
+  const colorIconoActivo =
+    Platform.OS === 'android'
+      ? comoColor(superficie.backgroundColor)
+      : colorActivo;
 
   return {
     backgroundColor: comoColor(superficie.backgroundColor),
     iconColor: {
       default: colorInactivo,
-      selected: colorActivo,
+      selected: colorIconoActivo,
     },
+    indicatorColor: colorActivo,
     labelStyle: {
       default: {
         color: colorInactivo,
@@ -40,6 +46,7 @@ export function useOpcionesDeTabs() {
       },
     },
     tintColor: colorActivo,
+    rippleColor: colorActivo,
     // NativeTabs no expone un borde superior multiplataforma. El color se
     // resuelve para conservar la misma superficie visual en Android e iOS.
     shadowColor: comoColor(borde.borderColor),
