@@ -4,6 +4,7 @@ import {
   index,
   integer,
   numeric,
+  pgSequence,
   pgTable,
   text,
   timestamp,
@@ -19,6 +20,26 @@ import { publicacion } from './publicaciones.js';
  * Modulo de pedidos: el proceso transaccional central del sistema
  * (alcance 2.2.2.2.2).
  */
+
+/**
+ * Secuencia del numero visible de pedido (US-PED-01, RF022).
+ *
+ * RF022 fija el formato: "prefijo FH- seguido de un secuencial de cinco digitos
+ * con ceros a la izquierda". El secuencial lo lleva la base y no la aplicacion:
+ * calcularlo con un `max(numero) + 1` en el servicio abriria una condicion de
+ * carrera entre dos clientes que confirman a la vez, y el indice unico de
+ * `numero_pedido` convertiria esa carrera en un error visible para el usuario.
+ * `nextval` es atomico y no bloquea.
+ *
+ * Los huecos que deja una transaccion abortada son irrelevantes: el numero
+ * identifica al pedido, no cuenta cuantos hubo.
+ */
+export const secuenciaNumeroPedido = pgSequence('pedido_numero_seq', {
+  startWith: 1,
+  increment: 1,
+  minValue: 1,
+  cycle: false,
+});
 
 /**
  * Diagrama: Pedido.
@@ -77,12 +98,20 @@ export const pedido = pgTable(
       .defaultNow(),
   },
   (t) => [
-    // Un pedido rechazado sin motivo deja al cliente sin explicacion: la base
-    // lo impide, ademas de la validacion de zod en la API.
-    check(
-      'pedido_rechazo_con_motivo',
-      sql`${t.estadoPedidoActual} <> 'RECHAZADO' or ${t.motivoCancelacionId} is not null`,
-    ),
+    /**
+     * NO HAY CHECK DE "RECHAZO CON MOTIVO", y su ausencia es deliberada.
+     *
+     * El CHECK original exigia `motivo_cancelacion_id` en todo pedido
+     * RECHAZADO, pero los tres caminos que llevan a ese estado lo contradicen:
+     * el cliente cancela "con o sin motivo ingresado" (US-PED-09), el cocinero
+     * puede rechazar con solo texto libre de cinco palabras y sin elegir un
+     * motivo del catalogo (US-PED-04) y la expiracion automatica no tiene
+     * motivo alguno (US-PED-10). Se elimino en la migracion 0008.
+     *
+     * La obligatoriedad que SI existe -motivo cuando rechaza el cocinero- es
+     * condicional y depende de `origen_rechazo`, asi que vive en
+     * `rechazarPedidoSchema` (@foodhub/shared) y en el servicio de pedidos.
+     */
     // Nadie puede pedirse a si mismo.
     check(
       'pedido_partes_distintas',

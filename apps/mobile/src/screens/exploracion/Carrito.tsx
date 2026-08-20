@@ -27,6 +27,7 @@ import {
   useQuitarItem,
   useVaciarCarrito,
 } from '../../hooks/useCarrito';
+import { useConfirmarPedido } from '../../hooks/usePedidos';
 import { mensajeDeError } from '../../lib/api';
 import { formatearPrecio } from '../../lib/formato';
 import { TEXTOS_CARRITO } from '../../lib/textos';
@@ -53,7 +54,7 @@ import { AvatarDeCocinero, MiniaturaDePlato, Valoracion } from './Piezas';
 /**
  * Tope de caracteres de las notas.
  *
- * Es el mismo que `crearPedidoSchema` impone a `instruccionesCliente`, que es
+ * Es el mismo que `confirmarPedidoSchema` impone a `instruccionesCliente`, que es
  * donde van a terminar: dejar escribir más de lo que el pedido acepta haría que
  * el cliente pierda texto recién al confirmar.
  */
@@ -180,7 +181,7 @@ function CarritoConItems({ carrito }: { carrito: CarritoContrato }) {
         renderItem={({ item }) => <FilaDeItem item={item} />}
       />
 
-      <PieConTotal carrito={carrito} />
+      <PieConTotal carrito={carrito} notas={notas} />
 
       {/* Sexto criterio: "Vaciar carrito" confirma antes de borrar. */}
       <DialogoSevero
@@ -398,18 +399,43 @@ function BotonDeCantidad({
 }
 
 /**
- * Pie fijo con el total y "Confirmar pedido" (séptimo criterio).
+ * Pie fijo con el total y "Confirmar pedido" (séptimo criterio de US-EXP-07).
  *
- * El botón lleva a la confirmación del pedido (US-PED-01). Ese módulo todavía no
- * está codificado, así que navega a su pantalla anunciada (PAN-PED-05), igual que
- * "Enviar mensaje" en el perfil del cocinero. El carrito NO se vacía acá: el
- * octavo criterio dice que se vacía "una vez registrado el pedido en el sistema",
- * y el noveno que volver atrás sin confirmar lo deja intacto. Las dos cosas son
- * responsabilidad de US-PED-01.
+ * ACÁ SE REGISTRA EL PEDIDO (US-PED-01). No hay pantalla intermedia de
+ * confirmación: RF022 menciona una PAN-PED-02 que la maquetación no dibuja, y el
+ * criterio de aceptación de US-PED-01 pone al cliente "en la pantalla de el
+ * carrito" al presionar el botón. Esta pantalla ya muestra todo lo que RF022 le
+ * pide a esa confirmación -los platos, el cocinero, el total y el campo de
+ * instrucciones-, así que confirmar desde acá cumple los dos textos sin inventar
+ * una pantalla (decisión del equipo, 2026-08-19).
+ *
+ * EL CARRITO NO SE VACÍA EN EL CLIENTE: lo borra el servidor dentro de la misma
+ * transacción que crea el pedido, y el hook refleja ese borrado en la caché. Así
+ * un fallo a mitad de camino no deja al cliente sin carrito Y sin pedido.
+ *
+ * Al confirmar navega con `replace` y no con `push`: el carrito ya no existe, y
+ * dejarlo en la pila haría que el gesto de volver aterrizara en una pantalla
+ * vacía en lugar de en el feed.
  */
-function PieConTotal({ carrito }: { carrito: CarritoContrato }) {
+function PieConTotal({
+  carrito,
+  notas,
+}: {
+  carrito: CarritoContrato;
+  notas: string;
+}) {
+  const confirmar = useConfirmarPedido();
+
   return (
     <View className="border-t border-border bg-surface px-4 pb-2 pt-3">
+      {confirmar.isError ? (
+        <Aviso
+          className="mb-3"
+          mensaje={mensajeDeError(confirmar.error)}
+          tono="error"
+        />
+      ) : null}
+
       <View className="mb-3 flex-row items-center justify-between">
         <Text className="text-body text-text-secondary">
           {TEXTOS_CARRITO.total}
@@ -420,8 +446,16 @@ function PieConTotal({ carrito }: { carrito: CarritoContrato }) {
       </View>
 
       <Boton
+        cargando={confirmar.isPending}
         onPress={() => {
-          router.push('/(cliente)/pedidos');
+          confirmar.mutate(notas.trim() || undefined, {
+            onSuccess: (pedido) => {
+              router.replace({
+                pathname: '/pedidos/[id]/seguimiento',
+                params: { id: pedido.id },
+              });
+            },
+          });
         }}
       >
         {MENSAJES_EXPLORACION.confirmarPedido}

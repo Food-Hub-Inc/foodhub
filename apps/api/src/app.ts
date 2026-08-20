@@ -18,6 +18,7 @@ import { auditoriaRouter } from './modules/auditoria/auditoria.router.js';
 import { catalogoRouter } from './modules/catalogo/catalogo.router.js';
 import { carritoRouter } from './modules/exploracion/carrito.router.js';
 import { exploracionRouter } from './modules/exploracion/exploracion.router.js';
+import { pedidosRouter } from './modules/pedidos/pedidos.router.js';
 import { publicacionesRouter } from './modules/publicaciones/publicaciones.router.js';
 import { categoriasRouter } from './modules/configuracion/categorias.router.js';
 import { motivosCancelacionRouter } from './modules/configuracion/motivosCancelacion.router.js';
@@ -144,8 +145,12 @@ export function crearApp(): Express {
   app.use(`${PREFIJO_API}/exploracion`, exploracionRouter);
   app.use(`${PREFIJO_API}/carrito`, carritoRouter);
 
+  // Modulo de Pedidos (US-PED-01 a US-PED-09). US-PED-10, la expiracion
+  // automatica, no tiene ruta: corre con pg_cron dentro de la base.
+  app.use(`${PREFIJO_API}/pedidos`, pedidosRouter);
+
   // A medida que avance la Etapa 6 se montan aca los routers de cada modulo:
-  //   app.use(`${PREFIJO_API}/pedidos`, pedidosRouter);
+  //   app.use(`${PREFIJO_API}/resenas`, resenasRouter);
   //   ...
 
   // --- 7. Errores (siempre al final) -----------------------------------------

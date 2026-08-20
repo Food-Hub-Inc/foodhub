@@ -64,6 +64,20 @@
       "when": 1787076318282,
       "tag": "0007_resena_por_plato",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787178927224,
+      "tag": "0009_quitar_check_rechazo_y_secuencia_numero",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1787178986843,
+      "tag": "0010_expiracion_automatica_pedidos",
+      "breakpoints": true
     }
   ]
 }

@@ -196,8 +196,13 @@ async function leerCarrito(clienteId: string): Promise<Carrito | null> {
  * un carrito con cero items, y dejar la fila vacia haria que el proximo
  * "Agregar al carrito" de OTRO cocinero disparara la pregunta de reemplazo sin
  * que hubiera nada que reemplazar.
+ *
+ * Se exporta porque el modulo de Pedidos la corre tambien al confirmar
+ * (US-EXP-07: "al ingresar al carrito O AL INTENTAR CONFIRMAR EL PEDIDO"): sin
+ * eso, un plato que dejo de estar disponible mientras el cliente miraba la
+ * pantalla entraria igual al pedido.
  */
-async function depurarYLimpiar(clienteId: string): Promise<string[]> {
+export async function depurarYLimpiar(clienteId: string): Promise<string[]> {
   const [propio] = await db
     .select({ id: carrito.id })
     .from(carrito)

@@ -111,6 +111,37 @@ export async function obtenerParametrosSistema(): Promise<ParametrosSistema> {
   };
 }
 
+/**
+ * US-CFG-03 / RF057 - Minutos que tiene el cliente para cancelar un pedido en
+ * estado "Creado".
+ *
+ * Lectura de UN parametro, sin traer los otros nueve: la consulta la hace el
+ * detalle de cada pedido del cliente (US-PED-09) y ahi el resto de la
+ * configuracion no interviene.
+ *
+ * Ante un valor ausente o no numerico cae al valor de fabrica en lugar de
+ * fallar: un parametro mal cargado no puede dejar sin detalle a un pedido.
+ * Es el mismo criterio con el que la funcion `expirar_pedidos_sin_respuesta`
+ * (migracion 0010) trata su propio parametro.
+ */
+export async function obtenerMinutosDeCancelacion(): Promise<number> {
+  const [fila] = await db
+    .select({ valor: configuracionSistema.valor })
+    .from(configuracionSistema)
+    .where(
+      eq(
+        configuracionSistema.clave,
+        CLAVE_PARAMETRO.pedidoTiempoCancelacionClienteMinutos,
+      ),
+    )
+    .limit(1);
+
+  const minutos = Number(fila?.valor);
+  return Number.isFinite(minutos) && minutos > 0
+    ? minutos
+    : PARAMETROS_PEDIDOS_DEFAULT.tiempoCancelacionClienteMinutos;
+}
+
 // ---------------------------------------------------------------------------
 // Escritura
 // ---------------------------------------------------------------------------

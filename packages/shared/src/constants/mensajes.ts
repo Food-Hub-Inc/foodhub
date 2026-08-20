@@ -598,6 +598,262 @@ export const MENSAJES_CONFIGURACION = {
   preferenciaActualizada: 'Preferencia actualizada',
 } as const;
 
+/**
+ * Modulo de Pedidos (US-PED-01 a US-PED-10, RF022 a RF032).
+ *
+ * Casi todo este bloque es LITERAL: el ciclo de vida del pedido es el proceso
+ * que mas textos fijos tiene en la documentacion, porque el cliente y el
+ * cocinero ven leyendas distintas del MISMO estado interno. Esa traduccion
+ * -CREADO se muestra "Recibido" al cliente y "Nuevo" al cocinero- es parte del
+ * requerimiento, no una decision de interfaz, y por eso vive aca y no en las
+ * pantallas.
+ *
+ * DONDE LA MAQUETACION Y EL DOCUMENTO DIFIEREN, GANA EL DOCUMENTO (decision del
+ * equipo del 14/08/2026). Los dos casos de este modulo quedan anotados en el
+ * literal correspondiente.
+ */
+export const MENSAJES_PEDIDO = {
+  // --- Leyendas del ciclo de vida -------------------------------------------
+  /**
+   * LITERAL - US-PED-02: "una linea de tiempo con cuatro leyendas visuales
+   * secuenciales: Recibido (estado interno: Creado), Preparando (estado
+   * interno: Aceptado), Listo (estado interno: Listo) y Entregado (estado
+   * interno: Completado)".
+   *
+   * Son las leyendas QUE VE EL CLIENTE. El cocinero nombra los mismos estados
+   * con las etiquetas de sus pestanas (US-PED-03), que estan mas abajo.
+   */
+  leyendaRecibido: 'Recibido',
+  leyendaPreparando: 'Preparando',
+  leyendaListo: 'Listo',
+  leyendaEntregado: 'Entregado',
+
+  // --- Seguimiento del pedido (US-PED-02, PAN-PED-03) -----------------------
+  /**
+   * LITERAL - US-PED-02, encabezado de la pantalla de seguimiento al confirmar.
+   *
+   * La maquetacion escribe "!Pedido enviado!" en PAN-PED-03.0 y "!Pedido
+   * confirmado!" en PAN-PED-03; el criterio de aceptacion fija el segundo para
+   * los dos casos, asi que se usa uno solo.
+   */
+  pedidoConfirmado: '¡Pedido confirmado!',
+
+  /** PROPIO - bajada del banner mientras el cocinero no responde (PAN-PED-03.0). */
+  esperandoConfirmacion: 'Esperando confirmación del cocinero…',
+
+  /** LITERAL - US-PED-02, enlace al detalle completo desde el seguimiento. */
+  verDetalleDelPedido: 'Ver detalle del pedido',
+
+  /**
+   * LITERAL - US-PED-02, rotulo del tiempo estimado, y la forma del rango del
+   * ejemplo del criterio ("Estimado 9:45 - 9:55 hs").
+   */
+  tiempoEstimado: 'Tiempo estimado',
+  rangoEstimado: (desde: string, hasta: string) =>
+    `Estimado ${desde} – ${hasta} hs`,
+
+  // --- Origen del rechazo ---------------------------------------------------
+  /** LITERAL - US-PED-02 y US-PED-06, el cocinero rechazo el pedido. */
+  rechazadoPorElCocinero: 'Rechazado por el cocinero',
+
+  /** LITERAL - US-PED-02 y US-PED-06, el propio cliente cancelo. */
+  canceladoPorVos: 'Cancelado por vos',
+
+  /**
+   * LITERAL - US-PED-06, etiqueta de la tarjeta en el historial cuando expiro.
+   * El criterio la escribe con guion medio: "Expirado - sin respuesta del
+   * cocinero".
+   */
+  expiradoSinRespuesta: 'Expirado - sin respuesta del cocinero',
+
+  /**
+   * LITERAL - US-PED-07, indicador de estado en el DETALLE de un pedido
+   * expirado. Es un texto distinto del anterior, no una variante de redaccion:
+   * la tarjeta del historial y el detalle lo dicen con otras palabras.
+   */
+  expiradoSinRespuestaDetalle: 'Expirado - el cocinero no respondió a tiempo',
+
+  /** LITERAL - US-PED-07, encabezados del detalle segun como termino el pedido. */
+  encabezadoPedidoRechazado: 'Pedido rechazado',
+  encabezadoPedidoCancelado: 'Pedido cancelado',
+  encabezadoPedidoExpirado: 'Pedido expirado',
+
+  // --- Historial del cliente (US-PED-06, PAN-PED-05) ------------------------
+  /**
+   * LITERAL - US-PED-06: "tres pestanas horizontales: Activos ("En curso"),
+   * Completados y Rechazados". El criterio da los dos nombres de la primera; la
+   * maquetacion rotula "En curso", que es el que se muestra.
+   */
+  pestanaEnCurso: 'En curso',
+  pestanaCompletados: 'Completados',
+  pestanaRechazados: 'Rechazados',
+
+  /** LITERAL - US-PED-06, pestana "Activos" sin pedidos. */
+  sinPedidosEnCurso: 'No tenés pedidos en curso ahora mismo',
+
+  /** LITERAL - US-PED-06, pestana "Rechazados" sin pedidos. */
+  sinPedidosRechazados: '¡Todo bien! No tenés pedidos rechazados',
+
+  /**
+   * PROPIO - US-PED-06 pide un estado vacio "acorde a la pestana" y solo da
+   * ejemplos para "Activos" y "Rechazados".
+   */
+  sinPedidosCompletados: 'Todavía no completaste ningún pedido',
+
+  /** LITERAL - US-PED-06 y US-PED-07, accion sobre un pedido completado. */
+  dejarResena: 'Dejar reseña',
+
+  /** LITERAL - US-PED-07, el cliente ya reseno lo que pidio. */
+  yaCalificasteEstePedido: 'Ya calificaste este pedido',
+
+  // --- Cancelacion por el cliente (US-PED-09, PAN-PED-03.0.1) ---------------
+  /** LITERAL - US-PED-09, boton visible solo mientras el pedido esta en Creado. */
+  cancelarPedido: 'Cancelar pedido',
+
+  /** LITERAL - US-PED-09, titulo del dialogo de confirmacion. */
+  cancelarPedidoTitulo: '¿Cancelar pedido?',
+
+  /** LITERAL - US-PED-09, campo de texto opcional del dialogo. */
+  cancelarPedidoPlaceholder: 'Contale al cocinero por qué cancelás (opcional)',
+
+  /** LITERAL - US-PED-09, botones del dialogo. */
+  cancelarPedidoConfirmar: 'Sí, cancelar',
+  cancelarPedidoVolver: 'Volver',
+
+  /**
+   * LITERAL - US-PED-09: paso el tiempo maximo de cancelacion (RF057) y el
+   * cliente intenta cancelar igual "via API". Con punto final, como el criterio.
+   */
+  cancelacionExpirada: 'El tiempo para cancelar este pedido ha expirado.',
+
+  /** PROPIO - el pedido ya no esta en Creado cuando llega la cancelacion. */
+  cancelacionFueraDeEstado:
+    'Este pedido ya no se puede cancelar porque el cocinero lo respondió.',
+
+  // --- Bandeja del cocinero (US-PED-03, US-PED-05, US-PED-08) ---------------
+  /**
+   * LITERAL - US-PED-03: "cinco pestanas: Nuevos (pedidos en estado Creado),
+   * Preparando (Aceptado), Listos (Listo), Completados y Rechazados".
+   */
+  pestanaNuevos: 'Nuevos',
+  pestanaPreparando: 'Preparando',
+  pestanaListos: 'Listos',
+
+  /** LITERAL - US-PED-03, boton de cada tarjeta de la bandeja. */
+  verDetalle: 'Ver detalle',
+
+  /** LITERAL - US-PED-03 y US-PED-04, acciones del detalle de un pedido nuevo. */
+  aceptar: 'Aceptar',
+  rechazar: 'Rechazar',
+
+  /** LITERAL - US-PED-03, rotulo del selector de tiempo (PAN-PED-04.4). */
+  tiempoEstimadoDePreparacion: 'Tiempo estimado de preparación',
+
+  /**
+   * LITERAL - US-PED-03, se presiono "Aceptar" sin elegir tiempo.
+   *
+   * Sin punto final y con voseo: asi lo escribe el criterio de aceptacion.
+   * RF025 lo transcribe como "Selecciona el tiempo estimado de preparacion.";
+   * ante la diferencia manda la US, que es lo que verifican las pruebas
+   * funcionales.
+   */
+  seleccionaTiempoPreparacion: 'Seleccioná el tiempo estimado de preparación',
+
+  /** PROPIO - referencia bajo el selector de tiempo (PAN-PED-04.4). */
+  listoAproximadamenteALas: (hora: string) =>
+    `Listo aproximadamente a las ${hora} hs`,
+
+  /** LITERAL - US-PED-05, boton que avanza un pedido de Preparando a Listos. */
+  marcarListo: 'Listo',
+
+  /** LITERAL - US-PED-05, boton que completa un pedido de la pestana Listos. */
+  marcarEntregado: 'Entregado',
+
+  /** LITERAL - US-PED-05, dialogo de confirmacion de la entrega. */
+  confirmarEntregaTitulo: '¿Confirmar entrega?',
+  confirmarEntregaConfirmar: 'Confirmar',
+  confirmarEntregaCancelar: 'Cancelar',
+
+  /** LITERAL - US-PED-05, pestana "Preparando" sin pedidos. */
+  sinPedidosPreparandose: 'No tenés pedidos preparándose ahora',
+
+  /**
+   * PROPIO - US-PED-05 pide un estado vacio "con un mensaje acorde" y solo da
+   * el ejemplo de "Preparando".
+   */
+  sinPedidosNuevos: 'No tenés pedidos nuevos por ahora',
+  sinPedidosListos: 'No tenés pedidos listos para entregar',
+
+  /**
+   * LITERAL - US-PED-08: "Aun no tienes pedidos Completados/Rechazados". La
+   * barra separa las dos pestanas, no es texto a mostrar, asi que se transcribe
+   * una variante por pestana. El tuteo -unico en toda la aplicacion, que vosea-
+   * es el del criterio y se respeta.
+   */
+  cocineroSinPedidosCompletados: 'Aún no tienes pedidos Completados',
+  cocineroSinPedidosRechazados: 'Aún no tienes pedidos Rechazados',
+
+  /** LITERAL - US-PED-08, accion sobre un pedido completado del cocinero. */
+  calificarCliente: 'Calificar cliente',
+
+  /** PROPIO - el cocinero ya califico a ese cliente (US-RES-02 es por par). */
+  yaCalificasteAlCliente: 'Ya calificaste a este cliente',
+
+  // --- Rechazo por el cocinero (US-PED-04, PAN-PED-04.5) --------------------
+  /** LITERAL - US-PED-04, titulo de la pantalla de rechazo. */
+  rechazarPedidoTitulo: 'Rechazar pedido',
+
+  /** LITERAL - US-PED-04, campo de texto libre opcional. */
+  motivoRechazoPlaceholder: 'Contale al cliente el motivo del rechazo...',
+
+  /** LITERAL - US-PED-04, boton que confirma el rechazo. */
+  confirmarRechazo: 'Confirmar rechazo',
+
+  /**
+   * LITERAL - US-PED-04: el boton "permanece deshabilitado hasta que el
+   * cocinero seleccione al menos un motivo rapido O ingrese al menos 5 palabras
+   * en el campo de texto libre".
+   */
+  motivoRechazoRequerido:
+    'Elegí un motivo o escribí al menos 5 palabras para el cliente.',
+
+  /** PROPIO - ayuda bajo el campo de texto (PAN-PED-04.5: "Minimo 5 palabras"). */
+  motivoRechazoMinimo: 'Mínimo 5 palabras',
+
+  /** PROPIO - advertencia de la pantalla de rechazo (PAN-PED-04.5). */
+  rechazoIrreversible:
+    'Una vez rechazado, el pedido no puede recuperarse. El cliente recibirá el motivo ingresado.',
+
+  // --- Errores de la maquina de estados -------------------------------------
+  /**
+   * LITERAL - US-PED-04, tercer criterio: el rechazo "solo esta disponible para
+   * pedidos en estado Creado".
+   */
+  rechazoFueraDeEstado:
+    'Solo se pueden rechazar los pedidos que todavía no aceptaste.',
+
+  /** PROPIO - transicion no declarada en TRANSICIONES_PEDIDO. */
+  transicionInvalida: 'El pedido ya no se encuentra en ese estado.',
+
+  /** PROPIO - el carrito quedo vacio entre que se dibujo la pantalla y el toque. */
+  carritoVacioAlConfirmar:
+    'Tu carrito está vacío. Agregá platos antes de confirmar el pedido.',
+
+  /** PROPIO - el cocinero se dio de baja o fue suspendido antes de confirmar. */
+  cocineroNoDisponible:
+    'Este cocinero ya no está recibiendo pedidos. Probá con otro.',
+
+  // --- Titulos de pantalla --------------------------------------------------
+  /** PROPIO - titulos de las pantallas del modulo. */
+  misPedidos: 'Mis pedidos',
+  seguimiento: 'Seguimiento',
+  nuevoPedido: 'Nuevo pedido',
+  lineaDeTiempo: 'Línea de tiempo',
+  notaDelCliente: 'Nota del cliente',
+  totalDelPedido: 'Total del pedido',
+  cantidad: (unidades: number) => `Cantidad: ${String(unidades)}`,
+} as const;
+
 /** Errores tecnicos, sin detalle del stack (requisito del modulo de seguridad). */
 export const MENSAJES_ERROR = {
   interno: 'Ocurrió un error inesperado. Intentá nuevamente en unos minutos.',

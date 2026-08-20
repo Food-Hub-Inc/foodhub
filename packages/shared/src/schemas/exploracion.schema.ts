@@ -342,7 +342,7 @@ export const favoritoRespuestaSchema = z.object({
 /**
  * Tope de unidades por plato en el carrito.
  *
- * Es el mismo que `itemPedidoInputSchema` impone por plato en el pedido: si el
+ * Es el mismo tope que aplica el pedido a cada plato al confirmar: si el
  * carrito admitiera mas, el cliente podria armarlo y recien enterarse al
  * confirmar, cuando el pedido lo rechace.
  *

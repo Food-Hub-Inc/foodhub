@@ -601,6 +601,33 @@ export const PANTALLAS_PENDIENTES = {
     descripcion:
       'La bandeja de pedidos que te llegan, separada en nuevos, preparando, listos y completados.',
   },
+  /**
+   * Las dos pantallas del modulo de Reseñas a las que llega el de Pedidos.
+   *
+   * US-PED-06 y US-PED-07 exigen el botón "Dejar reseña" sobre un pedido
+   * completado sin reseñar, y US-PED-08 el de "Calificar cliente": los botones
+   * se muestran igual y llevan acá hasta que el módulo RES exista (decisión del
+   * equipo, 2026-08-19). Ocultarlos habría dejado esos criterios sin nada que
+   * verificar.
+   *
+   * Las dos llevan el mismo código PAN porque la maquetación dibuja una sola
+   * pantalla de reseña, la del cliente; US-RES-02 -la calificación en el sentido
+   * inverso- no tiene código propio en el inventario.
+   */
+  dejarResena: {
+    codigo: 'PAN-RES-01',
+    modulo: 'Reseñas y calificaciones',
+    titulo: 'Dejar reseña',
+    descripcion:
+      'La calificación con estrellas y el comentario de cada plato que pediste, una vez que el pedido se completó.',
+  },
+  calificarCliente: {
+    codigo: 'PAN-RES-01',
+    modulo: 'Reseñas y calificaciones',
+    titulo: 'Calificar cliente',
+    descripcion:
+      'Tu calificación del cliente después de un pedido, con estrellas y un comentario opcional.',
+  },
   actividad: {
     codigo: 'PAN-DASH-01',
     modulo: 'Dashboard del cocinero',
@@ -633,4 +660,52 @@ export const PANTALLAS_PENDIENTES = {
     titulo: 'Información legal',
     descripcion: TEXTOS_AYUDA.legalPendiente,
   },
+} as const;
+
+/**
+ * Textos de las pantallas del módulo de Pedidos que NO salen de un criterio de
+ * aceptación.
+ *
+ * Los literales del módulo -las leyendas de los estados, los mensajes de error,
+ * los rótulos de las pestañas y de los botones- viven en `MENSAJES_PEDIDO`
+ * (`@foodhub/shared`) porque los comparten la API y la app. Acá quedan solo los
+ * que son de esta interfaz y de nadie más: etiquetas accesibles y rótulos de
+ * apoyo.
+ */
+export const TEXTOS_PEDIDOS = {
+  /** [PROPIO] Etiquetas accesibles de la lista de pestañas. */
+  pestanasDePedidos: 'Pestañas de pedidos',
+  abrirPedido: (numero: string) => `Abrir el pedido ${numero}`,
+
+  /**
+   * [PROPIO] Contador de la pestaña, anunciado aparte del rótulo para que un
+   * lector de pantalla diga "Nuevos, 2 pedidos" y no "Nuevos 2".
+   */
+  cantidadDePedidos: (cantidad: number) =>
+    `${String(cantidad)} pedido${cantidad === 1 ? '' : 's'}`,
+
+  /** [PROPIO] Cabecera de la lista de platos del detalle. */
+  platosDelPedido: 'Platos del pedido',
+
+  /**
+   * [PROPIO] Se muestra bajo el primer plato cuando el pedido tiene más de uno,
+   * porque la tarjeta solo puede mostrar el primero (US-PED-06).
+   */
+  platosAdicionales: (cantidad: number) =>
+    `y ${String(cantidad)} plato${cantidad === 1 ? '' : 's'} más`,
+
+  /** [PROPIO] Rótulo de la línea del cliente en el detalle del cocinero. */
+  cliente: 'Cliente',
+
+  /** [PROPIO] Rótulo de la línea del cocinero en el detalle del cliente. */
+  cocinero: 'Cocinero',
+
+  /** [PROPIO] Rótulo del bloque de motivos rápidos (US-CFG-02 los provee). */
+  motivosRapidos: 'Motivos frecuentes',
+
+  /** [PROPIO] Rótulo del campo de texto libre del rechazo. */
+  motivoDelRechazo: 'Motivo del rechazo',
+
+  /** [PROPIO] Rótulo del campo de texto libre de la cancelación. */
+  motivoDeLaCancelacion: 'Motivo de la cancelación',
 } as const;
