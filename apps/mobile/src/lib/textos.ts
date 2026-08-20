@@ -224,6 +224,29 @@ export const TEXTOS_AYUDA = {
     'Esta sección reúne los términos, condiciones y datos de contacto de FoodHub.',
 } as const;
 
+/**
+ * PAN-AYU-04 - Pantallas del sub-hub de Informacion legal (US-AYU-04).
+ *
+ * Los mensajes LITERALES (boton "Descargar PDF", encabezado "Contacto del
+ * soporte" en el sub-hub) viven en `MENSAJES_AYUDA` (@foodhub/shared) y se
+ * importan de ahi. Acá solo va la copia de cada pantalla: titulos,
+ * placeholders y textos [PROPIO].
+ */
+export const TEXTOS_LEGAL = {
+  pantallaTerminos: {
+    /** [PROPIO] Titulo de la pantalla de Terminos y condiciones. */
+    titulo: 'Términos y condiciones',
+  },
+  pantallaPrivacidad: {
+    /** [PROPIO] Titulo de la pantalla de Politica de privacidad. */
+    titulo: 'Política de privacidad',
+  },
+  pantallaContacto: {
+    /** [PROPIO] Titulo de la pantalla de Contacto del soporte. */
+    titulo: 'Contacto del soporte',
+  },
+} as const;
+
 /** Textos del shell de navegación (barras de tabs y header). */
 export const TEXTOS_NAVEGACION = {
   inicio: 'Inicio',
