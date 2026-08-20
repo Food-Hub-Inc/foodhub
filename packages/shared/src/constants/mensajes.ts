@@ -854,6 +854,136 @@ export const MENSAJES_PEDIDO = {
   cantidad: (unidades: number) => `Cantidad: ${String(unidades)}`,
 } as const;
 
+/**
+ * Modulo de Dashboard del cocinero (US-DASH-01 a US-DASH-05, RF042 a RF046).
+ *
+ * Una sola pantalla -PAN-DASH-01, "Mi actividad"- con cuatro secciones y un
+ * filtro de periodo que las atraviesa a las cuatro.
+ *
+ * EL DOCUMENTO SE CONTRADICE A SI MISMO EN LOS ESTADOS VACIOS. Los requisitos
+ * los escriben con tuteo ("No tienes platos pedidos...") y los criterios de
+ * aceptacion con voseo ("No tenes platos pedidos..."); RF045 llega a mezclar
+ * las dos formas en la misma frase. GANA LA HISTORIA DE USUARIO (decision del
+ * equipo del 20/08/2026): las pruebas funcionales de la Etapa 6 verifican los
+ * criterios de aceptacion palabra por palabra, no los requisitos.
+ */
+export const MENSAJES_DASHBOARD = {
+  // --- Resumen general (US-DASH-01) -----------------------------------------
+  /** LITERAL - US-DASH-01: "el cocinero accede a la seccion 'Mi actividad'". */
+  miActividad: 'Mi actividad',
+
+  /**
+   * LITERAL - US-DASH-01: "tres tarjetas de resumen en la parte superior:
+   * 'Ventas acumuladas' (monto total en pesos de los pedidos Completados en el
+   * periodo seleccionado), 'Pedidos totales' (cantidad total de pedidos en el
+   * periodo) y 'Valoracion promedio'".
+   */
+  ventasAcumuladas: 'Ventas acumuladas',
+  pedidosTotales: 'Pedidos totales',
+  valoracionPromedio: 'Valoración promedio',
+
+  /**
+   * LITERAL - US-DASH-01: "las tres tarjetas de resumen con valor '—' o '$0'
+   * segun corresponda". Es el guion largo, no un guion medio.
+   *
+   * El "$0" del criterio NO se declara aca: un importe en cero es un importe, y
+   * lo formatea `formatearPrecio` como cualquier otro. Declararlo como literal
+   * dejaria dos formas distintas de escribir el mismo cero segun la pantalla.
+   */
+  sinValor: '—',
+
+  /** LITERAL - US-DASH-01, el mensaje informativo que va debajo de las tarjetas. */
+  sinActividad: 'No tenés actividad registrada en el período seleccionado.',
+
+  /**
+   * LITERAL - US-DASH-01: "la leyenda 'Sin calificaciones aun' en lugar del
+   * promedio de estrellas". Sin punto final, tal como lo escribe el criterio.
+   */
+  sinCalificaciones: 'Sin calificaciones aún',
+
+  // --- Platos mas pedidos (US-DASH-02) --------------------------------------
+  /** LITERAL - US-DASH-02: "la seccion 'Platos mas pedidos' dentro del dashboard". */
+  platosMasPedidos: 'Platos más pedidos',
+
+  /** LITERAL - US-DASH-02: "un boton 'Ver todos' que expanda el listado completo". */
+  verTodos: 'Ver todos',
+
+  /** LITERAL - US-DASH-02: "la indicacion '(eliminado)' junto al nombre". */
+  sufijoEliminado: '(eliminado)',
+
+  /** LITERAL - US-DASH-02, estado vacio de la seccion. */
+  sinPlatosPedidos: 'No tenés platos pedidos en el período seleccionado.',
+
+  // --- Clientes recurrentes (US-DASH-03) ------------------------------------
+  /** LITERAL - US-DASH-03: "la seccion 'Clientes recurrentes' dentro del dashboard". */
+  clientesRecurrentes: 'Clientes recurrentes',
+
+  /**
+   * LITERAL - US-DASH-03: "la indicacion 'Usuario eliminado' en lugar de su
+   * nombre y sin foto de perfil". El cliente sigue en el listado: sacarlo
+   * cambiaria las metricas historicas de un periodo ya cerrado.
+   */
+  usuarioEliminado: 'Usuario eliminado',
+
+  /** LITERAL - US-DASH-03, estado vacio de la seccion. */
+  sinClientesRecurrentes:
+    'Todavía no tenés clientes recurrentes en el período seleccionado. ¡Seguí cocinando!',
+
+  // --- Distribucion por estado (US-DASH-04) ---------------------------------
+  /** LITERAL - US-DASH-04: "la seccion 'Pedidos por estado' dentro del dashboard". */
+  pedidosPorEstado: 'Pedidos por estado',
+
+  /**
+   * LITERAL - US-DASH-04: "pedidos agrupados por estado: Completados,
+   * Rechazados por el cocinero, Cancelados por el cliente y Expirados".
+   *
+   * Son CUATRO rotulos para DOS estados internos: COMPLETADO, y RECHAZADO
+   * abierto por `origen_rechazo` (COCINERO / CLIENTE / SISTEMA). Los pedidos
+   * todavia abiertos -CREADO, ACEPTADO y LISTO- no tienen rotulo porque el
+   * criterio no los enumera.
+   *
+   * En plural y no reutilizando `MENSAJES_PEDIDO.rechazadoPorElCocinero`: aquel
+   * rotula UN pedido en el detalle, este cuenta a un grupo. Son dos historias
+   * distintas con dos textos distintos y no se unifican.
+   */
+  estadoCompletados: 'Completados',
+  estadoRechazadosCocinero: 'Rechazados por el cocinero',
+  estadoCanceladosCliente: 'Cancelados por el cliente',
+  estadoExpirados: 'Expirados',
+
+  /** LITERAL - US-DASH-04, estado vacio de la seccion: "No se muestra ningun grafico". */
+  sinPedidosRegistrados:
+    'No tenés pedidos registrados en el período seleccionado.',
+
+  // --- Filtro de periodo (US-DASH-05) ---------------------------------------
+  /**
+   * LITERAL - US-DASH-05: "las siguientes opciones predefinidas: 'Esta semana',
+   * 'Este mes', 'Ultimos 3 meses', 'Este ano' y 'Personalizado'".
+   */
+  periodoSemana: 'Esta semana',
+  periodoMes: 'Este mes',
+  periodoTrimestre: 'Últimos 3 meses',
+  periodoAnio: 'Este año',
+  periodoPersonalizado: 'Personalizado',
+
+  /** LITERAL - US-DASH-05: "un selector de rango de fechas con campos 'Desde' y 'Hasta'". */
+  desde: 'Desde',
+  hasta: 'Hasta',
+
+  /** LITERAL - US-DASH-05: "el boton 'Aplicar' permanece deshabilitado". */
+  aplicar: 'Aplicar',
+
+  /**
+   * LITERAL - US-DASH-05, rango invertido en el modo "Personalizado".
+   *
+   * NO es el mismo texto que `filtrosAuditoriaSchema` (US-AUD-02), que dice
+   * "...posterior a la de fin.". Son dos historias distintas y cada una fija el
+   * suyo: unificarlos romperia una de las dos pruebas de la Etapa 6.
+   */
+  rangoInvertido:
+    'La fecha de inicio no puede ser posterior a la fecha de fin.',
+} as const;
+
 /** Errores tecnicos, sin detalle del stack (requisito del modulo de seguridad). */
 export const MENSAJES_ERROR = {
   interno: 'Ocurrió un error inesperado. Intentá nuevamente en unos minutos.',
