@@ -1,25 +1,12 @@
-import { IconoMensaje } from '../../src/components/iconos';
-import { PantallaPendiente } from '../../src/components/ui/PantallaPendiente';
-import { PANTALLAS_PENDIENTES } from '../../src/lib/textos';
+import { ListaDeConversaciones } from '../../src/screens/mensajeria/ListaDeConversaciones';
 
 /**
- * Mensajes — PAN-MSG-01.
+ * Mensajes del cliente — PAN-MSG-01 · US-MSG-04.
  *
- * Pendiente de codificación: pertenece al módulo de Mensajería directa, que se desarrolla
- * en un sprint posterior al de los módulos transversales. La pantalla anuncia
- * su código y qué va a hacer, para que el destino exista y se pueda navegar el
- * shell completo sin encontrarse con una pantalla en blanco.
+ * `esCliente` decide una sola cosa: si el estado vacío ofrece el acceso para
+ * explorar cocineros, que el criterio pide "en el caso del cliente". Todo lo
+ * demás del listado es idéntico para los dos roles.
  */
 export default function MensajesDelCliente() {
-  const ficha = PANTALLAS_PENDIENTES.mensajes;
-
-  return (
-    <PantallaPendiente
-      codigo={ficha.codigo}
-      descripcion={ficha.descripcion}
-      icono={<IconoMensaje size={34} className="text-primary" />}
-      modulo={ficha.modulo}
-      titulo={ficha.titulo}
-    />
-  );
+  return <ListaDeConversaciones esCliente />;
 }
