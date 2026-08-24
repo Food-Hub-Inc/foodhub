@@ -25,8 +25,10 @@ import {
 import { env } from '../../config/env.js';
 import { db } from '../../lib/db.js';
 import {
+  bloquearCuenta,
   conCompensacionDeCuenta,
   crearClienteAnonimo,
+  desbloquearCuenta,
   esCorreoYaRegistrado,
   revocarSesiones,
   supabaseAdmin,
@@ -617,6 +619,14 @@ export async function suspenderUsuario(entrada: {
       .where(eq(usuario.id, usuarioId));
   });
 
+  /**
+   * "Bloquee nuevos inicios de sesion de ese usuario" (US-GURP-08). Con el
+   * estado solo en la base, `signInWithPassword` seguia emitiendo un token y la
+   * app quedaba mostrando un error de perfil en vez del literal de US-AUT-03.
+   * Va DESPUES del commit: si la transaccion se cae, la cuenta no se banea.
+   */
+  await bloquearCuenta(usuarioId);
+
   void registrarOperacion({
     usuarioId: entrada.administradorId,
     operacion: 'MODIFICACION',
@@ -648,6 +658,10 @@ export async function rehabilitarUsuario(entrada: {
       .set({ estadoCuenta: 'ACTIVA', motivoSuspension: null })
       .where(eq(usuario.id, usuarioId));
   });
+
+  // "Permita que el usuario vuelva a iniciar sesion" (US-GURP-08): sin esto la
+  // cuenta quedaria activa en la base pero baneada en GoTrue.
+  await desbloquearCuenta(usuarioId);
 
   void registrarOperacion({
     usuarioId: entrada.administradorId,

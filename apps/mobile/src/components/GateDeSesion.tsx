@@ -12,7 +12,8 @@ import {
 } from '../hooks/useEnlaceDeAcceso';
 import { usePerfil } from '../hooks/usePerfil';
 import { useSesion, useEscucharSesion } from '../hooks/useSesion';
-import { TEXTOS_LOGIN } from '../lib/textos';
+import { TEXTOS_LOGIN, TEXTOS_PERFIL } from '../lib/textos';
+import { BotonDeTexto } from './ui/Boton';
 import { EstadoDeError } from './ui/EstadoDeError';
 
 /**
@@ -119,6 +120,13 @@ export function GateDeSesion({ children }: { children: ReactNode }) {
    * El perfil no cargó y sin él no se sabe el rol. Se muestra el error con
    * reintento en lugar de adivinar una barra de tabs: entrar como cliente a
    * alguien que es cocinero es peor que pedirle que reintente.
+   *
+   * VA TAMBIÉN UNA SALIDA, y no solo el reintento. Esta rama reemplaza el árbol
+   * de navegación entero, así que mientras dura no hay pestañas ni "Mi perfil"
+   * —donde vive el único "Cerrar sesión" de la app—. Con un error que el
+   * reintento no puede resolver, eso dejaba al usuario encerrado sin manera de
+   * cambiar de cuenta ni siquiera reiniciando, porque la sesión sigue en el
+   * Keystore.
    */
   if (sesion !== null && perfil.isError) {
     return (
@@ -129,6 +137,15 @@ export function GateDeSesion({ children }: { children: ReactNode }) {
             void perfil.refetch();
           }}
         />
+        <View className="items-center pb-8">
+          <BotonDeTexto
+            onPress={() => {
+              void cerrarSesion();
+            }}
+          >
+            {TEXTOS_PERFIL.cerrarSesion}
+          </BotonDeTexto>
+        </View>
       </View>
     );
   }
