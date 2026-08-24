@@ -327,6 +327,29 @@ export function IconoEstrella(props: PropsIcono) {
   );
 }
 
+/**
+ * Variante rellena de la estrella, para la calificación ya seleccionada
+ * (US-RES-01) y para el promedio del perfil público (US-RES-03).
+ *
+ * Mismo par que `IconoCorazon` / `IconoCorazonRelleno`, y por el mismo motivo:
+ * el relleno es un ícono distinto y no una bandera del mismo, así el llamador
+ * elige cuál dibuja y no hay una prop booleana que cambie la forma.
+ *
+ * `fill="currentColor"` hereda el token que resuelve la clase, de modo que el
+ * ícono sigue sin contener un literal de color.
+ */
+export function IconoEstrellaRellena(props: PropsIcono) {
+  return (
+    <Lienzo {...props}>
+      <Path
+        d="m12 3.75 2.7 5.47 6.05.88-4.38 4.26 1.04 6.02L12 17.53l-5.41 2.85 1.04-6.02L3.25 10.1l6.05-.88L12 3.75Z"
+        {...TRAZO}
+        fill="currentColor"
+      />
+    </Lienzo>
+  );
+}
+
 export function IconoBuscar(props: PropsIcono) {
   return (
     <Lienzo {...props}>

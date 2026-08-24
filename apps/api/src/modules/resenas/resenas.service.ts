@@ -452,8 +452,18 @@ export async function listarResenasDeCocinero(entrada: {
   };
 }
 
-/** Relectura de una resena puntual, para devolverla despues de crearla o editarla. */
-async function leerResenaPublica(resenaId: string): Promise<ResenaPublica> {
+/**
+ * Una resena puntual.
+ *
+ * Se usa para devolverla despues de crearla o editarla, y tambien para
+ * precargar el formulario de edicion (US-RES-01: "muestre el formulario
+ * precargado"). No filtra por autor ni por estado: la resena es contenido
+ * publico —se muestra en el perfil del cocinero a cualquiera con sesion— y el
+ * permiso que importa, el de MODIFICARLA, lo verifica `editarResena`.
+ */
+export async function leerResenaPublica(
+  resenaId: string,
+): Promise<ResenaPublica> {
   const [fila] = await db
     .select(columnasResena)
     .from(resena)

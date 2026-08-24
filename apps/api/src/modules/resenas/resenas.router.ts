@@ -168,6 +168,22 @@ resenasRouter.post('/', requiereRol('CLIENTE'), async (req, res) => {
   res.status(201).json(resena);
 });
 
+/**
+ * US-RES-01 - Una resena puntual, para precargar el formulario de edicion y
+ * para el modo solo lectura de "Ver mi resena".
+ *
+ * Sin `requiereRol`: la resena es contenido publico del perfil del cocinero, y
+ * el propio cocinero tiene que poder abrirla. Va DESPUES de `/estado`,
+ * `/cocineros/...` y `/clientes/...` para que Express no interprete esos
+ * prefijos como un identificador.
+ */
+resenasRouter.get('/:id', async (req, res) => {
+  const resena = await resenasService.leerResenaPublica(
+    idResenaSchema.parse(req.params.id),
+  );
+  res.json(resena);
+});
+
 /** US-RES-01 - Edicion dentro de la ventana de 48 horas. */
 resenasRouter.patch('/:id', requiereRol('CLIENTE'), async (req, res) => {
   const resena = await resenasService.editarResena({

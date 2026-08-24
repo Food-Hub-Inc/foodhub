@@ -783,3 +783,84 @@ export const TEXTOS_DASHBOARD = {
   mesAnterior: 'Mes anterior',
   mesSiguiente: 'Mes siguiente',
 } as const;
+
+/**
+ * Modulo de Resenas y Calificaciones — PAN-RES-01 y PAN-RES-02.
+ *
+ * Solo los textos DE PANTALLA. Los literales de los criterios de aceptacion
+ * viven en `MENSAJES_RESENA` de `@foodhub/shared`, porque el servidor tambien
+ * los usa: si el mensaje que valida la API y el que muestra el formulario se
+ * escribieran por separado, se irian separando sin que nadie lo note.
+ */
+export const TEXTOS_RESENA = {
+  // --- PAN-RES-01, dejar resena ---------------------------------------------
+  tituloDejar: 'Dejar reseña',
+  tituloEditar: 'Editar mi reseña',
+  tituloVer: 'Mi reseña',
+
+  /** [PROPIO] Encabezado del selector de estrellas. */
+  etiquetaCalificacion: '¿Qué te pareció el plato?',
+
+  /** [PROPIO] Campo de comentario. El maximo de 500 sale de RF080. */
+  etiquetaComentario: 'Contanos tu experiencia',
+  placeholderComentario: 'Opcional. Qué te gustó, qué mejorarías…',
+
+  /** [PROPIO] Encabezado de los tags positivos de RF080. */
+  etiquetaTags: '¿Qué destacarías?',
+
+  /** [PROPIO] Encabezado del adjunto. El limite de 5 MB sale de RF080. */
+  etiquetaFoto: 'Foto del plato',
+  ayudaFoto: 'Opcional. JPG, PNG o WEBP de hasta 5 MB.',
+  quitarFoto: 'Quitar foto',
+
+  /** [PROPIO] Titulo de la vista previa que exige US-RES-01 antes de publicar. */
+  tituloVistaPrevia: 'Así se va a ver tu reseña',
+
+  /** [PROPIO] Estado de solo lectura, fuera de la ventana de 48 horas. */
+  avisoSoloLectura:
+    'Ya pasó el plazo para editar esta reseña. Si volvés a pedir el plato vas a poder actualizarla.',
+
+  // --- PAN-RES-02, calificar al cliente -------------------------------------
+  tituloCalificar: 'Calificar cliente',
+  tituloEditarCalificacion: 'Editar calificación',
+
+  /** [PROPIO] Encabezado del selector en la calificacion del cliente. */
+  etiquetaCalificacionCliente: '¿Cómo fue la experiencia con el cliente?',
+
+  /** [PROPIO] Campo de comentario. El maximo de 300 sale de RF081. */
+  etiquetaComentarioCliente: 'Comentario',
+  placeholderComentarioCliente: 'Opcional. Visible solo para otros cocineros.',
+
+  /**
+   * [PROPIO] Aviso de privacidad de US-RES-02. Se muestra ANTES de enviar y no
+   * solo en la confirmacion: el cocinero tiene que saber quien va a leer lo que
+   * escribe mientras lo escribe, no despues.
+   */
+  avisoPrivacidad:
+    'El cliente no ve esta calificación. Solo la ven otros cocineros cuando reciben un pedido suyo.',
+
+  // --- Seccion de resenas del perfil publico (PAN-EXP-04) -------------------
+  tituloSeccion: 'Reseñas',
+  verTodas: 'Ver todas',
+
+  /** [PROPIO] Encabezado del selector de orden y filtros. */
+  tituloFiltros: 'Ordenar y filtrar',
+  etiquetaOrden: 'Ordenar por',
+  etiquetaEstrellas: 'Filtrar por estrellas',
+  aplicarFiltros: 'Aplicar',
+  limpiarFiltros: 'Limpiar',
+
+  /**
+   * [PROPIO] Leyenda del promedio todavia no publicable. US-RES-03 no fija un
+   * texto para el caso "tiene resenas pero no llega al minimo", que es distinto
+   * de "no tiene ninguna": el segundo ya tiene su literal.
+   */
+  promedioInsuficiente: 'Todavía no hay suficientes reseñas para un promedio.',
+
+  /** [PROPIO] Cantidad de resenas con foto, del resumen de RF082. */
+  conFoto: (cantidad: number) =>
+    cantidad === 1 ? '1 con foto' : `${String(cantidad)} con foto`,
+
+  /** [PROPIO] Marca de una resena editada, junto a la fecha original. */
+  editada: '(editada)',
+} as const;
