@@ -111,8 +111,8 @@ export async function obtenerTerminosVigentesParaAceptar(): Promise<TerminosVige
   ]);
 
   if (!terminos || !privacidad) {
-    throw new Error(
-      'Todavía no hay una versión vigente de términos y/o de política de privacidad.',
+    throw noEncontrado(
+      'los términos y/o políticas de privacidad vigentes para aceptar',
     );
   }
 
