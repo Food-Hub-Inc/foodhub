@@ -2,16 +2,11 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
-  MENSAJES_EXPLORACION,
   MENSAJES_PEDIDO,
   rangoHorarioEstimado,
   type PedidoDetalle,
 } from '@foodhub/shared';
-import {
-  IconoChevronDerecha,
-  IconoMensaje,
-  IconoReloj,
-} from '../../components/iconos';
+import { IconoChevronDerecha, IconoReloj } from '../../components/iconos';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { Aviso } from '../../components/ui/Aviso';
 import { Boton } from '../../components/ui/Boton';
@@ -25,6 +20,7 @@ import { mensajeDeError } from '../../lib/api';
 import { formatearHora } from '../../lib/formato';
 import { TEXTOS_PEDIDOS } from '../../lib/textos';
 import { indicadorDeCierre, motivoVisible } from './estados';
+import { BotonMensajesDelPedido } from '../mensajeria/BotonDeMensajes';
 import { FichaDeParticipante, FilaDeItem, PasosDelPedido } from './Piezas';
 import { SelectorDeMotivo } from './SelectorDeMotivo';
 
@@ -124,19 +120,13 @@ function Contenido({ pedido }: { pedido: PedidoDetalle }) {
           <IconoChevronDerecha className="text-primary" size={18} />
         </Pressable>
 
-        {/* "Mensaje en chat con cocinero → PAN-MSG-02" (PAN-PED-03). El módulo
-            de Mensajería todavía no está codificado, así que el botón lleva a su
-            pantalla anunciada, igual que "Enviar mensaje" en el perfil del
-            cocinero. */}
-        <Boton
-          icono={<IconoMensaje className="text-primary" size={18} />}
-          onPress={() => {
-            router.push('/(cliente)/mensajes');
-          }}
-          variante="secundario"
-        >
-          {MENSAJES_EXPLORACION.enviarMensaje}
-        </Boton>
+        {/* "Mensaje en chat con cocinero → PAN-MSG-02" (PAN-PED-03) y primer
+            criterio de US-MSG-06: "Muestre un botón 'Mensajes del pedido' que
+            redirige al hilo de chat asociado a ese pedido específico", con el
+            contador de no leídos encima. El hilo es el del par cliente-cocinero
+            del pedido: sigue accesible cuando el pedido se completa o se
+            cancela, que es el cuarto criterio de la misma historia. */}
+        <BotonMensajesDelPedido participanteId={pedido.participante.id} />
       </ScrollView>
 
       {/* "Muestre el botón 'Cancelar pedido' visible y habilitado, siempre que no

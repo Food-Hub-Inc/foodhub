@@ -78,6 +78,13 @@
       "when": 1787178986843,
       "tag": "0010_expiracion_automatica_pedidos",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1787179046843,
+      "tag": "0011_realtime_mensajeria",
+      "breakpoints": true
     }
   ]
 }

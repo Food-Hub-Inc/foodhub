@@ -114,6 +114,22 @@ const envSchema = z.object({
   STORAGE_BUCKET_PUBLICACIONES: z.string().default('publicaciones'),
   STORAGE_BUCKET_CONFIGURACION: z.string().default('configuracion'),
   STORAGE_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(5),
+
+  /**
+   * US-MSG-03 - Bucket de las imagenes del chat.
+   *
+   * Separado de `publicaciones` a proposito: ahi viven las fotos de platos, que
+   * son contenido publico del catalogo, y aca imagenes de una conversacion
+   * privada entre dos personas. Mezclarlas en un bucket haria que cualquier
+   * cambio de politica sobre uno alcanzara al otro.
+   *
+   * El tope es propio y no `STORAGE_MAX_FILE_SIZE_MB`: US-MSG-03 fija 8 MB para
+   * el chat, mientras que la foto de perfil (US-AUT-01) y la del plato
+   * (US-PUB-01) fijan 5 MB. Son tres criterios distintos y cada uno se ajusta
+   * por su lado.
+   */
+  STORAGE_BUCKET_MENSAJES: z.string().default('mensajes'),
+  STORAGE_MAX_IMAGEN_CHAT_MB: z.coerce.number().positive().default(8),
 });
 
 const parsed = envSchema.safeParse(process.env);

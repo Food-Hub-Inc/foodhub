@@ -59,7 +59,13 @@ export function EtiquetaDeEstado({ pedido }: { pedido: PedidoResumen }) {
 export interface OpcionDePestana<T extends string> {
   valor: T;
   etiqueta: string;
-  cantidad: number;
+  /**
+   * Ausente cuando la pestana no cuenta nada. Los filtros del listado de
+   * conversaciones (US-MSG-04) son dos vistas del mismo conjunto, no dos grupos
+   * con cantidades distintas: mostrarles un contador -aunque fuera cero- diria
+   * algo que el criterio no pide y que ademas seria falso.
+   */
+  cantidad?: number;
 }
 
 /**
@@ -95,10 +101,15 @@ export function Pestanas<T extends string>({
       >
         {opciones.map((opcion) => {
           const seleccionada = opcion.valor === activa;
+          const cantidad = opcion.cantidad;
 
           return (
             <Pressable
-              accessibilityLabel={`${opcion.etiqueta}. ${TEXTOS_PEDIDOS.cantidadDePedidos(opcion.cantidad)}`}
+              accessibilityLabel={
+                cantidad === undefined
+                  ? opcion.etiqueta
+                  : `${opcion.etiqueta}. ${TEXTOS_PEDIDOS.cantidadDePedidos(cantidad)}`
+              }
               accessibilityRole="tab"
               accessibilityState={{ selected: seleccionada }}
               className={`min-h-14 flex-row items-center gap-2 border-b-2 px-4 ${
@@ -119,7 +130,7 @@ export function Pestanas<T extends string>({
                 {opcion.etiqueta}
               </Text>
 
-              {opcion.cantidad > 0 ? (
+              {cantidad !== undefined && cantidad > 0 ? (
                 <View className="min-w-6 items-center overflow-hidden rounded-full px-1.5 py-0.5">
                   <FondoTenue
                     className={seleccionada ? 'bg-primary' : 'bg-secondary'}
@@ -129,7 +140,7 @@ export function Pestanas<T extends string>({
                       seleccionada ? 'text-primary' : 'text-text-secondary'
                     }`}
                   >
-                    {String(opcion.cantidad)}
+                    {String(cantidad)}
                   </Text>
                 </View>
               ) : null}

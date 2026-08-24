@@ -1,6 +1,7 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useOpcionesDeTabs } from '../../src/components/navegacion/opcionesDeTabs';
 import { TEXTOS_NAVEGACION } from '../../src/lib/textos';
+import { useAcuseDeEntrega } from '../../src/hooks/useAcuseDeEntrega';
 
 /**
  * Barra de navegación del cliente.
@@ -19,6 +20,15 @@ import { TEXTOS_NAVEGACION } from '../../src/lib/textos';
  * De los cinco destinos, solo Perfil está codificado en este sprint.
  */
 export default function LayoutCliente() {
+  /**
+   * US-MSG-02 · Acuse de entrega y contador de no leídos del módulo de
+   * Mensajería. Se monta acá, en el layout de pestañas, y no en una pantalla:
+   * "entregado" significa que el mensaje llegó al dispositivo, y eso pasa
+   * mientras el usuario está en cualquier lugar de la app. Ver
+   * `useAcuseDeEntrega` para el detalle.
+   */
+  useAcuseDeEntrega();
+
   const opciones = useOpcionesDeTabs();
 
   return (
