@@ -1,25 +1,11 @@
-import { IconoReloj } from '../../src/components/iconos';
-import { PantallaPendiente } from '../../src/components/ui/PantallaPendiente';
-import { PANTALLAS_PENDIENTES } from '../../src/lib/textos';
+import { MiActividad } from '../../src/screens/dashboard/MiActividad';
 
 /**
- * Mi actividad — PAN-DASH-01.
+ * Mi actividad — PAN-DASH-01 · US-DASH-01 a US-DASH-05.
  *
- * Pendiente de codificación: pertenece al módulo de Dashboard del cocinero, que se desarrolla
- * en un sprint posterior al de los módulos transversales. La pantalla anuncia
- * su código y qué va a hacer, para que el destino exista y se pueda navegar el
- * shell completo sin encontrarse con una pantalla en blanco.
+ * Tercera tab del cocinero. Es la única pantalla del módulo de Dashboard: las
+ * cinco historias son cuatro secciones y un filtro sobre la misma vista.
  */
 export default function Actividad() {
-  const ficha = PANTALLAS_PENDIENTES.actividad;
-
-  return (
-    <PantallaPendiente
-      codigo={ficha.codigo}
-      descripcion={ficha.descripcion}
-      icono={<IconoReloj size={34} className="text-primary" />}
-      modulo={ficha.modulo}
-      titulo={ficha.titulo}
-    />
-  );
+  return <MiActividad />;
 }
