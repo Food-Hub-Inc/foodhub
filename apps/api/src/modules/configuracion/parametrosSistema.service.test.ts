@@ -38,6 +38,9 @@ const {
 const ADMIN_ID = '11111111-1111-1111-1111-111111111111';
 
 /** Las 11 filas que siembran las migraciones 0004 y 0011, con valores de ejemplo. */
+const HORARIO_JSON =
+  '{"LUNES":{"inicio":"09:00","fin":"18:00"},"MARTES":{"inicio":"09:00","fin":"18:00"},"MIERCOLES":{"inicio":"09:00","fin":"18:00"},"JUEVES":{"inicio":"09:00","fin":"18:00"},"VIERNES":{"inicio":"09:00","fin":"18:00"},"SABADO":null,"DOMINGO":null}';
+
 const FILAS_SEMBRADAS = [
   { clave: 'radio_busqueda_defecto_km', valor: '5' },
   { clave: 'distancia_maxima_filtro_km', valor: '20' },
@@ -51,7 +54,7 @@ const FILAS_SEMBRADAS = [
   { clave: 'plataforma_correo_soporte', valor: 'soporte@foodhub.com' },
   {
     clave: 'plataforma_horario_atencion_soporte',
-    valor: 'Lunes a viernes de 9 a 18 hs',
+    valor: HORARIO_JSON,
   },
 ];
 
@@ -80,7 +83,15 @@ describe('obtenerParametrosSistema', () => {
         nombrePlataforma: 'FoodHub',
         logoPlataformaUrl: null,
         correoSoporte: 'soporte@foodhub.com',
-        horarioAtencionSoporte: 'Lunes a viernes de 9 a 18 hs',
+        horarioAtencionSoporte: {
+          LUNES: { inicio: '09:00', fin: '18:00' },
+          MARTES: { inicio: '09:00', fin: '18:00' },
+          MIERCOLES: { inicio: '09:00', fin: '18:00' },
+          JUEVES: { inicio: '09:00', fin: '18:00' },
+          VIERNES: { inicio: '09:00', fin: '18:00' },
+          SABADO: null,
+          DOMINGO: null,
+        },
       },
     });
   });

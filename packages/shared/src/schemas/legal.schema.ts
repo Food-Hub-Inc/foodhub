@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { emailSchema } from './auth.schema.js';
-import { MENSAJES_AYUDA } from '../constants/mensajes.js';
+import { horarioAtencionSemanaSchema } from './configuracionSistema.schema.js';
 
 /**
  * Contratos del modulo de Informacion legal (US-AYU-04).
@@ -56,9 +56,6 @@ export type DocumentoLegalVigente = z.infer<typeof documentoLegalVigenteSchema>;
  */
 export const informacionDeContactoSchema = z.object({
   correo: emailSchema,
-  horarioAtencion: z
-    .string()
-    .trim()
-    .min(1, MENSAJES_AYUDA.contacto.horarioVacio),
+  horarioAtencion: horarioAtencionSemanaSchema,
 });
 export type InformacionDeContacto = z.infer<typeof informacionDeContactoSchema>;

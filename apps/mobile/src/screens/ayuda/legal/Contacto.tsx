@@ -1,6 +1,10 @@
 import { Linking, ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { MENSAJES_AYUDA } from '@foodhub/shared';
+import {
+  MENSAJES_AYUDA,
+  type DiaHorario,
+  type HorarioAtencionSemana,
+} from '@foodhub/shared';
 import { IconoSobre } from '../../../components/iconos';
 import { SafeAreaView } from '../../../components/SafeAreaView';
 import { Boton } from '../../../components/ui/Boton';
@@ -10,6 +14,82 @@ import { EstadoDeError } from '../../../components/ui/EstadoDeError';
 import { useInformacionDeContacto } from '../../../hooks/useLegal';
 import { mensajeDeError } from '../../../lib/api';
 import { TEXTOS_LEGAL } from '../../../lib/textos';
+
+const DIAS_ORDEN: DiaHorario[] = [
+  'LUNES',
+  'MARTES',
+  'MIERCOLES',
+  'JUEVES',
+  'VIERNES',
+  'SABADO',
+  'DOMINGO',
+];
+
+const NOMBRE_DIA: Record<DiaHorario, string> = {
+  LUNES: 'Lunes',
+  MARTES: 'Martes',
+  MIERCOLES: 'Miércoles',
+  JUEVES: 'Jueves',
+  VIERNES: 'Viernes',
+  SABADO: 'Sábado',
+  DOMINGO: 'Domingo',
+};
+
+interface GrupoDeHorario {
+  desde: string;
+  hasta: string;
+  rango: { inicio: string; fin: string };
+}
+
+/**
+ * Agrupa días consecutivos que comparten el mismo tramo horario: "Lunes a
+ * viernes: 09:00 a 18:00" en vez de cinco líneas repetidas. Los días sin
+ * atención no aparecen.
+ */
+function lineasDeHorario(horario: HorarioAtencionSemana): string[] {
+  const grupos: GrupoDeHorario[] = [];
+  let desde: string | null = null;
+  let hasta: string | null = null;
+  let rango: { inicio: string; fin: string } | null = null;
+
+  const volcar = () => {
+    if (desde && hasta && rango) {
+      grupos.push({ desde, hasta, rango });
+    }
+  };
+
+  for (const dia of DIAS_ORDEN) {
+    const tramo = horario[dia];
+    const nombre = NOMBRE_DIA[dia];
+
+    if (tramo === null) {
+      volcar();
+      desde = null;
+      hasta = null;
+      rango = null;
+      continue;
+    }
+
+    if (rango?.inicio === tramo.inicio && rango?.fin === tramo.fin) {
+      hasta = nombre;
+    } else {
+      volcar();
+      desde = nombre;
+      hasta = nombre;
+      rango = tramo;
+    }
+  }
+
+  volcar();
+
+  return grupos.map((grupo) => {
+    const etiqueta =
+      grupo.desde === grupo.hasta
+        ? grupo.desde
+        : `${grupo.desde} a ${grupo.hasta}`;
+    return `${etiqueta}: ${grupo.rango.inicio} a ${grupo.rango.fin}`;
+  });
+}
 
 /**
  * PAN-AYU-04 - Datos de contacto del soporte (CA4).
@@ -68,9 +148,20 @@ export function Contacto() {
                 etiqueta={MENSAJES_AYUDA.contacto.horarioTitulo}
                 icono={<IconoSobre className="text-primary" size={20} />}
               >
-                <Text className="text-body text-text-primary">
-                  {contacto.data.horarioAtencion}
-                </Text>
+                {(() => {
+                  const lineas = lineasDeHorario(contacto.data.horarioAtencion);
+                  return lineas.length > 0 ? (
+                    lineas.map((linea) => (
+                      <Text className="text-body text-text-primary" key={linea}>
+                        {linea}
+                      </Text>
+                    ))
+                  ) : (
+                    <Text className="text-body text-text-secondary">
+                      {MENSAJES_AYUDA.contacto.horarioVacio}
+                    </Text>
+                  );
+                })()}
               </Bloque>
 
               <View className="mt-6">

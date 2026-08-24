@@ -15,7 +15,7 @@ INSERT INTO "configuracion_sistema" ("clave", "valor", "descripcion")
 VALUES
   (
     'plataforma_horario_atencion_soporte',
-    'Lunes a viernes de 9 a 18 hs',
+    '{"LUNES":{"inicio":"09:00","fin":"18:00"},"MARTES":{"inicio":"09:00","fin":"18:00"},"MIERCOLES":{"inicio":"09:00","fin":"18:00"},"JUEVES":{"inicio":"09:00","fin":"18:00"},"VIERNES":{"inicio":"09:00","fin":"18:00"},"SABADO":null,"DOMINGO":null}',
     'Horario de atencion del equipo de soporte que se muestra al usuario en la pantalla "Contacto del soporte" (US-AYU-04).'
   )
 ON CONFLICT ("clave") DO NOTHING;

@@ -7,6 +7,7 @@ import {
 } from '@foodhub/db';
 import {
   CLAVE_PARAMETRO,
+  horarioAtencionSemanaSchema,
   informacionDeContactoSchema,
   type CategoriaResumen,
   type DocumentoLegalVigente,
@@ -216,7 +217,7 @@ export async function obtenerInformacionDeContacto(): Promise<InformacionDeConta
 
   return informacionDeContactoSchema.parse({
     correo,
-    horarioAtencion: horario,
+    horarioAtencion: horarioAtencionSemanaSchema.parse(JSON.parse(horario)),
   });
 }
 

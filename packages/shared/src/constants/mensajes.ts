@@ -628,6 +628,14 @@ export const MENSAJES_CONFIGURACION = {
   /** PROPIO - US-CFG-03, confirmación del guardado. */
   parametrosActualizados: 'Guardamos los nuevos parámetros.',
 
+  /** PROPIO - US-CFG-03 / US-AYU-04, validación del horario de atención. */
+  horarioHoraInvalida: 'Ingresá una hora válida.',
+  /** PROPIO - US-CFG-03 / US-AYU-04, al menos un día de atención. */
+  horarioDiaObligatorio:
+    'Seleccioná al menos un día en el que la plataforma tenga atención.',
+  /** PROPIO - US-CFG-03 / US-AYU-04, cierre posterior a la apertura. */
+  horarioFinPosterior: 'La hora de cierre debe ser posterior a la de apertura.',
+
   /** PROPIO - US-CFG-03, confirmación de la restauración. */
   parametrosRestaurados: 'Restauramos los valores predefinidos de fábrica.',
 
