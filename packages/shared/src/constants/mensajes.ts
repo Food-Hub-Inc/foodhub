@@ -989,6 +989,41 @@ export const MENSAJES_RESENA = {
    * "Mas utiles": depende de US-RES-05.
    */
   filtroSoloConFoto: 'Solo reseñas con foto',
+
+  // --- Rechazos de la API ---------------------------------------------------
+  /**
+   * LOS CINCO DE ABAJO SON PROPIOS, no literales.
+   *
+   * Las historias describen estos casos como "no muestre el boton": resuelven
+   * la interfaz y no dicen que responde el servidor. Pero la regla del modulo
+   * de seguridad es que toda validacion del formulario existe tambien en la
+   * API, y una API que rechaza tiene que explicar por que. Se redactan aca, en
+   * un bloque aparte y anotados como PROPIO, para que se distingan de lo que si
+   * esta comprometido con el documento y el equipo los pueda corregir sin miedo
+   * a romper una prueba funcional.
+   */
+
+  /** PROPIO - no hay ningun pedido completado del cliente con ese plato. */
+  sinDerechoAResenar:
+    'Solo podés reseñar un plato que hayas recibido en un pedido completado.',
+
+  /** PROPIO - pasaron mas dias de los que fija `resena_limite_dias_para_resenar`. */
+  plazoParaResenarVencido:
+    'Ya pasó el plazo para reseñar este plato. Si volvés a pedirlo vas a poder hacerlo.',
+
+  /**
+   * PROPIO - ya existe resena de este cliente sobre este plato. No es un error
+   * del usuario: la accion correcta es editar, y por eso el mensaje lo dice.
+   */
+  resenaYaExiste: 'Ya reseñaste este plato. Podés editar tu reseña.',
+
+  /** PROPIO - la ventana de 48 horas se cerro. */
+  edicionFueraDeVentana:
+    'Ya pasó el plazo para editar esta reseña. Si volvés a pedir el plato vas a poder actualizarla.',
+
+  /** PROPIO - el cocinero nunca tuvo un pedido aceptado con ese cliente. */
+  sinDerechoACalificar:
+    'Solo podés calificar a un cliente con el que hayas tenido un pedido aceptado.',
 } as const;
 
 /**

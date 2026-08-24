@@ -1,4 +1,4 @@
-import { avg, count, eq } from 'drizzle-orm';
+import { avg, count, eq, sql } from 'drizzle-orm';
 import { resena } from '@foodhub/db';
 import { db } from './db.js';
 
@@ -61,18 +61,56 @@ export function subconsultaValoracionPorPublicacion() {
 }
 
 /**
+ * Minimo de resenas que necesita un cocinero para que su promedio sea PUBLICO
+ * (US-RES-03), leido de `configuracion_sistema` en la misma consulta.
+ *
+ * POR QUE UN SUBSELECT Y NO UN PARAMETRO DE LA FUNCION
+ *
+ * `subconsultaValoracionPorCocinero` la llaman seis servicios distintos (feed,
+ * mapa, perfil publico, favoritos, carrito y pedidos). Pasarles el umbral
+ * obligaria a que los seis lo consulten antes y lo propaguen, con seis
+ * oportunidades de olvidarselo en el proximo modulo que muestre una valoracion.
+ * Resuelto adentro, el umbral se respeta siempre y ademas toma el valor vigente
+ * sin cache: el administrador lo cambia desde PAN-ADM-04 y rige en la consulta
+ * siguiente.
+ *
+ * El `regexp_replace` es la defensa contra un valor no numerico: `valor` es una
+ * columna de texto y un cast directo abortaria toda la consulta. Ante cualquier
+ * cosa rara cae al 3 de fabrica, mismo criterio que la funcion
+ * `expirar_pedidos_sin_respuesta` de la migracion 0010.
+ */
+const minimoResenasParaPromedio = sql`coalesce((
+  select nullif(regexp_replace(valor, '[^0-9]', '', 'g'), '')::int
+    from configuracion_sistema
+   where clave = 'resena_minimo_para_promedio'
+), 3)`;
+
+/**
  * Promedio y cantidad de resenas VISIBLE por COCINERO.
  *
  * Se apoya en `resena.cocineroResId`, la columna desnormalizada del schema:
  * evita pasar por `publicacion` para un dato que no cambia (una publicacion no
  * se transfiere de cocinero) y deja la agregacion cubierta por
  * `resena_cocinero_idx`.
+ *
+ * EL PROMEDIO ES `null` HASTA ALCANZAR EL MINIMO (US-RES-03). Con dos o tres
+ * opiniones un promedio no describe a nadie: una sola resena mala dejaria a un
+ * cocinero en 1,0 de por vida. `cantidad` NO se recorta -sigue informando el
+ * total real- para que la interfaz pueda distinguir "todavia no tiene resenas"
+ * de "tiene pocas y por eso no mostramos promedio".
+ *
+ * Devolver `null` es ademas lo que hace que este cambio no rompa a ningun
+ * consumidor: los seis ya pasan el valor por `aValoracion`, que trata `null`
+ * como "Sin calificaciones aun".
  */
 export function subconsultaValoracionPorCocinero() {
   const tabla = db
     .select({
       cocineroId: resena.cocineroResId,
-      promedio: avg(resena.calificacion).as('valoracion_promedio'),
+      promedio: sql<string | null>`case
+        when count(*) >= ${minimoResenasParaPromedio}
+        then ${avg(resena.calificacion)}
+      end`.as('valoracion_promedio'),
       cantidad: count().as('cantidad_resenas'),
     })
     .from(resena)

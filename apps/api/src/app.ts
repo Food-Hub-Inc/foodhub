@@ -25,6 +25,7 @@ import { categoriasRouter } from './modules/configuracion/categorias.router.js';
 import { motivosCancelacionRouter } from './modules/configuracion/motivosCancelacion.router.js';
 import { parametrosSistemaRouter } from './modules/configuracion/parametrosSistema.router.js';
 import { terminosRouter } from './modules/configuracion/terminos.router.js';
+import { resenasRouter } from './modules/resenas/resenas.router.js';
 import { seguridadRouter } from './modules/seguridad/seguridad.router.js';
 import { soporteRouter } from './modules/soporte/soporte.router.js';
 import { usuariosRouter } from './modules/usuarios/usuarios.router.js';
@@ -154,8 +155,13 @@ export function crearApp(): Express {
   // solo sobre los datos del cocinero de la sesion.
   app.use(`${PREFIJO_API}/dashboard`, dashboardRouter);
 
+  // Modulo de Resenas y Calificaciones (US-RES-01 a US-RES-03). Las tres
+  // sociales -reacciones, respuestas y reportes- suman sus rutas a este mismo
+  // router en el segundo PR del modulo.
+  app.use(`${PREFIJO_API}/resenas`, resenasRouter);
+
   // A medida que avance la Etapa 6 se montan aca los routers de cada modulo:
-  //   app.use(`${PREFIJO_API}/resenas`, resenasRouter);
+  //   app.use(`${PREFIJO_API}/notificaciones`, notificacionesRouter);
   //   ...
 
   // --- 7. Errores (siempre al final) -----------------------------------------
