@@ -28,7 +28,12 @@ interface Segmento {
 type Bloque =
   | { tipo: 'titulo'; nivel: 1 | 2 | 3; texto: string }
   | { tipo: 'parrafo'; segmentos: Segmento[] }
-  | { tipo: 'lista'; items: Segmento[][] };
+  | { tipo: 'lista'; ordenada: boolean; items: Segmento[][] };
+
+/** Marcos de la pila que acumulan texto: titulos, parrafos e items de lista. */
+type MarcoContenedor =
+  | Extract<MarcoPila, { segmentos: Segmento[] }>
+  | Extract<MarcoPila, { tag: 'li' }>;
 
 type BloquesParseados = Bloque[];
 
@@ -124,14 +129,34 @@ class ConstructorDeBloques {
       return;
     }
     if (marco.tag === 'p') {
-      this.bloques.push({ tipo: 'parrafo', segmentos: marco.segmentos });
+      this.cerrarParrafo(marco.segmentos);
       return;
     }
     if (marco.tag === 'ul' || marco.tag === 'ol') {
-      this.bloques.push({ tipo: 'lista', items: marco.items });
+      this.bloques.push({
+        tipo: 'lista',
+        ordenada: marco.tag === 'ol',
+        items: marco.items,
+      });
       return;
     }
     if (marco.tag === 'li') this.consolidarItem(marco);
+  }
+
+  /**
+   * TipTap (el editor de PAN-ADM-04) envuelve el contenido de cada <li> en
+   * un <p>: ese parrafo no es un bloque aparte, es el texto del item. Si se
+   * emitiera como parrafo suelto, el <li> cerraria vacio y pdfkit no
+   * dibujaria ni la viñeta ni el numero (los items llegan sin texto).
+   */
+  private cerrarParrafo(segmentos: Segmento[]): void {
+    const padre = this.pila[this.pila.length - 1];
+    if (padre?.tag === 'li') {
+      if (padre.items.length > 0) padre.items.push({ texto: '\n' });
+      padre.items.push(...segmentos);
+      return;
+    }
+    this.bloques.push({ tipo: 'parrafo', segmentos });
   }
 
   private emitirTitulo(marco: {
@@ -175,41 +200,37 @@ class ConstructorDeBloques {
     return { texto: this.bufferTexto };
   }
 
+  /**
+   * Las marcas inline (<strong>, <em>, <a>, ...) no acumulan texto por si
+   * mismas: el segmento se adhiere al bloque contenedor mas cercano. Si se
+   * mirara solo el tope de la pila, al cerrar `<strong>` el segmento caeria
+   * sobre la propia marca y se descartaria: `<p>a <strong>b</strong></p>`
+   * perderia la "b".
+   */
   private adjuntarSegmento(segmento: Segmento): void {
-    const actual = this.pila[this.pila.length - 1];
-    if (!actual) return;
-    if (actual.tag === 'h1' || actual.tag === 'h2' || actual.tag === 'h3') {
-      actual.segmentos.push(segmento);
+    const contenedor = this.contenedorMasCercano();
+    if (!contenedor) return;
+    if (contenedor.tag === 'li') {
+      contenedor.items.push(segmento);
       return;
     }
-    if (actual.tag === 'p') {
-      actual.segmentos.push(segmento);
-      return;
-    }
-    if (actual.tag === 'li') {
-      actual.items.push(segmento);
-      return;
-    }
-    if (actual.tag === 'a') this.adjuntarHijoDeAncla(segmento);
+    contenedor.segmentos.push(segmento);
   }
 
-  /**
-   * El texto dentro de `<a>` se acumula contra el abuelo: un `<a>` solo
-   * lleva marcas inline, no acumula por si mismo.
-   */
-  private adjuntarHijoDeAncla(segmento: Segmento): void {
-    const abuelo = this.pila[this.pila.length - 2];
-    if (!abuelo) return;
-    if (
-      abuelo.tag === 'h1' ||
-      abuelo.tag === 'h2' ||
-      abuelo.tag === 'h3' ||
-      abuelo.tag === 'p'
-    ) {
-      abuelo.segmentos.push(segmento);
-      return;
+  private contenedorMasCercano(): MarcoContenedor | undefined {
+    for (let i = this.pila.length - 1; i >= 0; i--) {
+      const marco = this.pila[i]!;
+      if (
+        marco.tag === 'h1' ||
+        marco.tag === 'h2' ||
+        marco.tag === 'h3' ||
+        marco.tag === 'p' ||
+        marco.tag === 'li'
+      ) {
+        return marco;
+      }
     }
-    if (abuelo.tag === 'li') abuelo.items.push(segmento);
+    return undefined;
   }
 }
 
@@ -278,19 +299,43 @@ function pintarSegmento(doc: PDFKit.PDFDocument, segmento: Segmento): void {
 }
 
 /**
+ * Calcula hasta que linea llega un texto en el ancho del cuerpo, para poder
+ * avanzar el cursor hasta el final del bloque.
+ *
+ * Se mide sobre el texto plano: las marcas inline (negrita/cursiva) pueden
+ * ensanchar una linea y agregar como mucho una de desfase. Se llama ANTES de
+ * dibujar cualquier segmento con `continued: true`: `heightOfString`
+ * reutiliza el wrapper que dejo abierto una llamada `continued` anterior (la
+ * viñeta de una lista) y medir despues lo corrompe.
+ */
+function medirAltura(doc: PDFKit.PDFDocument, segmentos: Segmento[]): number {
+  doc.font(TIPOGRAFIA.cuerpo).fontSize(TAMAÑOS.parrafo);
+  const textoPlano = segmentos.map((s) => s.texto).join('');
+  return Math.max(doc.heightOfString(textoPlano), doc.currentLineHeight(true));
+}
+
+/**
  * Escribe una secuencia de segmentos en una sola linea del PDF. pdfkit
  * mantiene la fuente activa entre llamadas a `text({ continued: true })`,
  * asi que cambiamos la fuente antes de cada segmento con marca.
+ *
+ * POR QUE SE REPOSICIONA EL CURSOR AL FINAL: con `continued: true`, pdfkit
+ * al terminar cada `wrap()` hace `document.y = y`, volviendo el cursor al
+ * inicio del bloque. Las lineas ya quedaron dibujadas en su posición —el
+ * cursor es lo que se pierde— y sin este ajuste el bloque siguiente se dibuja
+ * encima del anterior (lineas superpuestas).
  */
 function escribirConEstilos(
   doc: PDFKit.PDFDocument,
   segmentos: Segmento[],
+  yFinal: number,
 ): void {
   segmentos.forEach((s) => {
     pintarSegmento(doc, s);
   });
   doc.font(TIPOGRAFIA.cuerpo);
   doc.text('', { lineBreak: true });
+  doc.y = yFinal;
 }
 
 function pintarCabecera(
@@ -313,6 +358,39 @@ function pintarCabecera(
   doc.fillColor(COLOR_TEXTO);
 }
 
+/**
+ * Distancia entre el numero y el texto del item en las listas ordenadas.
+ * Mas amplia que la de las viñetas: "10." en Helvetica 11 ocupa ~15pt y no
+ * tiene que quedar pegada al texto ni meterse en el margen.
+ */
+const SANGRIA_ITEM_NUMERADO = 18;
+
+/**
+ * Las listas ordenadas se numeran a mano y no con `listType: 'numbered'`
+ * de pdfkit: en 0.15.1 el contador de items vive en el closure de cada item
+ * (`let i = 0` dentro de `drawListItem`), asi que todos salen como "1.".
+ *
+ * El numero se dibuja en la columna del margen izquierdo y el item con su
+ * propia caja de texto indentada, para que las lineas que envuelven cuelguen
+ * alineadas con la primera y no vuelvan al margen del numero.
+ */
+function pintarListaNumerada(doc: PDFKit.PDFDocument, items: string[]): void {
+  const xBase = doc.x;
+  items.forEach((item, indice) => {
+    const y = doc.y;
+    doc.text(`${indice + 1}.`, xBase, y);
+    // Item vacio (<li></li>): el numero ya hizo avanzar una linea.
+    if (!item) return;
+    doc.text(item, xBase + SANGRIA_ITEM_NUMERADO, y, {
+      width:
+        doc.page.width - doc.page.margins.right - xBase - SANGRIA_ITEM_NUMERADO,
+    });
+  });
+  // El item se dibuja en xBase + sangria y pdfkit no restaura x al terminar:
+  // sin esto, el bloque siguiente quedaria indentado como parte de la lista.
+  doc.x = xBase;
+}
+
 function tamañoDeTitulo(nivel: 1 | 2 | 3): number {
   if (nivel === 1) return TAMAÑOS.titulo1;
   if (nivel === 2) return TAMAÑOS.titulo2;
@@ -332,16 +410,23 @@ function pintarBloque(doc: PDFKit.PDFDocument, bloque: Bloque): void {
     return;
   }
   if (bloque.tipo === 'parrafo') {
-    doc.fontSize(TAMAÑOS.parrafo);
-    escribirConEstilos(doc, bloque.segmentos);
+    const alto = medirAltura(doc, bloque.segmentos);
+    escribirConEstilos(doc, bloque.segmentos, doc.y + alto);
     doc.moveDown(0.4);
     return;
   }
-  doc.fontSize(TAMAÑOS.parrafo);
-  bloque.items.forEach((item) => {
-    doc.text('• ', { continued: true });
-    escribirConEstilos(doc, item);
-  });
+  doc.font(TIPOGRAFIA.cuerpo).fontSize(TAMAÑOS.parrafo).fillColor(COLOR_TEXTO);
+  const items = bloque.items.map((item) => item.map((s) => s.texto).join(''));
+  if (bloque.ordenada) {
+    pintarListaNumerada(doc, items);
+  } else {
+    doc.list(items, {
+      listType: 'bullet',
+      bulletRadius: 2.8,
+      textIndent: 14,
+      bulletIndent: 6,
+    });
+  }
   doc.moveDown(0.4);
 }
 
