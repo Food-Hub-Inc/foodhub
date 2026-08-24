@@ -15,14 +15,14 @@ import * as catalogoService from './catalogo.service.js';
  * Publicaciones, el flujo de rechazo/cancelacion de un pedido (US-PED-04) y
  * la pantalla de re-aceptacion obligatoria solo consultan.
  *
- * Exige sesion pero no un rol puntual: cliente, cocinero y administrador
- * necesitan las categorias por igual (el formulario de plato, los filtros del
- * feed, el ABM del panel), y cada ruta que sí necesita acotar por rol filtra
- * puntualmente la que lo requiere.
+ * Casi todo exige sesion pero no un rol puntual: cliente, cocinero y
+ * administrador necesitan las categorias por igual (el formulario de plato,
+ * los filtros del feed, el ABM del panel). La unica excepcion es la lectura de
+ * un documento legal vigente, que se hace PUBLICO a proposito: el registro de
+ * cuenta (PAN-AUT-01/PAN-AUT-02) ocurre sin sesion y el usuario debe poder
+ * leer los terminos antes de aceptarlos (ver mas abajo).
  */
 export const catalogoRouter: Router = Router();
-
-catalogoRouter.use(requiereAutenticacion);
 
 /**
  * Valida que el parametro `:tipo` de las rutas de documentos legales sea
@@ -33,6 +33,27 @@ catalogoRouter.use(requiereAutenticacion);
 const tipoVersionTerminosParamsSchema = z.object({
   tipo: z.enum(TIPO_VERSION_TERMINOS),
 });
+
+/**
+ * US-AYU-04 - Documento legal vigente de un tipo (terminos o privacidad).
+ *
+ * RUTA PUBLICA, sin sesion: el registro de cuenta la consulta antes de crear
+ * la cuenta para mostrarle al usuario que esta aceptando. Es informacion de
+ * solo lectura y publica por naturaleza (los terminos y la politica de
+ * privacidad son documentos publicos en cualquier producto), y a diferencia
+ * del endpoint anterior esta variante agrega `fechaPublicacion` y
+ * `adminAutor` para la leyenda de "Ultima actualizacion" y la trazabilidad.
+ *
+ * Por vivir antes del `use(requiereAutenticacion)` de abajo, es la unica ruta
+ * de este router que no exige token.
+ */
+catalogoRouter.get('/terminos-vigentes/:tipo', async (req, res) => {
+  const { tipo } = tipoVersionTerminosParamsSchema.parse(req.params);
+  const documento = await catalogoService.obtenerDocumentoLegalVigente(tipo);
+  res.json(documento);
+});
+
+catalogoRouter.use(requiereAutenticacion);
 
 /** US-PUB-01 - Categorias activas para el desplegable del formulario de plato. */
 catalogoRouter.get('/categorias', async (_req, res) => {
@@ -63,18 +84,6 @@ catalogoRouter.get('/motivos-cancelacion', async (req, res) => {
 catalogoRouter.get('/terminos-vigentes', async (_req, res) => {
   const vigentes = await catalogoService.obtenerTerminosVigentesParaAceptar();
   res.json(vigentes);
-});
-
-/**
- * US-AYU-04 - Documento legal vigente de un tipo (terminos o privacidad)
- * para PAN-AYU-04. A diferencia del endpoint anterior, este devuelve la
- * `fechaPublicacion` y el `adminAutor` para que la pantalla pueda
- * mostrar "Ultima actualizacion: ..." y la trazabilidad visible.
- */
-catalogoRouter.get('/terminos-vigentes/:tipo', async (req, res) => {
-  const { tipo } = tipoVersionTerminosParamsSchema.parse(req.params);
-  const documento = await catalogoService.obtenerDocumentoLegalVigente(tipo);
-  res.json(documento);
 });
 
 /**
