@@ -11,9 +11,11 @@ import {
   type InformacionDeContacto,
   type TipoVersionTerminos,
 } from '@foodhub/shared';
-import { shareAsync } from 'expo-sharing';
+import { saveFile, openFile } from 'expo-downloads';
+import * as FileSystem from 'expo-file-system/legacy';
 import {
   descargarPdfLegal,
+  nombreDeDocumentoLegal,
   obtenerDocumentoLegal,
   obtenerInformacionDeContacto,
 } from '../api/legal';
@@ -53,9 +55,15 @@ export function useInformacionDeContacto(): UseQueryResult<
 }
 
 /**
- * Descarga el PDF del documento y abre el dialogo nativo de "Compartir" del
- * sistema. Asi el usuario puede guardarlo en Drive, enviarlo por WhatsApp,
- * o abrirlo con un visor PDF sin que la app tenga que elegir por el.
+ * Descarga el PDF del documento y lo guarda en la carpeta Descargas del
+ * dispositivo, para luego abrirlo en el visor de PDF del sistema.
+ *
+ * En Android 10+ `expo-downloads` escribe con MediaStore en la carpeta
+ * Descargas publica: sin selector de carpeta, sin dialogo de permisos y sin
+ * pedirle al usuario que elija donde guardar — el comportamiento de "apretar
+ * descargar y que aparezca en Descargas", igual que un navegador. Antes esto
+ * abria el dialogo nativo de "Compartir" (`expo-sharing`), que para el
+ * usuario no es una descarga.
  *
  * El error que devuelve `mutate` ya viene envuelto por React Query; los
  * callers lo traducen con `mensajeDeError`.
@@ -69,11 +77,33 @@ export function useDescargarPdfLegal(): UseMutationResult<
   return useMutation({
     mutationFn: async (tipo: TipoVersionTerminos) => {
       const uri = await descargarPdfLegal(tipo);
-      await shareAsync(uri, {
-        mimeType: 'application/pdf',
-        dialogTitle: 'Guardar documento',
+
+      // `saveFile` recibe el contenido como string (base64), asi que el PDF en
+      // cache se lee y se reenvia: la logica de autenticacion de la descarga
+      // ya quedo resuelta en `descargarPdfLegal`.
+      const contenido = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
       });
-      return uri;
+
+      const guardado = await saveFile({
+        name: nombreDeDocumentoLegal(tipo),
+        type: 'application/pdf',
+        data: contenido,
+        encoding: 'base64',
+      });
+
+      // En Android nunca viene `cancelled` (solo iOS puede cancelar el picker):
+      // si ocurriera, no hay nada que abrir.
+      if (guardado.cancelled) return uri;
+
+      try {
+        await openFile({ uri: guardado.uri, type: 'application/pdf' });
+      } catch {
+        // No hay visor de PDF o no se pudo abrir: el archivo igual quedo en
+        // Descargas, asi que el guardado no debe reportarse como fallido.
+      }
+
+      return guardado.uri;
     },
     onSuccess: () => {
       void cliente.invalidateQueries({ queryKey: ['legal', 'documento'] });

@@ -259,8 +259,9 @@ export const api = {
    * Descarga un binario (PDF u otro) autentificado con el token de la sesion
    * y lo guarda en el directorio cache del dispositivo.
    *
-   * Devuelve la URI local del archivo para que el caller la use con
-   * `expo-sharing`, `Linking.openURL` o el visor que corresponda.
+   * Devuelve la URI local del archivo para que el caller la guarde en la
+   * carpeta Descargas, la abra con `Linking.openURL` o el visor que
+   * corresponda.
    *
    * Usa `DownloadTask` de expo-file-system (no `fetch`+`blob`): en RN un
    * blob no tiene URL estable para abrir desde otra app, y descargar directo

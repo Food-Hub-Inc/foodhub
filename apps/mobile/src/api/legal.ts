@@ -9,8 +9,8 @@ import { api } from '../lib/api';
  * Informacion legal y datos de contacto — US-AYU-04 (PAN-AYU-04).
  *
  * Capa HTTP: este archivo solo sabe hablar con la API. La cache, los
- * estados de carga y la apertura del dialogo de "compartir" viven en
- * `useLegal.ts` (React Query + expo-sharing).
+ * estados de carga y el guardado del PDF en la carpeta Descargas viven en
+ * `useLegal.ts` (React Query + expo-downloads).
  */
 
 /**
@@ -36,19 +36,25 @@ export function obtenerInformacionDeContacto(): Promise<InformacionDeContacto> {
 }
 
 /**
+ * Nombre con el que se guarda el documento en Descargas. Vive aca (y no en
+ * `useLegal.ts`) para que la descarga a cache y el guardado posterior usen el
+ * mismo nombre.
+ */
+export function nombreDeDocumentoLegal(tipo: TipoVersionTerminos): string {
+  const prefijo = tipo === 'TERMINOS' ? 'terminos' : 'privacidad';
+  return `${prefijo}-foodhub.pdf`;
+}
+
+/**
  * Descarga el PDF del documento legal vigente al cache del dispositivo y
- * devuelve la URI local. El nombre de archivo viene del header
- * `Content-Disposition` que la API setea, pero como `DownloadTask` lo
- * resuelve solo, aca le pasamos uno razonable y devolvemos la URI final
- * para que el caller la pase a `Share.shareAsync` o al visor del sistema.
+ * devuelve la URI local. El guardado en la carpeta Descargas y la apertura
+ * del visor viven en `useLegal.ts`.
  */
 export async function descargarPdfLegal(
   tipo: TipoVersionTerminos,
 ): Promise<string> {
-  const prefijo = tipo === 'TERMINOS' ? 'terminos' : 'privacidad';
-  const nombre = `${prefijo}-foodhub.pdf`;
   return api.descargarBinario(
     `/catalogo/terminos-vigentes/${encodeURIComponent(tipo)}/pdf`,
-    nombre,
+    nombreDeDocumentoLegal(tipo),
   );
 }
