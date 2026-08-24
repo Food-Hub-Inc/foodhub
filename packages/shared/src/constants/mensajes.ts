@@ -855,6 +855,143 @@ export const MENSAJES_PEDIDO = {
 } as const;
 
 /**
+ * Modulo de Resenas y Calificaciones (US-RES-01 a US-RES-03, RF080 a RF082).
+ *
+ * ALCANCE DE ESTE ARCHIVO: las tres historias del nucleo. Las tres sociales
+ * -US-RES-04 reacciones, US-RES-05 respuestas y US-RES-06 reportes- van en un
+ * segundo PR y sus literales se agregan aca cuando se implementen. No se
+ * declaran por adelantado: una constante que nadie usa es una promesa que el
+ * compilador no puede verificar.
+ *
+ * LA RESENA ES POR PLATO, NO POR PEDIDO (decision del equipo, 2026-08-18). El
+ * objeto resenado es la publicacion; el pedido solo habilita el derecho a
+ * opinar. Si alguna otra fuente dice "una resena por pedido", esta
+ * desactualizada.
+ *
+ * DOS PLAZOS DISTINTOS QUE NO HAY QUE CONFUNDIR:
+ *
+ *   14 dias   plazo para CREAR la resena, contado desde que se completa el
+ *             pedido. Sale de `resena_limite_dias_para_resenar`, editable
+ *             desde PAN-ADM-04.
+ *   48 horas  plazo para EDITAR una resena ya publicada, contado desde su
+ *             publicacion. Cada nuevo pedido completado que incluya el mismo
+ *             plato REABRE la ventana, contando desde ese completado.
+ */
+export const MENSAJES_RESENA = {
+  // --- Dejar resena (US-RES-01) ---------------------------------------------
+  /**
+   * LITERAL - US-RES-01: los tres estados del boton segun exista resena y este
+   * abierta la ventana de edicion. RF031 los pide POR ITEM del pedido, no uno
+   * solo para todo el pedido.
+   *
+   * "Dejar resena" no se declara aca: ya vive en `MENSAJES_PEDIDO.dejarResena`
+   * porque el modulo de Pedidos lo necesito antes de que existiera este.
+   */
+  editarMiResena: 'Editar mi reseña',
+  verMiResena: 'Ver mi reseña',
+
+  /** LITERAL - US-RES-01, boton que confirma el alta desde PAN-RES-01. */
+  publicarResena: 'Publicar reseña',
+
+  /**
+   * LITERAL - US-RES-01: "Muestre el mensaje: 'Tenes que asignar una
+   * calificacion de al menos 1 estrella' debajo del componente de estrellas".
+   * Sin punto final: asi esta en el criterio de aceptacion.
+   *
+   * El mismo literal lo exige US-RES-02 para la calificacion del cliente, asi
+   * que se declara una sola vez y lo usan las dos pantallas.
+   */
+  calificacionRequerida:
+    'Tenés que asignar una calificación de al menos 1 estrella',
+
+  /** LITERAL - US-RES-01, filtro automatico de moderacion sobre el comentario. */
+  comentarioModerado:
+    'Tu reseña contiene términos que no cumplen con nuestras normas de comunidad. Por favor, modificála antes de publicar.',
+
+  /** LITERAL - US-RES-01, botones de la vista previa previa a publicar. */
+  vistaPreviaEditar: 'Editar',
+  vistaPreviaPublicar: 'Publicar',
+
+  /** LITERAL - US-RES-01, confirmacion del alta. */
+  resenaPublicada: '¡Reseña publicada con éxito!',
+
+  /**
+   * LITERAL - US-RES-01, ultimo criterio: el plato pertenece a un pedido que no
+   * llego a Completado.
+   */
+  pedidoNoCompletado: 'No se puede reseñar un plato de un pedido cancelado.',
+
+  // --- Calificar al cliente (US-RES-02) -------------------------------------
+  /** LITERAL - US-RES-02: los dos estados del boton segun exista calificacion. */
+  calificarCliente: 'Calificar cliente',
+  editarCalificacion: 'Editar calificación',
+
+  /** LITERAL - US-RES-02, boton que confirma el envio desde PAN-RES-02. */
+  enviarCalificacion: 'Enviar calificación',
+
+  /** LITERAL - US-RES-02, confirmacion del envio. */
+  calificacionEnviada:
+    '¡Calificación enviada con éxito! La información es visible solo para otros cocineros que reciban pedidos de este cliente.',
+
+  /**
+   * LITERAL - US-RES-02: "Si el cliente registra menos de 3 pedidos completados
+   * en la plataforma, muestre el texto 'Cliente nuevo' en lugar del promedio".
+   *
+   * OJO: el umbral de este texto son PEDIDOS COMPLETADOS del cliente, no
+   * calificaciones recibidas. Es un criterio distinto del de
+   * `resena_minimo_para_promedio`, que cuenta RESENAS y aplica al promedio
+   * publico del cocinero. Coinciden en el numero 3 y en nada mas.
+   */
+  clienteNuevo: 'Cliente nuevo',
+
+  // --- Ver resenas en el perfil publico (US-RES-03) -------------------------
+  /**
+   * LITERAL - US-RES-03, estado vacio de la seccion de resenas.
+   *
+   * El subtitulo va sin tilde en "Se": asi esta transcrito el criterio de
+   * aceptacion. Es la misma decision que ya se tomo con "Este correo ya esta
+   * registrado" en MENSAJES_AUTH — gana el documento por sobre la ortografia,
+   * porque las pruebas funcionales de la Etapa 6 comparan palabra por palabra.
+   */
+  cocineroSinResenasTitulo: 'Este cocinero aún no recibió reseñas.',
+  cocineroSinResenasSubtitulo: 'Se el primero en compartir tu experiencia.',
+
+  /**
+   * LITERAL - US-RES-03, boton del estado vacio. Es distinto de
+   * `MENSAJES_PEDIDO.dejarResena` ("Dejar reseña"): el criterio escribe
+   * "Dejar una reseña" con articulo. No unificarlos.
+   */
+  dejarUnaResena: 'Dejar una reseña',
+
+  /**
+   * LITERAL - US-RES-03: la publicacion resenada fue dada de baja por el
+   * cocinero. La resena sobrevive y sigue promediando; lo unico que cambia es
+   * el nombre del plato y que el enlace deja de funcionar.
+   */
+  platoNoDisponible: '[Plato no disponible]',
+
+  /**
+   * LITERAL - US-RES-03, opciones del selector de orden.
+   *
+   * "Mas utiles" NO esta: ordena por cantidad de reacciones y las reacciones
+   * son US-RES-04, que no entra en este PR. Se agrega junto con esa historia,
+   * no antes: una opcion de orden que siempre devuelve lo mismo es peor que no
+   * ofrecerla.
+   */
+  ordenMasRecientes: 'Más recientes',
+  ordenMejorCalificacion: 'Mejor calificación',
+  ordenPeorCalificacion: 'Peor calificación',
+
+  /**
+   * LITERAL - US-RES-03, filtros del listado.
+   *
+   * Falta "Solo resenas con respuesta del cocinero" por el mismo motivo que
+   * "Mas utiles": depende de US-RES-05.
+   */
+  filtroSoloConFoto: 'Solo reseñas con foto',
+} as const;
+
+/**
  * Modulo de Dashboard del cocinero (US-DASH-01 a US-DASH-05, RF042 a RF046).
  *
  * Una sola pantalla -PAN-DASH-01, "Mi actividad"- con cuatro secciones y un
