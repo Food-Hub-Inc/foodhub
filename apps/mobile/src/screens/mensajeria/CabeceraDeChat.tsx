@@ -157,7 +157,9 @@ function HojaDeOpciones({
             }}
             variante="secundario"
           >
-            {MENSAJES_MENSAJERIA.archivarConversacion}
+            {conversacion.archivada
+              ? MENSAJES_MENSAJERIA.desarchivarConversacion
+              : MENSAJES_MENSAJERIA.archivarConversacion}
           </Boton>
         </View>
       )}
