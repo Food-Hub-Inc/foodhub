@@ -9,11 +9,12 @@ Expo Go es un contenedor genérico que solo incluye los módulos nativos que Exp
 decidió empaquetar. FoodHub depende de módulos que **no están** en ese
 contenedor:
 
-| Módulo                    | Motivo                                              |
-| ------------------------- | --------------------------------------------------- |
-| `react-native-maps`       | mapa de cocineros cercanos con SDK de Google Maps   |
-| `expo-notifications`      | push por FCM con `google-services.json` propio      |
-| `react-native-reanimated` | animaciones que exige HeroUI Native (v4 + worklets) |
+| Módulo                             | Motivo                                               |
+| ---------------------------------- | ---------------------------------------------------- |
+| `react-native-maps`                | mapa de cocineros cercanos con SDK de Google Maps    |
+| `expo-notifications`               | push por FCM con `google-services.json` propio       |
+| `react-native-reanimated`          | animaciones que exige HeroUI Native (v4 + worklets)  |
+| `react-native-keyboard-controller` | altura real del teclado, para que no tape los campos |
 
 Con Expo Go esas pantallas fallan en ejecución. La build de desarrollo incluye
 los módulos nativos reales y conserva la recarga en caliente, así que se
@@ -45,6 +46,10 @@ pnpm --filter @foodhub/mobile run start
 El paso 1 se repite solo cuando se agrega o actualiza una dependencia con
 código nativo. Los cambios de JavaScript y de estilos llegan por Metro sin
 reconstruir.
+
+> **Al 2026-08-24 hay que rehacer la build de desarrollo.** Se agregó
+> `react-native-keyboard-controller`, que trae código nativo: con la build
+> anterior instalada, la app arranca y falla al montar `KeyboardProvider`.
 
 ## El `.env` va en `apps/mobile`, no en la raíz
 

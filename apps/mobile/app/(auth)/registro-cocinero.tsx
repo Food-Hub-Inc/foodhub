@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { registroCocineroSchema, type Ubicacion } from '@foodhub/shared';
 import { registrarCocinero } from '../../src/api/auth';
 import { SafeAreaView } from '../../src/components/SafeAreaView';
@@ -8,6 +8,7 @@ import { PieDeRegistro } from '../../src/components/registro/PieDeRegistro';
 import { AreaTexto } from '../../src/components/ui/AreaTexto';
 import { Aviso } from '../../src/components/ui/Aviso';
 import { EncabezadoPantalla } from '../../src/components/ui/EncabezadoPantalla';
+import { PantallaConTeclado } from '../../src/components/ui/PantallaConTeclado';
 import type { FotoElegida } from '../../src/components/ui/SelectorDeFoto';
 import { SelectorDeUbicacion } from '../../src/components/ui/SelectorDeUbicacion';
 import { useFormulario } from '../../src/hooks/useFormulario';
@@ -68,10 +69,7 @@ export default function RegistroCocinero() {
         titulo={TEXTOS_REGISTRO.tituloCocinero}
       />
 
-      <ScrollView
-        contentContainerClassName="px-6 pt-4 pb-10"
-        keyboardShouldPersistTaps="handled"
-      >
+      <PantallaConTeclado contentContainerClassName="px-6 pt-4 pb-10">
         <Avisos
           avisoDeFoto={registro.avisoDeFoto}
           errorGeneral={registro.errorGeneral}
@@ -113,7 +111,7 @@ export default function RegistroCocinero() {
           puedeEnviar={formulario.esValido}
           terminosAceptados={formulario.valores.terminosAceptados}
         />
-      </ScrollView>
+      </PantallaConTeclado>
     </SafeAreaView>
   );
 }
