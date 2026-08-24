@@ -43,6 +43,16 @@ import {
 export function DetalleDePlato({ id }: { id: string | undefined }) {
   const consulta = usePublicacionPublica(id);
 
+  /**
+   * Alto real del pie de "Agregar al carrito", para que el botón flotante del
+   * carrito quede por encima y no le coma el toque.
+   *
+   * Se MIDE en vez de fijarse: el pie crece cuando aparece el aviso de error o
+   * la leyenda "Sin unidades disponibles", y un número fijo se volvería a
+   * solapar justo en esos casos.
+   */
+  const [altoDelPie, setAltoDelPie] = useState(0);
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <EncabezadoPantalla
@@ -63,9 +73,11 @@ export function DetalleDePlato({ id }: { id: string | undefined }) {
         <EsqueletoDelDetalle />
       ) : null}
 
-      {consulta.data ? <Detalle plato={consulta.data} /> : null}
+      {consulta.data ? (
+        <Detalle onAltoDelPie={setAltoDelPie} plato={consulta.data} />
+      ) : null}
 
-      <BotonFlotanteDelCarrito />
+      <BotonFlotanteDelCarrito separacionInferior={altoDelPie} />
     </SafeAreaView>
   );
 }
@@ -81,12 +93,21 @@ function EsqueletoDelDetalle() {
   );
 }
 
-function Detalle({ plato }: { plato: PublicacionPublica }) {
+function Detalle({
+  plato,
+  onAltoDelPie,
+}: {
+  plato: PublicacionPublica;
+  onAltoDelPie: (alto: number) => void;
+}) {
   const noDisponible = plato.estadoPublicacion === 'NO_DISPONIBLE';
 
   return (
     <>
-      <ScrollView contentContainerClassName="pb-6">
+      {/* `pb-24` y no `pb-6`: es el colchón que ya usan el feed, favoritos y el
+          perfil del cocinero para que el botón flotante del carrito no tape la
+          última línea del contenido al llegar al final del scroll. */}
+      <ScrollView contentContainerClassName="pb-24">
         <FotoDelPlato
           imagenUrl={plato.imagenUrl ?? plato.categoria.imagenPredeterminadaUrl}
         />
@@ -118,7 +139,11 @@ function Detalle({ plato }: { plato: PublicacionPublica }) {
         </View>
       </ScrollView>
 
-      <PieDeAccion noDisponible={noDisponible} plato={plato} />
+      <PieDeAccion
+        noDisponible={noDisponible}
+        onAlto={onAltoDelPie}
+        plato={plato}
+      />
     </>
   );
 }
@@ -249,12 +274,29 @@ function SeccionDeCocinero({ plato }: { plato: PublicacionPublica }) {
  * también por `CANTIDAD_MAXIMA_ALCANZADA`, y ese no es una pregunta sino un
  * error que hay que mostrar tal cual.
  */
+/**
+ * "Muestre el botón 'Agregar al carrito' deshabilitado con la indicación 'Sin
+ * unidades disponibles'" (US-EXP-05, tercer criterio).
+ */
+function LeyendaSinUnidades() {
+  return (
+    <View className="flex-row items-center justify-center gap-2 pb-2">
+      <IconoAlerta size={16} className="text-text-disabled" />
+      <Text className="text-body text-text-disabled">
+        {MENSAJES_EXPLORACION.sinUnidadesDisponibles}
+      </Text>
+    </View>
+  );
+}
+
 function PieDeAccion({
   plato,
   noDisponible,
+  onAlto,
 }: {
   plato: PublicacionPublica;
   noDisponible: boolean;
+  onAlto: (alto: number) => void;
 }) {
   const agregar = useAgregarAlCarrito();
   const [preguntandoPorOtroCocinero, setPreguntando] = useState(false);
@@ -294,19 +336,17 @@ function PieDeAccion({
       : undefined;
 
   return (
-    <View className="border-t border-border bg-surface px-4 pb-2 pt-3">
+    <View
+      className="border-t border-border bg-surface px-4 pb-2 pt-3"
+      onLayout={(evento) => {
+        onAlto(evento.nativeEvent.layout.height);
+      }}
+    >
       {errorVisible !== undefined ? (
         <Aviso className="mb-3" mensaje={errorVisible} tono="error" />
       ) : null}
 
-      {noDisponible ? (
-        <View className="flex-row items-center justify-center gap-2 pb-2">
-          <IconoAlerta size={16} className="text-text-disabled" />
-          <Text className="text-body text-text-disabled">
-            {MENSAJES_EXPLORACION.sinUnidadesDisponibles}
-          </Text>
-        </View>
-      ) : null}
+      {noDisponible ? <LeyendaSinUnidades /> : null}
 
       <Boton
         cargando={agregar.isPending}
