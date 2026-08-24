@@ -34,6 +34,7 @@ import {
 import { AppError, noEncontrado } from '../../middleware/error.middleware.js';
 import { limpiarFotosDePerfilAnteriores } from '../almacenamiento/almacenamiento.service.js';
 import { registrarOperacion } from '../auditoria/auditoria.service.js';
+import { bloquearConversacionesPorBaja } from '../mensajeria/mensajeria.service.js';
 
 /**
  * Modulo de Gestion de Usuarios, Roles y Permisos (US-GURP-01 a US-GURP-09).
@@ -323,10 +324,20 @@ export async function eliminarCuentaPropia(entrada: {
     );
   }
 
-  await db
-    .update(usuario)
-    .set({ estadoCuenta: 'ELIMINADA' })
-    .where(eq(usuario.id, entrada.usuarioId));
+  /**
+   * US-MSG-07 - La baja y el bloqueo de las conversaciones son UNA operacion.
+   * Si la cuenta quedara ELIMINADA y el UPDATE de `conversacion` fallara, la
+   * contraparte seguiria viendo un chat abierto contra alguien que ya no esta y
+   * sus mensajes se perderian en el vacio.
+   */
+  await db.transaction(async (tx) => {
+    await tx
+      .update(usuario)
+      .set({ estadoCuenta: 'ELIMINADA' })
+      .where(eq(usuario.id, entrada.usuarioId));
+
+    await bloquearConversacionesPorBaja(tx, entrada.usuarioId);
+  });
 
   // Alcance global: la cuenta tiene que dejar de funcionar en todos los
   // dispositivos donde haya sesion abierta, no solo en el que pidio la baja.
@@ -665,6 +676,11 @@ export async function eliminarUsuarioPanel(entrada: {
       .update(usuario)
       .set({ estadoCuenta: 'ELIMINADA' })
       .where(eq(usuario.id, usuarioId));
+
+    // US-MSG-07 - Misma regla que en la baja propia: las conversaciones del
+    // usuario quedan bloqueadas y archivadas del lado de quien sigue en la
+    // plataforma, dentro de la misma transaccion que la baja.
+    await bloquearConversacionesPorBaja(tx, usuarioId);
   });
 
   void registrarOperacion({

@@ -2,9 +2,8 @@ import { FlatList, Pressable, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { router } from 'expo-router';
 import { MENSAJES_EXPLORACION, type CocineroPublico } from '@foodhub/shared';
-import { IconoCocinero, IconoMensaje } from '../../components/iconos';
+import { IconoCocinero } from '../../components/iconos';
 import { SafeAreaView } from '../../components/SafeAreaView';
-import { Boton } from '../../components/ui/Boton';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
@@ -15,6 +14,7 @@ import { useUbicacionActual } from '../../hooks/useUbicacionActual';
 import { mensajeDeError } from '../../lib/api';
 import { formatearPrecio } from '../../lib/formato';
 import { TEXTOS_EXPLORACION } from '../../lib/textos';
+import { BotonDeMensajes } from '../mensajeria/BotonDeMensajes';
 import { BotonFlotanteDelCarrito } from './BotonFlotanteDelCarrito';
 import {
   AvatarDeCocinero,
@@ -232,20 +232,17 @@ function FichaDelCocinero({ cocinero }: { cocinero: CocineroPublico }) {
 
       <UbicacionDelCocinero lat={cocinero.lat} lng={cocinero.lng} />
 
-      {/* Sexto criterio: "Enviar mensaje" abre la mensajería directa. El módulo
-          MSG todavía no está codificado, así que lleva a su pantalla anunciada
-          (PAN-MSG-01), que es el patrón que el equipo ya usa para el shell
-          navegable. Cuando exista US-MSG-01, cambia el destino y nada más. */}
+      {/* Sexto criterio de US-EXP-04: "Enviar mensaje" abre la mensajería
+          directa. Es también el primer criterio de US-MSG-01: el botón abre el
+          hilo existente con este cocinero o crea el único posible, y navega a
+          PAN-MSG-02. Con la cuenta suspendida el chat se abre igual, con el
+          campo de entrada deshabilitado y el motivo escrito; con la cuenta
+          eliminada la API rechaza y el aviso queda debajo del botón. */}
       <View className="bg-surface px-4 pb-4">
-        <Boton
-          icono={<IconoMensaje size={18} className="text-primary" />}
-          onPress={() => {
-            router.push('/(cliente)/mensajes');
-          }}
-          variante="secundario"
-        >
-          {MENSAJES_EXPLORACION.enviarMensaje}
-        </Boton>
+        <BotonDeMensajes
+          destinatarioId={cocinero.id}
+          etiqueta={MENSAJES_EXPLORACION.enviarMensaje}
+        />
       </View>
 
       <Text className="px-4 pb-2 pt-5 text-h2 font-bold text-text-primary">

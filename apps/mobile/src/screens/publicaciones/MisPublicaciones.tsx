@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { useResolveClassNames } from 'uniwind';
 import {
   MENSAJES_PUBLICACION,
   PUBLICACIONES_POR_PAGINA,
@@ -17,6 +16,7 @@ import {
   IconoMas,
 } from '../../components/iconos';
 import { SafeAreaView } from '../../components/SafeAreaView';
+import { BarraDeBusqueda } from '../../components/ui/BarraDeBusqueda';
 import { Boton } from '../../components/ui/Boton';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../components/ui/Esqueleto';
@@ -199,7 +199,11 @@ function BarraSuperior({
       </View>
 
       <View className="flex-row items-center gap-2 px-4 pt-3">
-        <BarraDeBusqueda onCambiar={onCambiarBusqueda} valor={busqueda} />
+        <BarraDeBusqueda
+          onCambiar={onCambiarBusqueda}
+          placeholder={TEXTOS_PUBLICACIONES.buscarPlaceholder}
+          valor={busqueda}
+        />
         <BotonIcono
           accessibilityLabel={TEXTOS_PUBLICACIONES.filtros}
           activo={filtrosActivos}
@@ -331,39 +335,6 @@ function EsqueletoListado() {
       <Esqueleto className="mb-3 h-28 rounded-md" />
       <Esqueleto className="mb-3 h-28 rounded-md" />
       <Esqueleto className="mb-3 h-28 rounded-md" />
-    </View>
-  );
-}
-
-/**
- * Barra de búsqueda simple: sin etiqueta ni mensaje de error, a diferencia de
- * `CampoTexto`, porque no es un campo de un formulario que se valide.
- */
-function BarraDeBusqueda({
-  valor,
-  onCambiar,
-}: {
-  valor: string;
-  onCambiar: (valor: string) => void;
-}) {
-  const estiloPlaceholder = useResolveClassNames('text-text-disabled');
-  const colorPlaceholder =
-    typeof estiloPlaceholder.color === 'string'
-      ? estiloPlaceholder.color
-      : undefined;
-
-  return (
-    <View className="h-11 flex-1 flex-row items-center gap-2 rounded-sm border border-border bg-surface px-3">
-      <IconoBuscar size={18} className="text-text-disabled" />
-      <TextInput
-        accessibilityLabel={TEXTOS_PUBLICACIONES.buscarPlaceholder}
-        autoCorrect={false}
-        className="flex-1 text-body text-text-primary"
-        onChangeText={onCambiar}
-        placeholder={TEXTOS_PUBLICACIONES.buscarPlaceholder}
-        placeholderTextColor={colorPlaceholder}
-        value={valor}
-      />
     </View>
   );
 }
