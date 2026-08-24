@@ -2,6 +2,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   MENSAJES_PEDIDO,
+  MENSAJES_RESENA,
   type EventoPedido,
   type PedidoDetalle,
 } from '@foodhub/shared';
@@ -14,6 +15,7 @@ import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
 import { usePedido } from '../../hooks/usePedidos';
 import { usePerfil } from '../../hooks/usePerfil';
+import { useEstadoDeResenas } from '../../hooks/useResenas';
 import { mensajeDeError } from '../../lib/api';
 import { formatearFecha, formatearPrecio } from '../../lib/formato';
 import { TEXTOS_PEDIDOS } from '../../lib/textos';
@@ -214,17 +216,20 @@ function nombreDelEvento(evento: EventoPedido): string {
 /**
  * Lo que queda por calificar, al final del detalle.
  *
- * "Si el pedido está en estado Completado y el cliente todavía no dejó reseña,
- * muestre el botón 'Dejar reseña' de forma prominente al final del detalle"
- * (US-PED-07); "si ya dejó una, muestre en su lugar una indicación de que la
- * reseña ya fue enviada". Para el cocinero, el equivalente es "Calificar
- * cliente" (US-PED-08).
+ * LAS DOS DIRECCIONES NO TIENEN LA MISMA FORMA, y por eso se separan:
  *
- * `puedeCalificar` ya viene resuelto por la API contra `resena` o
- * `calificacion_cocinero`, así que la pantalla no interpreta nada.
+ *   cliente → plato    UN BOTÓN POR ÍTEM. RF031 lo pide explícitamente:
+ *                      "reemplazar el botón único 'Dejar reseña' por un botón
+ *                      por cada ítem del pedido". La reseña es por publicación
+ *                      (cambio del 2026-08-18), así que un pedido de tres
+ *                      platos habilita tres reseñas independientes, cada una
+ *                      con su propio estado.
+ *   cocinero → cliente UN SOLO BOTÓN. La calificación es una por par
+ *                      cocinero-cliente, no una por pedido ni por plato.
  *
- * Los dos botones llevan a la pantalla anunciada del módulo de Reseñas, que
- * todavía no está codificado (decisión del equipo, 2026-08-19).
+ * La maquetación de PAN-PED-06 dibuja un único botón "Dejar reseña" para todo
+ * el pedido, pero es de la Etapa 5 y anterior al cambio de modelo; RF031 la
+ * corrige de forma explícita.
  */
 function AccionDeCalificacion({
   pedido,
@@ -234,15 +239,18 @@ function AccionDeCalificacion({
   esCocinero: boolean;
 }) {
   if (pedido.estado !== 'COMPLETADO') return null;
+  if (esCocinero) return <CalificarAlCliente pedido={pedido} />;
+  return <ResenarCadaPlato pedido={pedido} />;
+}
 
+/** US-PED-08 y US-RES-02 — una calificación por cliente, no por pedido. */
+function CalificarAlCliente({ pedido }: { pedido: PedidoDetalle }) {
   if (!pedido.puedeCalificar) {
     return (
       <View className="flex-row items-center justify-center gap-2 py-2">
         <IconoTildeCirculo className="text-success" size={18} />
         <Text className="text-body text-text-secondary">
-          {esCocinero
-            ? MENSAJES_PEDIDO.yaCalificasteAlCliente
-            : MENSAJES_PEDIDO.yaCalificasteEstePedido}
+          {MENSAJES_PEDIDO.yaCalificasteAlCliente}
         </Text>
       </View>
     );
@@ -251,14 +259,77 @@ function AccionDeCalificacion({
   return (
     <Boton
       onPress={() => {
-        router.push(
-          esCocinero ? '/resenas/calificar-cliente' : '/resenas/dejar',
-        );
+        router.push({
+          pathname: '/resenas/calificar-cliente',
+          params: { clienteId: pedido.participante.id },
+        });
       }}
     >
-      {esCocinero
-        ? MENSAJES_PEDIDO.calificarCliente
-        : MENSAJES_PEDIDO.dejarResena}
+      {MENSAJES_PEDIDO.calificarCliente}
     </Boton>
+  );
+}
+
+/**
+ * RF031 — un botón por plato, con el rótulo que corresponda a su estado.
+ *
+ * El estado sale del servidor porque depende de dos plazos y del historial de
+ * pedidos del cliente con ese plato: "Dejar reseña" si nunca lo reseñó y está
+ * a tiempo, "Editar mi reseña" si ya lo hizo y la ventana de 48 h sigue
+ * abierta, "Ver mi reseña" si se cerró.
+ *
+ * Mientras la consulta viaja no se dibuja nada: mostrar "Dejar reseña" y
+ * cambiarlo a "Editar mi reseña" un segundo después invita a tocar el botón
+ * equivocado.
+ */
+function ResenarCadaPlato({ pedido }: { pedido: PedidoDetalle }) {
+  const publicacionIds = pedido.items.map((item) => item.publicacionId);
+  const estado = useEstadoDeResenas(publicacionIds);
+
+  if (!estado.data) return null;
+
+  const porPublicacion = new Map(
+    estado.data.map((fila) => [fila.publicacionId, fila]),
+  );
+
+  return (
+    <View className="gap-3">
+      {pedido.items.map((item) => {
+        const suEstado = porPublicacion.get(item.publicacionId);
+        if (!suEstado) return null;
+
+        // Ni reseñable ni reseñado: venció el plazo sin haber opinado. No hay
+        // acción posible, así que el plato no muestra botón.
+        if (suEstado.resenaId === null && !suEstado.puedeResenar) return null;
+
+        const etiqueta =
+          suEstado.resenaId === null
+            ? MENSAJES_PEDIDO.dejarResena
+            : suEstado.puedeEditar
+              ? MENSAJES_RESENA.editarMiResena
+              : MENSAJES_RESENA.verMiResena;
+
+        return (
+          <Boton
+            key={item.id}
+            onPress={() => {
+              router.push({
+                pathname: '/resenas/dejar',
+                params: { publicacionId: item.publicacionId },
+              });
+            }}
+            variante={suEstado.resenaId === null ? 'primario' : 'secundario'}
+          >
+            {/*
+              El nombre del plato va en el botón porque con varios ítems tres
+              botones idénticos no dicen cuál es cuál.
+            */}
+            {pedido.items.length > 1
+              ? `${etiqueta} · ${item.nombre}`
+              : etiqueta}
+          </Boton>
+        );
+      })}
+    </View>
   );
 }

@@ -798,12 +798,27 @@ export const TEXTOS_RESENA = {
   tituloEditar: 'Editar mi reseña',
   tituloVer: 'Mi reseña',
 
-  /** [PROPIO] Encabezado del selector de estrellas. */
-  etiquetaCalificacion: '¿Qué te pareció el plato?',
+  /** [MOCKUP PAN-RES-01] Encabezado del selector de estrellas. */
+  etiquetaCalificacion: '¿Cómo fue tu experiencia?',
 
-  /** [PROPIO] Campo de comentario. El maximo de 500 sale de RF080. */
-  etiquetaComentario: 'Contanos tu experiencia',
-  placeholderComentario: 'Opcional. Qué te gustó, qué mejorarías…',
+  /**
+   * [MOCKUP PAN-RES-01] Campo de comentario, con el contador `usado/maximo`
+   * que la maquetacion dibuja arriba a la derecha (ahi se lee "107/500").
+   * El maximo de 500 sale de RF080.
+   */
+  etiquetaComentario: 'Comentario (opcional)',
+  placeholderComentario: 'Qué te gustó, qué mejorarías…',
+  contadorComentario: (usado: number, maximo: number) =>
+    `${String(usado)}/${String(maximo)}`,
+
+  /**
+   * [MOCKUP PAN-RES-01, con el plazo corregido] El pie de la maquetacion dice
+   * "24 hs", pero RF080 fija 48 horas y esa es la version vigente (decision del
+   * equipo, 2026-08-23): la maquetacion es de la Etapa 5 y es anterior al
+   * cambio de modelo del 18/08.
+   */
+  avisoPublica:
+    'Una vez enviada, tu reseña será pública. Podés editarla durante 48 hs.',
 
   /** [PROPIO] Encabezado de los tags positivos de RF080. */
   etiquetaTags: '¿Qué destacarías?',
@@ -812,6 +827,13 @@ export const TEXTOS_RESENA = {
   etiquetaFoto: 'Foto del plato',
   ayudaFoto: 'Opcional. JPG, PNG o WEBP de hasta 5 MB.',
   quitarFoto: 'Quitar foto',
+
+  /** [PROPIO] La ruta se abrio sin indicar que plato se resena. */
+  sinPublicacion:
+    'No pudimos saber qué plato querés reseñar. Volvé al pedido y entrá desde el plato.',
+
+  /** [PROPIO] Boton que cierra el dialogo de exito y vuelve al pedido. */
+  cerrarExito: 'Listo',
 
   /** [PROPIO] Titulo de la vista previa que exige US-RES-01 antes de publicar. */
   tituloVistaPrevia: 'Así se va a ver tu reseña',
