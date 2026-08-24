@@ -46,6 +46,16 @@ const ETIQUETA_ACTIVA_CLIENTE: Record<
 };
 
 /**
+ * DESDE QUÉ LADO SE MIRA EL PEDIDO.
+ *
+ * Hace falta porque los literales de US-PED-06 y US-PED-07 están escritos para
+ * la pantalla del CLIENTE ("Cancelado por vos") y el detalle es una sola
+ * pantalla para los dos roles: sin este dato, al cocinero se le atribuía una
+ * cancelación que había hecho el cliente.
+ */
+export type VistaDePedido = 'CLIENTE' | 'COCINERO';
+
+/**
  * Cómo terminó un pedido rechazado, según su origen (US-PED-06, tercer
  * criterio de la pestaña "Rechazados").
  *
@@ -57,6 +67,18 @@ const ETIQUETA_POR_ORIGEN: Record<OrigenTransicion, string> = {
   CLIENTE: MENSAJES_PEDIDO.canceladoPorVos,
   COCINERO: MENSAJES_PEDIDO.rechazadoPorElCocinero,
   SISTEMA: MENSAJES_PEDIDO.expiradoSinRespuesta,
+};
+
+/**
+ * Lo MISMO visto por el cocinero, y lo único que cambia es el origen CLIENTE.
+ *
+ * "Rechazado por el cocinero" y "Expirado - sin respuesta del cocinero" se
+ * dejan tal cual: son literales de la documentación y redactarlos en segunda
+ * persona sería inventar dos textos que ningún criterio respalda.
+ */
+const ETIQUETA_POR_ORIGEN_COCINERO: Record<OrigenTransicion, string> = {
+  ...ETIQUETA_POR_ORIGEN,
+  CLIENTE: MENSAJES_PEDIDO.canceladoPorElCliente,
 };
 
 /** Encabezado del detalle de un pedido que ya cerró (US-PED-07). */
@@ -75,6 +97,11 @@ const ENCABEZADO_POR_ORIGEN: Record<OrigenTransicion, string> = {
 const INDICADOR_POR_ORIGEN: Record<OrigenTransicion, string> = {
   ...ETIQUETA_POR_ORIGEN,
   SISTEMA: MENSAJES_PEDIDO.expiradoSinRespuestaDetalle,
+};
+
+const INDICADOR_POR_ORIGEN_COCINERO: Record<OrigenTransicion, string> = {
+  ...INDICADOR_POR_ORIGEN,
+  CLIENTE: MENSAJES_PEDIDO.canceladoPorElCliente,
 };
 
 /**
@@ -132,11 +159,23 @@ function origenDe(pedido: PedidoParaEtiquetar): OrigenTransicion {
   return pedido.origenRechazo ?? 'SISTEMA';
 }
 
-/** Texto del badge de estado que ve el CLIENTE. */
-export function etiquetaDeEstado(pedido: PedidoParaEtiquetar): string {
-  return pedido.estado === 'RECHAZADO'
-    ? ETIQUETA_POR_ORIGEN[origenDe(pedido)]
-    : ETIQUETA_ACTIVA_CLIENTE[pedido.estado];
+/**
+ * Texto del badge de estado.
+ *
+ * `vista` es obligatoria y no tiene valor por defecto a propósito: un default
+ * dejaría que una pantalla nueva del cocinero heredara en silencio la redacción
+ * del cliente, que es exactamente el defecto que esto corrige.
+ */
+export function etiquetaDeEstado(
+  pedido: PedidoParaEtiquetar,
+  vista: VistaDePedido,
+): string {
+  if (pedido.estado !== 'RECHAZADO') {
+    return ETIQUETA_ACTIVA_CLIENTE[pedido.estado];
+  }
+  const etiquetas =
+    vista === 'COCINERO' ? ETIQUETA_POR_ORIGEN_COCINERO : ETIQUETA_POR_ORIGEN;
+  return etiquetas[origenDe(pedido)];
 }
 
 /** Colores del badge de estado. */
@@ -146,14 +185,25 @@ export function tonoDeEstado(pedido: PedidoParaEtiquetar): TonoDeEstado {
     : TONO_ACTIVO[pedido.estado];
 }
 
-/** Encabezado del detalle de un pedido cerrado (US-PED-07). */
+/**
+ * Encabezado del detalle de un pedido cerrado (US-PED-07).
+ *
+ * No recibe `vista`: los tres encabezados ("Pedido rechazado", "Pedido
+ * cancelado", "Pedido expirado") describen el hecho sin atribuírselo a nadie,
+ * así que sirven igual para los dos roles.
+ */
 export function encabezadoDeCierre(pedido: PedidoParaEtiquetar): string {
   return ENCABEZADO_POR_ORIGEN[origenDe(pedido)];
 }
 
 /** Indicador de estado del detalle de un pedido cerrado (US-PED-07). */
-export function indicadorDeCierre(pedido: PedidoParaEtiquetar): string {
-  return INDICADOR_POR_ORIGEN[origenDe(pedido)];
+export function indicadorDeCierre(
+  pedido: PedidoParaEtiquetar,
+  vista: VistaDePedido,
+): string {
+  const indicadores =
+    vista === 'COCINERO' ? INDICADOR_POR_ORIGEN_COCINERO : INDICADOR_POR_ORIGEN;
+  return indicadores[origenDe(pedido)];
 }
 
 /**
