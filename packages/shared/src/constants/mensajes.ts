@@ -660,6 +660,19 @@ export const MENSAJES_PEDIDO = {
   canceladoPorVos: 'Cancelado por vos',
 
   /**
+   * PROPIO - la misma cancelacion, vista por el COCINERO.
+   *
+   * US-PED-06 y US-PED-07 fijan "Cancelado por vos" para la pantalla del
+   * CLIENTE y no dicen nada de como lo ve la otra parte; el detalle del pedido
+   * es una sola pantalla para los dos roles, asi que sin este texto el cocinero
+   * leia que habia cancelado el mismo.
+   *
+   * NO se reusa `MENSAJES_DASHBOARD.estadoCanceladosCliente`: es plural y
+   * rotula una serie del grafico de US-DASH-04, no un pedido.
+   */
+  canceladoPorElCliente: 'Cancelado por el cliente',
+
+  /**
    * LITERAL - US-PED-06, etiqueta de la tarjeta en el historial cuando expiro.
    * El criterio la escribe con guion medio: "Expirado - sin respuesta del
    * cocinero".
@@ -1104,6 +1117,15 @@ export const MENSAJES_MENSAJERIA = {
   /** LITERAL - US-MSG-04: "traslade la conversacion al filtro 'Archivados'". */
   archivados: 'Archivados',
 
+  /**
+   * PROPIO - la accion inversa, en el gesto de deslizar del listado.
+   *
+   * US-MSG-04 solo nombra "Archivar". El listado ya sabia devolver una
+   * conversacion al filtro principal, pero rotulaba ese boton con el nombre de
+   * la pestana ("Activos"), que no se lee como una accion.
+   */
+  desarchivar: 'Desarchivar',
+
   /** LITERAL - US-MSG-04, busqueda sin resultados. */
   sinResultadosDeBusqueda:
     'No se encontraron conversaciones con esos criterios.',
@@ -1125,6 +1147,13 @@ export const MENSAJES_MENSAJERIA = {
    */
   verPerfil: 'Ver perfil',
   archivarConversacion: 'Archivar conversación',
+
+  /**
+   * PROPIO - US-MSG-05 solo enumera "Archivar conversacion". La hoja de la
+   * cabecera ofrecia siempre esa opcion, incluso sobre una conversacion ya
+   * archivada, donde no tenia ningun efecto.
+   */
+  desarchivarConversacion: 'Desarchivar conversación',
 
   // --- Hilo del pedido (US-MSG-06) ------------------------------------------
   /**
@@ -1153,6 +1182,42 @@ export const MENSAJES_MENSAJERIA = {
    */
   usuarioNoDisponible: 'Usuario no disponible',
 } as const;
+
+/**
+ * Errores de Supabase Auth que tienen un texto nuestro aprobado.
+ *
+ * GoTrue responde en ingles y con su propio vocabulario. Los flujos que hablan
+ * directo con el -el login (US-AUT-03) y el restablecimiento por enlace de
+ * US-AUT-04- no pasan por la API, asi que su error no llega como el
+ * `{ codigo, mensaje }` que los clientes saben traducir y terminaba degradado a
+ * `MENSAJES_ERROR.interno`.
+ *
+ * LA LISTA ES CORTA A PROPOSITO: solo entran codigos cuyo texto en espanol ya
+ * existe y esta comprometido con un criterio de aceptacion. Cualquier otro
+ * sigue cayendo al mensaje generico, que es lo que evita filtrar detalle
+ * tecnico de GoTrue a la interfaz.
+ */
+/**
+ * Codigo con el que GoTrue rechaza el ingreso de una cuenta baneada.
+ *
+ * Se nombra porque lo miran DOS lugares por separado: este mapa y el default
+ * del formulario de login, que no puede usar el mapa —su caso normal es
+ * `credencialesInvalidas`, no el mensaje generico—.
+ */
+export const CODIGO_SUPABASE_CUENTA_BANEADA = 'user_banned';
+
+export const MENSAJES_POR_CODIGO_SUPABASE: Readonly<Record<string, string>> = {
+  /** US-AUT-04: la contrasena nueva es igual a la que ya tenia. */
+  same_password: MENSAJES_USUARIO.contrasenaNuevaIgualAActual,
+
+  /**
+   * US-AUT-03: la cuenta esta suspendida. GoTrue rechaza el login antes de
+   * emitir el token porque `suspenderUsuario` la deja baneada; sin esta
+   * traduccion el usuario veia "credenciales incorrectas", que es justo lo que
+   * el criterio de aceptacion NO quiere que se muestre.
+   */
+  [CODIGO_SUPABASE_CUENTA_BANEADA]: MENSAJES_AUTH.cuentaSuspendida,
+};
 
 /** Errores tecnicos, sin detalle del stack (requisito del modulo de seguridad). */
 export const MENSAJES_ERROR = {
