@@ -444,6 +444,9 @@ export const TEXTOS_EXPLORACION = {
   sobreElCocinero: 'Sobre el cocinero',
   susPlatos: 'Sus platos',
   /** [PROPIO] Acompaña al promedio de estrellas del perfil. */
+  /** [MOCKUP PAN-EXP-04] Solapa del perfil publico, junto a "Resenas". */
+  solapaPlatos: 'Platos disponibles',
+
   cantidadResenas: (cantidad: number) =>
     `${String(cantidad)} reseña${cantidad === 1 ? '' : 's'}`,
   /** [PROPIO] Etiquetas accesibles del botón de favorito, en sus dos estados. */
@@ -879,6 +882,9 @@ export const TEXTOS_RESENA = {
 
   // --- Seccion de resenas del perfil publico (PAN-EXP-04) -------------------
   tituloSeccion: 'Reseñas',
+
+  /** [MOCKUP PAN-RES-02] Titulo de la pantalla propia del cocinero. */
+  tituloMisResenas: 'Mis reseñas',
   verTodas: 'Ver todas',
 
   /** [PROPIO] Encabezado del selector de orden y filtros. */
@@ -898,6 +904,30 @@ export const TEXTOS_RESENA = {
   /** [PROPIO] Cantidad de resenas con foto, del resumen de RF082. */
   conFoto: (cantidad: number) =>
     cantidad === 1 ? '1 con foto' : `${String(cantidad)} con foto`,
+
+  /**
+   * [PROPIO] Los filtros no dejaron pasar ninguna resena, pero el cocinero SI
+   * tiene. Es distinto de no tener ninguna y no se pueden confundir: ofrecer
+   * "se el primero en opinar" con 87 resenas filtradas seria mentir.
+   */
+  sinResultadosConFiltros:
+    'Ninguna reseña coincide con los filtros que elegiste.',
+
+  /** [MOCKUP PAN-RES-02] Total del resumen: "87 resenas recibidas". */
+  resenasRecibidas: (cantidad: number) =>
+    cantidad === 1
+      ? '1 reseña recibida'
+      : `${String(cantidad)} reseñas recibidas`,
+
+  /** [MOCKUP PAN-RES-02] Pie de cada tarjeta: "Sobre: Lasagna de verduras". */
+  sobreElPlato: (nombrePlato: string) => `Sobre: ${nombrePlato}`,
+
+  /** [PROPIO] Etiqueta accesible de la foto adjunta a una resena. */
+  fotoDeLaResena: 'Foto de la reseña',
+
+  /** [PROPIO] Etiqueta accesible de cada barra de la distribucion. */
+  nivelAccesible: (nivel: number, porcentaje: number) =>
+    `${String(nivel)} ${nivel === 1 ? 'estrella' : 'estrellas'}: ${String(porcentaje)}%`,
 
   /** [PROPIO] Marca de una resena editada, junto a la fecha original. */
   editada: '(editada)',

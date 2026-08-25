@@ -7,6 +7,7 @@ import {
   IconoCampana,
   IconoCandado,
   IconoAyuda,
+  IconoEstrella,
   IconoSalir,
   IconoTacho,
 } from '../../components/iconos';
@@ -15,11 +16,12 @@ import { DialogoSevero } from '../../components/ui/DialogoSevero';
 import { FilaDeNavegacion } from '../../components/ui/FilaDeNavegacion';
 import { FondoTenue } from '../../components/ui/FondoTenue';
 import { HojaInferior } from '../../components/ui/HojaInferior';
-import { useEliminarCuenta } from '../../hooks/usePerfil';
+import { useEliminarCuenta, usePerfil } from '../../hooks/usePerfil';
 import {
   TEXTOS_AYUDA,
   TEXTOS_CERRAR_SESION,
   TEXTOS_PERFIL,
+  TEXTOS_RESENA,
 } from '../../lib/textos';
 import { CambiarContrasena } from './CambiarContrasena';
 
@@ -38,7 +40,6 @@ import { CambiarContrasena } from './CambiarContrasena';
  * usuario dentro de una app que le va a rechazar cada request.
  */
 export function AccionesDeCuenta() {
-  const [cambiandoPassword, setCambiandoPassword] = useState(false);
   const [confirmandoSalida, setConfirmandoSalida] = useState(false);
   const [confirmandoBaja, setConfirmandoBaja] = useState(false);
   const baja = useEliminarCuenta();
@@ -59,23 +60,9 @@ export function AccionesDeCuenta() {
 
   return (
     <View className="mt-6 overflow-hidden rounded-md border border-border bg-surface">
-      <FilaDeNavegacion
-        etiqueta={TEXTOS_PERFIL.cambiarContrasena}
-        expandible
-        expandida={cambiandoPassword}
-        icono={<IconoCandado className="text-text-secondary" size={20} />}
-        onPress={() => {
-          setCambiandoPassword((abierto) => !abierto);
-        }}
-      />
-      {cambiandoPassword ? (
-        <CambiarContrasena
-          onListo={() => {
-            setCambiandoPassword(false);
-          }}
-        />
-      ) : null}
+      <FilaDeContrasena />
 
+      <FilaDeMisResenas />
       <FilaDeNavegacion
         etiqueta={TEXTOS_PERFIL.configurarNotificaciones}
         icono={<IconoCampana className="text-text-secondary" size={20} />}
@@ -124,6 +111,65 @@ export function AccionesDeCuenta() {
         titulo={TEXTOS_PERFIL.tituloEliminarCuenta}
       />
     </View>
+  );
+}
+
+/**
+ * Puerta de entrada a PAN-RES-02 (US-RES-03).
+ *
+ * SOLO PARA EL COCINERO: es el listado de las resenas que EL recibio. El
+ * cliente llega a las resenas de un cocinero por la solapa de su perfil
+ * publico, no por aca.
+ *
+ * El rol sale de la consulta ya cacheada por React Query y no de una prop: la
+ * pantalla que monta este bloque ya la pidio, y agregarla al contrato
+ * obligaria a propagarla por un nivel que no la necesita para nada mas.
+ */
+/**
+ * "Cambiar contrasena" (US-GURP-03) y el formulario que despliega.
+ *
+ * Se extrae con su propio estado porque nadie mas lo usa: mantenerlo en
+ * `AccionesDeCuenta` obligaba a esa funcion a cargar con el `useState` y las
+ * dieciseis lineas del bloque, y la dejaba por encima del limite de longitud
+ * que fija el proyecto.
+ */
+function FilaDeContrasena() {
+  const [abierto, setAbierto] = useState(false);
+
+  return (
+    <>
+      <FilaDeNavegacion
+        etiqueta={TEXTOS_PERFIL.cambiarContrasena}
+        expandible
+        expandida={abierto}
+        icono={<IconoCandado className="text-text-secondary" size={20} />}
+        onPress={() => {
+          setAbierto((previo) => !previo);
+        }}
+      />
+      {abierto ? (
+        <CambiarContrasena
+          onListo={() => {
+            setAbierto(false);
+          }}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function FilaDeMisResenas() {
+  const esCocinero = usePerfil().data?.tipo === 'COCINERO';
+  if (!esCocinero) return null;
+
+  return (
+    <FilaDeNavegacion
+      etiqueta={TEXTOS_RESENA.tituloMisResenas}
+      icono={<IconoEstrella className="text-text-secondary" size={20} />}
+      onPress={() => {
+        router.push('/resenas/mis-resenas');
+      }}
+    />
   );
 }
 

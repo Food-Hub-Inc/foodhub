@@ -59,7 +59,14 @@ export function EtiquetaDeEstado({ pedido }: { pedido: PedidoResumen }) {
 export interface OpcionDePestana<T extends string> {
   valor: T;
   etiqueta: string;
-  cantidad: number;
+  /**
+   * Contador que acompana a la etiqueta. OPCIONAL: las cinco pestanas de la
+   * bandeja de pedidos lo exigen ("cada pestana muestre un contador con la
+   * cantidad de pedidos en ese estado"), pero el perfil publico del cocinero
+   * reusa este componente para "Platos disponibles" / "Resenas", donde la
+   * maquetacion no dibuja ningun numero.
+   */
+  cantidad?: number;
 }
 
 /**
@@ -98,7 +105,11 @@ export function Pestanas<T extends string>({
 
           return (
             <Pressable
-              accessibilityLabel={`${opcion.etiqueta}. ${TEXTOS_PEDIDOS.cantidadDePedidos(opcion.cantidad)}`}
+              accessibilityLabel={
+                opcion.cantidad === undefined
+                  ? opcion.etiqueta
+                  : `${opcion.etiqueta}. ${TEXTOS_PEDIDOS.cantidadDePedidos(opcion.cantidad)}`
+              }
               accessibilityRole="tab"
               accessibilityState={{ selected: seleccionada }}
               className={`min-h-14 flex-row items-center gap-2 border-b-2 px-4 ${
@@ -119,7 +130,7 @@ export function Pestanas<T extends string>({
                 {opcion.etiqueta}
               </Text>
 
-              {opcion.cantidad > 0 ? (
+              {opcion.cantidad !== undefined && opcion.cantidad > 0 ? (
                 <View className="min-w-6 items-center overflow-hidden rounded-full px-1.5 py-0.5">
                   <FondoTenue
                     className={seleccionada ? 'bg-primary' : 'bg-secondary'}
