@@ -1,12 +1,13 @@
 import { ScrollView, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
+  MENSAJES_EXPLORACION,
   MENSAJES_PEDIDO,
   MENSAJES_RESENA,
   type EventoPedido,
   type PedidoDetalle,
 } from '@foodhub/shared';
-import { IconoTildeCirculo } from '../../components/iconos';
+import { IconoEstrella, IconoTildeCirculo } from '../../components/iconos';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { Aviso } from '../../components/ui/Aviso';
 import { Boton } from '../../components/ui/Boton';
@@ -21,14 +22,13 @@ import {
 } from '../../hooks/useResenas';
 import { mensajeDeError } from '../../lib/api';
 import { formatearFecha, formatearPrecio } from '../../lib/formato';
-import { TEXTOS_PEDIDOS } from '../../lib/textos';
+import { TEXTOS_PEDIDOS, TEXTOS_RESENA } from '../../lib/textos';
 import {
   PASOS_DEL_SEGUIMIENTO,
   encabezadoDeCierre,
   indicadorDeCierre,
   motivoVisible,
 } from './estados';
-import { Valoracion } from '../exploracion/Piezas';
 import { FichaDeParticipante, FilaDeItem, LineaDeTiempo } from './Piezas';
 
 /**
@@ -250,17 +250,23 @@ function ReputacionDelCliente({ clienteId }: { clienteId: string }) {
   const { promedio, cantidadCocineros, esClienteNuevo } = reputacion.data;
 
   return (
-    <View className="flex-row items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
-      <Text className="text-caption text-text-secondary">
-        {TEXTOS_PEDIDOS.cliente}
-      </Text>
-
-      {esClienteNuevo ? (
-        <Text className="text-caption font-semibold text-text-primary">
-          {MENSAJES_RESENA.clienteNuevo}
+    <View className="flex-row items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2">
+      {esClienteNuevo || promedio === null ? (
+        <Text className="text-caption text-text-secondary">
+          {esClienteNuevo
+            ? MENSAJES_RESENA.clienteNuevo
+            : MENSAJES_EXPLORACION.cocineroSinResenas}
         </Text>
       ) : (
-        <Valoracion cantidadResenas={cantidadCocineros} promedio={promedio} />
+        <>
+          <IconoEstrella className="text-warning" size={14} />
+          <Text className="text-caption font-semibold text-text-primary">
+            {promedio.toFixed(1)}
+          </Text>
+          <Text className="text-caption text-text-secondary">
+            {`· ${TEXTOS_RESENA.cantidadCocinerosQueCalificaron(cantidadCocineros)}`}
+          </Text>
+        </>
       )}
     </View>
   );

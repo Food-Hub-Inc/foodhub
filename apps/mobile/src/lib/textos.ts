@@ -828,6 +828,18 @@ export const TEXTOS_RESENA = {
   ayudaFoto: 'Opcional. JPG, PNG o WEBP de hasta 5 MB.',
   quitarFoto: 'Quitar foto',
 
+  /**
+   * [PROPIO] Cuantos cocineros calificaron a un cliente (US-RES-02).
+   *
+   * NO son resenas: la resena es del cliente hacia un plato y es publica; esto
+   * es la direccion inversa y privada. Reusar el texto de resenas confundia dos
+   * cosas distintas en la misma pantalla.
+   */
+  cantidadCocinerosQueCalificaron: (cantidad: number) =>
+    cantidad === 1
+      ? '1 cocinero lo calificó'
+      : `${String(cantidad)} cocineros lo calificaron`,
+
   /** [PROPIO] La ruta se abrio sin indicar a que cliente se califica. */
   sinCliente:
     'No pudimos saber a qué cliente querés calificar. Volvé al pedido y entrá desde ahí.',
