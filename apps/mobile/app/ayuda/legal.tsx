@@ -1,16 +1,6 @@
-import { IconoCandado } from '../../src/components/iconos';
-import { PantallaPendiente } from '../../src/components/ui/PantallaPendiente';
-import { PANTALLAS_PENDIENTES } from '../../src/lib/textos';
+import { IndiceDeLegal } from '../../src/screens/ayuda/legal/IndiceDeLegal';
 
+/** PAN-AYU-04 - Sub-hub "Informacion legal". */
 export default function LegalAyudaRoute() {
-  const ficha = PANTALLAS_PENDIENTES.legalAyuda;
-  return (
-    <PantallaPendiente
-      codigo={ficha.codigo}
-      descripcion={ficha.descripcion}
-      icono={<IconoCandado className="text-primary" size={34} />}
-      modulo={ficha.modulo}
-      titulo={ficha.titulo}
-    />
-  );
+  return <IndiceDeLegal />;
 }

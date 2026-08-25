@@ -59,7 +59,30 @@ config.resolver.resolveRequest = (contexto, modulo, plataforma) => {
     }
   }
 
-  return contexto.resolveRequest(contexto, modulo, plataforma);
+  try {
+    return contexto.resolveRequest(contexto, modulo, plataforma);
+  } catch (errorOriginal) {
+    // Si Metro falla por `disableHierarchicalLookup` (ej. `entities/decode` dentro
+    // de `htmlparser2`), se intenta resolver jerárquicamente a partir del emisor.
+    if (typeof contexto.originModulePath === 'string') {
+      try {
+        const rutaReal = require.resolve(modulo, {
+          paths: [
+            path.dirname(contexto.originModulePath),
+            proyecto,
+            raizMonorepo,
+          ],
+        });
+        return {
+          type: 'sourceFile',
+          filePath: rutaReal,
+        };
+      } catch {
+        // Si Node tampoco lo encuentra, se relanza el error original de Metro.
+      }
+    }
+    throw errorOriginal;
+  }
 };
 
 // --- Uniwind (Tailwind v4 para React Native) ---------------------------------

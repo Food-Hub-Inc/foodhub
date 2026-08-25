@@ -12,12 +12,18 @@ import { TEXTOS_PARAMETROS } from '../../../lib/textos.js';
 import { BotonesDeSeccion } from './BotonesDeSeccion.js';
 import { CampoDeTexto } from './CampoDeTexto.js';
 import { erroresDeSeccion } from './erroresDeSeccion.js';
+import { SelectorDeHorario } from './SelectorDeHorario.js';
 import { SelectorDeLogo } from './SelectorDeLogo.js';
 import { useFormularioDeSeccion } from './useFormularioDeSeccion.js';
 
 type Campo = keyof ParametrosInstitucionales;
 
-/** Subsección "Información institucional" de PAN-ADM-04 — US-CFG-03. */
+/**
+ * Subsección "Información institucional" de PAN-ADM-04 — US-CFG-03.
+ *
+ * El horario de atención del soporte se elige desde el selector de la
+ * derecha (días + tramo horario); los campos textuales quedan a la izquierda.
+ */
 export function SeccionInstitucional({
   valorInicial,
 }: {
@@ -38,31 +44,43 @@ export function SeccionInstitucional({
 
   return (
     <div className="space-y-5">
-      <CampoDeTexto
-        alCambiar={(nombrePlataforma) => {
-          setValores((previo) => ({ ...previo, nombrePlataforma }));
-        }}
-        error={errores.nombrePlataforma}
-        etiqueta={TEXTOS_PARAMETROS.campoNombrePlataforma}
-        valor={valores.nombrePlataforma}
-      />
+      <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]">
+        <div className="space-y-5">
+          <CampoDeTexto
+            alCambiar={(nombrePlataforma) => {
+              setValores((previo) => ({ ...previo, nombrePlataforma }));
+            }}
+            error={errores.nombrePlataforma}
+            etiqueta={TEXTOS_PARAMETROS.campoNombrePlataforma}
+            valor={valores.nombrePlataforma}
+          />
 
-      <SelectorDeLogo
-        alCambiar={(logoPlataformaUrl) => {
-          setValores((previo) => ({ ...previo, logoPlataformaUrl }));
-        }}
-        error={errores.logoPlataformaUrl}
-        valor={valores.logoPlataformaUrl}
-      />
+          <SelectorDeLogo
+            alCambiar={(logoPlataformaUrl) => {
+              setValores((previo) => ({ ...previo, logoPlataformaUrl }));
+            }}
+            error={errores.logoPlataformaUrl}
+            valor={valores.logoPlataformaUrl}
+          />
 
-      <CampoDeTexto
-        alCambiar={(correoSoporte) => {
-          setValores((previo) => ({ ...previo, correoSoporte }));
-        }}
-        error={errores.correoSoporte}
-        etiqueta={TEXTOS_PARAMETROS.campoCorreoSoporte}
-        valor={valores.correoSoporte}
-      />
+          <CampoDeTexto
+            alCambiar={(correoSoporte) => {
+              setValores((previo) => ({ ...previo, correoSoporte }));
+            }}
+            error={errores.correoSoporte}
+            etiqueta={TEXTOS_PARAMETROS.campoCorreoSoporte}
+            valor={valores.correoSoporte}
+          />
+        </div>
+
+        <SelectorDeHorario
+          alCambiar={(horarioAtencionSoporte) => {
+            setValores((previo) => ({ ...previo, horarioAtencionSoporte }));
+          }}
+          error={errores.horarioAtencionSoporte}
+          valor={valores.horarioAtencionSoporte}
+        />
+      </div>
 
       <BotonesDeSeccion
         alAbrirGuardar={formulario.abrirGuardar}

@@ -14,6 +14,7 @@ export function FilaDeNavegacion({
   etiqueta,
   icono,
   onPress,
+  descripcion,
   expandible = false,
   expandida = false,
   destructiva = false,
@@ -21,6 +22,12 @@ export function FilaDeNavegacion({
   etiqueta: string;
   icono: ReactNode;
   onPress: () => void;
+  /**
+   * Linea chica debajo de la etiqueta. La usan los sub-hubs que ofrecen
+   * varias opciones (US-AYU-04) para anticiparle al usuario qué va a
+   * encontrar en la pantalla siguiente sin obligarlo a entrar.
+   */
+  descripcion?: string;
   expandible?: boolean;
   expandida?: boolean;
   destructiva?: boolean;
@@ -30,15 +37,22 @@ export function FilaDeNavegacion({
   return (
     <Pressable
       onPress={onPress}
-      className="min-h-14 flex-row items-center gap-3 border-b border-border px-4"
+      className="min-h-14 flex-row items-center gap-3 border-b border-border px-4 py-3"
       accessibilityRole="button"
-      accessibilityLabel={etiqueta}
+      accessibilityLabel={
+        descripcion ? `${etiqueta}. ${descripcion}` : etiqueta
+      }
       accessibilityState={expandible ? { expanded: expandida } : undefined}
     >
       {icono}
-      <Text className={`flex-1 text-body font-medium ${color}`}>
-        {etiqueta}
-      </Text>
+      <View className="flex-1">
+        <Text className={`text-body font-medium ${color}`}>{etiqueta}</Text>
+        {descripcion ? (
+          <Text className="mt-1 text-caption text-text-secondary">
+            {descripcion}
+          </Text>
+        ) : null}
+      </View>
       <View style={{ transform: [{ rotate: expandida ? '90deg' : '0deg' }] }}>
         <IconoChevronDerecha size={18} className="text-text-disabled" />
       </View>

@@ -25,3 +25,4 @@ export * from './schemas/publicacion.schema.js';
 export * from './schemas/terminos.schema.js';
 export * from './schemas/usuario.schema.js';
 export * from './schemas/faq.schema.js';
+export * from './schemas/legal.schema.js';
