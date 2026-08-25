@@ -19,6 +19,7 @@ import { catalogoRouter } from './modules/catalogo/catalogo.router.js';
 import { dashboardRouter } from './modules/dashboard/dashboard.router.js';
 import { carritoRouter } from './modules/exploracion/carrito.router.js';
 import { exploracionRouter } from './modules/exploracion/exploracion.router.js';
+import { mensajeriaRouter } from './modules/mensajeria/mensajeria.router.js';
 import { pedidosRouter } from './modules/pedidos/pedidos.router.js';
 import { publicacionesRouter } from './modules/publicaciones/publicaciones.router.js';
 import { categoriasRouter } from './modules/configuracion/categorias.router.js';
@@ -150,6 +151,12 @@ export function crearApp(): Express {
   // Modulo de Pedidos (US-PED-01 a US-PED-09). US-PED-10, la expiracion
   // automatica, no tiene ruta: corre con pg_cron dentro de la base.
   app.use(`${PREFIJO_API}/pedidos`, pedidosRouter);
+
+  // Modulo de Mensajeria directa (US-MSG-01 a US-MSG-07). Cliente y cocinero:
+  // el administrador no tiene pantallas de chat. El tiempo real -mensaje nuevo,
+  // "Leido" y "Escribiendo..."- no pasa por aca: va por Supabase Realtime
+  // directo contra la base, con las politicas RLS de la migracion 0011.
+  app.use(`${PREFIJO_API}/mensajeria`, mensajeriaRouter);
 
   // Modulo de Dashboard del cocinero (US-DASH-01 a US-DASH-05). Solo lectura y
   // solo sobre los datos del cocinero de la sesion.

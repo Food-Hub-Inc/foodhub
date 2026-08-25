@@ -209,7 +209,11 @@ export const TEXTOS_AYUDA = {
   titulo: 'Ayuda y soporte',
   preguntasFrecuentes: 'Preguntas frecuentes',
   manual: 'Manual de usuario',
-  contacto: 'Contactar al soporte',
+  /**
+   * [PROPIO] Unica entrada de contacto del hub: abre los datos de contacto
+   * (correo y horarios) y desde ahi el boton lleva al formulario.
+   */
+  contacto: 'Datos de contacto',
   legal: 'Información legal',
   buscar: 'Buscar preguntas',
   buscarPlaceholder: 'Escribí una palabra o frase',
@@ -220,8 +224,29 @@ export const TEXTOS_AYUDA = {
     'El manual reúne instrucciones paso a paso para usar FoodHub según tu rol.',
   contactoPendiente:
     'El formulario permite enviar una consulta, sugerencia o reporte al equipo.',
-  legalPendiente:
-    'Esta sección reúne los términos, condiciones y datos de contacto de FoodHub.',
+} as const;
+
+/**
+ * PAN-AYU-04 - Pantallas del sub-hub de Informacion legal (US-AYU-04).
+ *
+ * Los mensajes LITERALES (boton "Descargar PDF", encabezado "Contacto del
+ * soporte" en el sub-hub) viven en `MENSAJES_AYUDA` (@foodhub/shared) y se
+ * importan de ahi. Acá solo va la copia de cada pantalla: titulos,
+ * placeholders y textos [PROPIO].
+ */
+export const TEXTOS_LEGAL = {
+  pantallaTerminos: {
+    /** [PROPIO] Titulo de la pantalla de Terminos y condiciones. */
+    titulo: 'Términos y condiciones',
+  },
+  pantallaPrivacidad: {
+    /** [PROPIO] Titulo de la pantalla de Politica de privacidad. */
+    titulo: 'Política de privacidad',
+  },
+  pantallaContacto: {
+    /** [PROPIO] Titulo de la pantalla de Contacto del soporte. */
+    titulo: 'Contacto del soporte',
+  },
 } as const;
 
 /** Textos del shell de navegación (barras de tabs y header). */
@@ -590,13 +615,6 @@ export const PANTALLAS_PENDIENTES = {
     descripcion:
       'Tus pedidos activos y tu historial, con el seguimiento de cada uno hasta que lo retirás.',
   },
-  mensajes: {
-    codigo: 'PAN-MSG-01',
-    modulo: 'Mensajería directa',
-    titulo: 'Mensajes',
-    descripcion:
-      'Tus conversaciones con la otra parte de cada pedido, con el último mensaje y los no leídos.',
-  },
   pedidosCocinero: {
     codigo: 'PAN-PED-04',
     modulo: 'Pedidos',
@@ -670,12 +688,6 @@ export const PANTALLAS_PENDIENTES = {
     modulo: 'Ayuda y soporte',
     titulo: 'Contactar al soporte',
     descripcion: TEXTOS_AYUDA.contactoPendiente,
-  },
-  legalAyuda: {
-    codigo: 'PAN-AYU-04',
-    modulo: 'Ayuda y soporte',
-    titulo: 'Información legal',
-    descripcion: TEXTOS_AYUDA.legalPendiente,
   },
 } as const;
 
@@ -931,4 +943,95 @@ export const TEXTOS_RESENA = {
 
   /** [PROPIO] Marca de una resena editada, junto a la fecha original. */
   editada: '(editada)',
+} as const;
+
+/**
+ * Textos de PAN-MSG-01 y PAN-MSG-02 que NO salen de un criterio de aceptación.
+ *
+ * Los literales del módulo —los estados del mensaje, los estados vacíos, los
+ * textos de bloqueo, "Escribiendo...", "Archivar", "Ver perfil"— viven en
+ * `MENSAJES_MENSAJERIA` (`@foodhub/shared`) y se importan de ahí. Acá queda sólo
+ * lo que es de esta interfaz: etiquetas accesibles, placeholders y los rótulos
+ * de apoyo que la documentación no dibuja.
+ */
+export const TEXTOS_MENSAJERIA = {
+  /**
+   * [PROPIO] Rótulo del filtro principal del listado.
+   *
+   * US-MSG-04 nombra sólo el otro ("el filtro 'Archivados'") y llama al primero
+   * "el listado principal", que no sirve como rótulo de una pestaña.
+   */
+  filtroActivas: 'Activos',
+
+  /** [PROPIO] Placeholder de la barra de búsqueda del listado (US-MSG-04). */
+  buscarConversacion: 'Buscar por nombre',
+
+  /** [PROPIO] Etiqueta accesible de la lista de filtros. */
+  filtrosDeConversaciones: 'Filtros de conversaciones',
+
+  /**
+   * [PROPIO] "un acceso para explorar cocineros en el caso del cliente"
+   * (US-MSG-04). El criterio pide el acceso, no fija su texto.
+   */
+  explorarCocineros: 'Explorar cocineros',
+
+  /** [PROPIO] Estado vacío del filtro "Archivados", que el criterio no cubre. */
+  sinArchivadas: 'No tenés conversaciones archivadas.',
+
+  /** [PROPIO] Etiqueta accesible de cada fila del listado. */
+  abrirConversacionCon: (nombre: string) =>
+    `Abrir la conversación con ${nombre}`,
+
+  /**
+   * [PROPIO] Extracto del último mensaje cuando es una imagen: no hay texto que
+   * recortar, así que la fila anuncia el tipo.
+   */
+  extractoDeImagen: 'Imagen',
+
+  /** [PROPIO] Contador de no leídos, anunciado aparte del nombre. */
+  cantidadNoLeidos: (cantidad: number) =>
+    `${String(cantidad)} mensaje${cantidad === 1 ? '' : 's'} sin leer`,
+
+  /**
+   * [PROPIO] Indicador de presencia de la cabecera (US-MSG-01).
+   *
+   * La otra mitad del criterio —"última conexión hace X tiempo"— NO se muestra:
+   * el sistema no registra la última conexión de nadie. La presencia sale del
+   * canal de Realtime, que sólo sabe quién está conectado AHORA. Ver
+   * PENDIENTE_PRESENCIA_MENSAJERIA.md.
+   */
+  enLinea: 'En línea',
+
+  /** [PROPIO] Placeholder del campo de entrada del chat. */
+  escribiUnMensaje: 'Escribí un mensaje',
+
+  /** [PROPIO] Etiqueta accesible del ícono de adjuntar (US-MSG-03). */
+  adjuntarImagen: 'Adjuntar imagen',
+
+  /** [PROPIO] Etiqueta accesible del botón de envío. */
+  enviarMensajeAccesible: 'Enviar el mensaje',
+
+  /** [PROPIO] Etiqueta accesible del menú de la cabecera (US-MSG-05). */
+  opcionesDeLaConversacion: 'Opciones de la conversación',
+
+  /** [PROPIO] Título de la vista previa de la imagen a enviar (US-MSG-03). */
+  vistaPreviaDeImagen: 'Vista previa',
+
+  /** [PROPIO] Campo opcional que acompaña a la imagen (US-MSG-03). */
+  pieDeImagen: 'Agregá un mensaje (opcional)',
+
+  /** [PROPIO] Etiqueta accesible de una imagen recibida en el chat. */
+  verImagenAmpliada: 'Ver la imagen ampliada',
+
+  /** [PROPIO] Estado vacío de una conversación recién abierta, sin mensajes. */
+  sinMensajes: 'Todavía no se enviaron mensajes en esta conversación.',
+
+  /** [PROPIO] Se muestra mientras entra un bloque anterior del historial. */
+  cargandoAnteriores: 'Cargando mensajes anteriores…',
+
+  /** [PROPIO] Etiqueta accesible del reintento de un envío fallido (US-MSG-03). */
+  reintentarEnvio: 'Reintentar el envío',
+
+  /** [PROPIO] Falla al guardar el archivo compartido desde el visor. */
+  noSePudoDescargar: 'No pudimos guardar la imagen. Intentá de nuevo.',
 } as const;

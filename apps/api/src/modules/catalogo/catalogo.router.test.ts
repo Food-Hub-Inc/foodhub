@@ -20,7 +20,12 @@ interface RespuestaError {
 const rutasProtegidas = [
   '/api/v1/catalogo/categorias',
   '/api/v1/catalogo/motivos-cancelacion',
+  // La lectura de un documento legal vigente (/terminos-vigentes/:tipo) es
+  // publica a proposito: el registro de cuenta (sin sesion) muestra los
+  // terminos antes de aceptarlos, asi que no va en esta lista.
   '/api/v1/catalogo/terminos-vigentes',
+  '/api/v1/catalogo/terminos-vigentes/TERMINOS/pdf',
+  '/api/v1/catalogo/informacion-de-contacto',
 ] as const;
 
 describe('acceso al módulo de catálogo', () => {

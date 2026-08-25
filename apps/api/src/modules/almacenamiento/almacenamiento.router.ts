@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import {
   solicitarUrlDeCargaCategoriaSchema,
+  solicitarUrlDeCargaImagenChatSchema,
   solicitarUrlDeCargaPlatoSchema,
   solicitarUrlDeCargaSchema,
 } from '@foodhub/shared';
@@ -11,6 +12,7 @@ import {
   requiereRol,
   soloAdministrador,
 } from '../../middleware/rbac.middleware.js';
+import { obtenerConversacion } from '../mensajeria/mensajeria.service.js';
 import * as almacenamientoService from './almacenamiento.service.js';
 
 /**
@@ -29,6 +31,9 @@ import * as almacenamientoService from './almacenamiento.service.js';
 export const almacenamientoRouter: Router = Router();
 
 const idCategoriaSchema = z.uuid('El identificador de categoría no es válido.');
+const idConversacionSchema = z.uuid(
+  'El identificador de la conversación no es válido.',
+);
 
 almacenamientoRouter.use(requiereAutenticacion);
 
@@ -104,3 +109,27 @@ almacenamientoRouter.post(
     res.status(201).json(urlDeCarga);
   },
 );
+
+/**
+ * US-MSG-03 - Imagen de una conversacion del chat.
+ *
+ * Es la unica ruta de este router que valida algo ademas de la sesion: antes de
+ * firmar, `obtenerConversacion` comprueba que quien pide participe de esa
+ * conversacion y responde 404 si no. Las otras cuatro arman la ruta del archivo
+ * a partir de la sesion o del rol, asi que no hay nada ajeno que proteger; aca
+ * la carpeta la nombra un id que viene del cliente.
+ *
+ * No exige un rol puntual: los dos lados del chat mandan imagenes (US-MSG-03
+ * tiene como actor a "Cliente / Cocinero"), y el filtro de rol ya lo aplica el
+ * router de mensajeria sobre la lectura de la conversacion.
+ */
+almacenamientoRouter.post('/imagen-chat/:conversacionId', async (req, res) => {
+  const conversacionId = idConversacionSchema.parse(req.params.conversacionId);
+  await obtenerConversacion(sesionDe(req).id, conversacionId);
+
+  const urlDeCarga = await almacenamientoService.crearUrlDeCargaDeImagenChat({
+    conversacionId,
+    datos: solicitarUrlDeCargaImagenChatSchema.parse(req.body),
+  });
+  res.status(201).json(urlDeCarga);
+});

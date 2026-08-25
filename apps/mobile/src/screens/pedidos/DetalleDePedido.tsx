@@ -29,6 +29,7 @@ import {
   indicadorDeCierre,
   motivoVisible,
 } from './estados';
+import { BotonMensajesDelPedido } from '../mensajeria/BotonDeMensajes';
 import { FichaDeParticipante, FilaDeItem, LineaDeTiempo } from './Piezas';
 
 /**
@@ -160,6 +161,8 @@ function Contenido({
       {esCocinero ? (
         <ReputacionDelCliente clienteId={pedido.participante.id} />
       ) : null}
+
+      <BotonMensajesDelPedido participanteId={pedido.participante.id} />
 
       <View className="overflow-hidden rounded-md border border-border bg-surface">
         <Text className="px-3 pt-3 text-caption font-bold uppercase text-text-secondary">

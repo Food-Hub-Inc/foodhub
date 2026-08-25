@@ -439,3 +439,18 @@ export function IconoAyuda(props: PropsIcono) {
     </Lienzo>
   );
 }
+
+/**
+ * Fuera de la guía: boton "Descargar PDF" del sub-hub de Informacion legal
+ * (US-AYU-04, CA5). Flecha hacia abajo con base, mismo lenguaje que el
+ * resto (24x24, trazo 1.75).
+ */
+export function IconoDescargar(props: PropsIcono) {
+  return (
+    <Lienzo {...props}>
+      <Path d="M12 3.75v11" {...TRAZO} />
+      <Path d="m7.5 10.25 4.5 4.5 4.5-4.5" {...TRAZO} />
+      <Path d="M4.75 18.25h14.5" {...TRAZO} />
+    </Lienzo>
+  );
+}

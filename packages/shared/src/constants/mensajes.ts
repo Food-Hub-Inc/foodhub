@@ -330,6 +330,79 @@ export const MENSAJES_AYUDA = {
   graciasPorTuOpinion: 'Gracias por tu opinión',
   sinResultados: 'No encontramos preguntas que coincidan con tu búsqueda.',
   contactarSoporte: 'Contactar al soporte',
+
+  /**
+   * US-AYU-04 - Informacion legal y datos de contacto (PAN-AYU-04).
+   *
+   * No todos los textos son literales de la tabla de criterios: la
+   * documentacion describe el comportamiento sin fijar cada palabra, asi que
+   * los que el equipo tuvo que redactar quedan marcados con [PROPIO]. Los que
+   * si lo son llevan el comentario "LITERAL - ..." que sigue el mismo formato
+   * que el resto del archivo.
+   */
+  indiceLegal: {
+    /** [PROPIO] Titulo del sub-hub "Informacion legal" dentro del hub AYU. */
+    titulo: 'Información legal',
+    /** [PROPIO] Bajada del sub-hub. */
+    bajada:
+      'Accedé a los términos y condiciones, la política de privacidad y los datos de contacto de FoodHub.',
+    terminos: {
+      /** [PROPIO] Etiqueta de la fila del sub-hub. */
+      titulo: 'Términos y condiciones',
+      /** [PROPIO] Descripcion breve de la fila del sub-hub. */
+      descripcion: 'El texto vigente que rige tu uso de la plataforma.',
+    },
+    privacidad: {
+      /** [PROPIO] */
+      titulo: 'Política de privacidad',
+      /** [PROPIO] */
+      descripcion:
+        'Cómo tratamos tus datos personales y tu información en FoodHub.',
+    },
+    contacto: {
+      /** [PROPIO] Etiqueta de la fila del sub-hub. */
+      titulo: 'Contacto del soporte',
+      /** [PROPIO] */
+      descripcion:
+        'El correo oficial, los horarios de atención y el formulario de contacto.',
+    },
+  },
+  documentoLegal: {
+    /**
+     * Leyenda del encabezado de PAN-AYU-04 cuando el documento tiene una
+     * fecha de publicacion. Es [PROPIO] porque el criterio pide "fecha de
+     * ultima actualizacion" sin fijar el formato.
+     */
+    ultimaActualizacion: (fecha: string) => `Última actualización: ${fecha}`,
+    /** [PROPIO] Etiqueta accesible del boton "Descargar PDF" en la barra superior. */
+    descargarPdf: 'Descargar PDF',
+    /** [PROPIO] Estado del boton mientras se genera y descarga el PDF. */
+    descargandoPdf: 'Descargando…',
+    /**
+     * LITERAL - US-AYU-04, error al no poder generar o descargar el PDF.
+     * Coherente con el resto de los mensajes de error: explica que paso
+     * sin detalle tecnico y ofrece una salida (reintentar).
+     */
+    errorPdf:
+      'No pudimos generar el PDF. Revisá tu conexión e intentá nuevamente.',
+  },
+  contacto: {
+    /** [PROPIO] Titulo de la pantalla de contacto. */
+    titulo: 'Contacto del soporte',
+    /** [PROPIO] Etiqueta del bloque con el correo electronico oficial. */
+    correoTitulo: 'Correo electrónico',
+    /** [PROPIO] Etiqueta del bloque con los horarios de atencion. */
+    horarioTitulo: 'Horarios de atención',
+    /**
+     * LITERAL - US-AYU-04, accion que abre el formulario de contacto
+     * interno (US-AYU-03). Reaprovecha la cadena que ya define
+     * `contactarSoporte` para que las pruebas funcionales no verifiquen dos
+     * copias del mismo texto.
+     */
+    irAlFormulario: 'Contactar al soporte',
+    /** [PROPIO] Validacion server-side: el horario no puede estar vacio. */
+    horarioVacio: 'El horario de atención no puede estar vacío.',
+  },
 } as const;
 
 /**
@@ -554,6 +627,14 @@ export const MENSAJES_CONFIGURACION = {
 
   /** PROPIO - US-CFG-03, confirmación del guardado. */
   parametrosActualizados: 'Guardamos los nuevos parámetros.',
+
+  /** PROPIO - US-CFG-03 / US-AYU-04, validación del horario de atención. */
+  horarioHoraInvalida: 'Ingresá una hora válida.',
+  /** PROPIO - US-CFG-03 / US-AYU-04, al menos un día de atención. */
+  horarioDiaObligatorio:
+    'Seleccioná al menos un día en el que la plataforma tenga atención.',
+  /** PROPIO - US-CFG-03 / US-AYU-04, cierre posterior a la apertura. */
+  horarioFinPosterior: 'La hora de cierre debe ser posterior a la de apertura.',
 
   /** PROPIO - US-CFG-03, confirmación de la restauración. */
   parametrosRestaurados: 'Restauramos los valores predefinidos de fábrica.',
@@ -1154,6 +1235,176 @@ export const MENSAJES_DASHBOARD = {
    */
   rangoInvertido:
     'La fecha de inicio no puede ser posterior a la fecha de fin.',
+} as const;
+
+/**
+ * Modulo de Mensajeria directa (US-MSG-01 a US-MSG-07, RF073 a RF079).
+ *
+ * Dos pantallas: PAN-MSG-01 (lista de conversaciones) y PAN-MSG-02
+ * (conversacion). La conversacion es SIEMPRE 1 a 1 y esta normalizada por el
+ * par de UUID, asi que "iniciar" un chat que ya existe abre el hilo de siempre.
+ *
+ * EL TUTEO DE "Todavia no tienes conversaciones." ES DEL DOCUMENTO, no un
+ * descuido. US-MSG-04 lo escribe asi, igual que RF076, y el resto del sistema
+ * vosea. Gana el criterio de aceptacion: es lo que verifica la prueba funcional
+ * de la Etapa 6. Mismo criterio que se aplico en MENSAJES_DASHBOARD.
+ */
+export const MENSAJES_MENSAJERIA = {
+  // --- Inicio de la conversacion (US-MSG-01) --------------------------------
+  /**
+   * LITERAL - US-MSG-01: "El cliente presiona el boton 'Enviar mensaje' desde
+   * el perfil publico de un cocinero". Es tambien el rotulo del acceso desde
+   * la pantalla de seguimiento del pedido.
+   */
+  enviarMensaje: 'Enviar mensaje',
+
+  /**
+   * LITERAL - US-MSG-01, cocinero con la cuenta SUSPENDIDA. Ademas de mostrar
+   * el texto, "no habilite el campo de entrada".
+   *
+   * Dice "Este cocinero" porque el criterio esta escrito desde el punto de
+   * vista del cliente, el unico actor de US-MSG-01. El caso simetrico -un
+   * cocinero escribiendole a un cliente suspendido- no lo cubre ningun
+   * criterio: la interfaz usa ahi un texto propio (ver TEXTOS_MENSAJERIA).
+   */
+  cocineroNoDisponible:
+    'Este cocinero no se encuentra disponible en este momento. No es posible enviar mensajes.',
+
+  /**
+   * PROPIO - el caso simetrico del anterior: un cocinero que le escribe a un
+   * CLIENTE suspendido.
+   *
+   * Ningun criterio lo cubre, porque el unico actor de US-MSG-01 es el cliente.
+   * Reusar el literal seria peor que redactar este: le diria "este cocinero" a
+   * alguien que esta mirando el perfil de un cliente. Y `MENSAJES_AUTH.
+   * cuentaSuspendida` tampoco sirve, porque esta escrito en segunda persona
+   * ("Tu cuenta...") para quien fue suspendido, no para quien le escribe.
+   *
+   * Calcado del literal salvo por el sujeto, para que las dos variantes se lean
+   * como el mismo mensaje del sistema.
+   */
+  interlocutorNoDisponible:
+    'Esta persona no se encuentra disponible en este momento. No es posible enviar mensajes.',
+
+  /**
+   * LITERAL - US-MSG-01: "La cuenta del destinatario fue eliminada entre el
+   * acceso al perfil y el envio". Es la carrera entre abrir el perfil y tocar
+   * "Enviar": lo responde la API al rechazar el POST, no la pantalla.
+   */
+  destinatarioEliminado: 'El destinatario ya no forma parte de la plataforma.',
+
+  // --- Envio de texto (US-MSG-02) -------------------------------------------
+  /**
+   * LITERAL - US-MSG-02: "un indicador de estado: Enviando / Enviado /
+   * Entregado / Leido".
+   *
+   * "Enviando" NO es un valor de `ESTADO_MENSAJE`: es el mensaje optimista que
+   * todavia no confirmo la API. Los otros tres si son el ENUM de la base.
+   */
+  estadoEnviando: 'Enviando',
+  estadoEnviado: 'Enviado',
+  estadoEntregado: 'Entregado',
+  estadoLeido: 'Leído',
+
+  /** LITERAL - US-MSG-02: "presiona 'Enviar'". */
+  enviar: 'Enviar',
+
+  // --- Imagenes (US-MSG-03) -------------------------------------------------
+  /**
+   * LITERAL - US-MSG-03: "Muestre las opciones: 'Tomar foto' (abre la camara
+   * del dispositivo) y 'Elegir de la galeria'".
+   */
+  tomarFoto: 'Tomar foto',
+  elegirDeLaGaleria: 'Elegir de la galería',
+
+  /**
+   * LITERAL - US-MSG-03 y RF075, formato o tamano no admitido.
+   *
+   * El tope de 8 MB es propio del chat y NO el de 5 MB de la foto de perfil o
+   * del plato: son tres criterios de aceptacion distintos y cada uno fija el
+   * suyo (ver MAXIMO_IMAGEN_MENSAJE_BYTES).
+   */
+  imagenInvalida:
+    'El archivo debe ser una imagen JPG, PNG o WEBP de hasta 8 MB.',
+
+  /** LITERAL - US-MSG-03: "los botones 'Enviar' y 'Cancelar'". */
+  cancelar: 'Cancelar',
+
+  /** LITERAL - US-MSG-03: "con las opciones 'Descargar' y 'Cerrar'". */
+  descargar: 'Descargar',
+  cerrar: 'Cerrar',
+
+  /**
+   * LITERAL - US-MSG-03: "muestre un icono de 'Error' sobre la burbuja del
+   * mensaje junto al texto 'No se pudo enviar' y, al tocar el icono, reintente
+   * el envio automaticamente".
+   */
+  noSePudoEnviar: 'No se pudo enviar',
+
+  // --- Listado de conversaciones (US-MSG-04) --------------------------------
+  /** LITERAL - US-MSG-04: "accede a la seccion 'Mensajes' desde el menu principal". */
+  mensajes: 'Mensajes',
+
+  /**
+   * LITERAL - US-MSG-04, estado vacio del listado. CON TUTEO: asi lo escriben
+   * la historia y el requisito. Ver la nota de arriba.
+   */
+  sinConversaciones: 'Todavía no tienes conversaciones.',
+
+  /** LITERAL - US-MSG-04: "Muestre el boton 'Archivar'". */
+  archivar: 'Archivar',
+
+  /** LITERAL - US-MSG-04: "traslade la conversacion al filtro 'Archivados'". */
+  archivados: 'Archivados',
+
+  /** LITERAL - US-MSG-04, busqueda sin resultados. */
+  sinResultadosDeBusqueda:
+    'No se encontraron conversaciones con esos criterios.',
+
+  /** LITERAL - US-MSG-04: "junto a la opcion 'Limpiar filtros'". */
+  limpiarFiltros: 'Limpiar filtros',
+
+  // --- Historial (US-MSG-05) ------------------------------------------------
+  /**
+   * LITERAL - US-MSG-05: "Muestre el indicador 'Escribiendo...' en la parte
+   * inferior del chat". Tres puntos suspensivos como tres caracteres, tal como
+   * lo escribe el criterio, y no el caracter de elipsis.
+   */
+  escribiendo: 'Escribiendo...',
+
+  /**
+   * LITERAL - US-MSG-05: "Muestre las opciones: 'Ver perfil' (redirige al
+   * perfil publico del interlocutor) y 'Archivar conversacion'".
+   */
+  verPerfil: 'Ver perfil',
+  archivarConversacion: 'Archivar conversación',
+
+  // --- Hilo del pedido (US-MSG-06) ------------------------------------------
+  /**
+   * LITERAL - US-MSG-06: "Muestre un boton 'Mensajes del pedido' que redirige
+   * al hilo de chat asociado a ese pedido especifico".
+   *
+   * El hilo se resuelve por el par cliente-cocinero del pedido y no por una
+   * columna `pedido_id` en `conversacion`: el diagrama vigente DG12082026_V5 no
+   * la tiene y el indice unico `conversacion_par_uq` admite UNA sola
+   * conversacion por par, tenga el par uno o diez pedidos (decision del equipo,
+   * 2026-08-21).
+   */
+  mensajesDelPedido: 'Mensajes del pedido',
+
+  // --- Interlocutor dado de baja (US-MSG-07) --------------------------------
+  /**
+   * LITERAL - US-MSG-07 y RF079: "Deshabilite el campo de entrada de mensajes y
+   * muestre el mensaje". El historial previo sigue visible.
+   */
+  conversacionBloqueadaPorBaja:
+    'Esta conversación está archivada porque el usuario ya no forma parte de la plataforma.',
+
+  /**
+   * LITERAL - US-MSG-07: "Muestre el texto 'Usuario no disponible' en lugar del
+   * nombre original y oculte el boton 'Ver perfil'".
+   */
+  usuarioNoDisponible: 'Usuario no disponible',
 } as const;
 
 /** Errores tecnicos, sin detalle del stack (requisito del modulo de seguridad). */

@@ -60,11 +60,19 @@ export interface OpcionDePestana<T extends string> {
   valor: T;
   etiqueta: string;
   /**
-   * Contador que acompana a la etiqueta. OPCIONAL: las cinco pestanas de la
-   * bandeja de pedidos lo exigen ("cada pestana muestre un contador con la
-   * cantidad de pedidos en ese estado"), pero el perfil publico del cocinero
-   * reusa este componente para "Platos disponibles" / "Resenas", donde la
-   * maquetacion no dibuja ningun numero.
+   * Contador que acompana a la etiqueta. OPCIONAL, por dos motivos que
+   * aparecieron por separado y llevan a lo mismo:
+   *
+   *   Los filtros del listado de conversaciones (US-MSG-04) son dos vistas del
+   *   mismo conjunto, no dos grupos con cantidades distintas: mostrarles un
+   *   contador -aunque fuera cero- diria algo que el criterio no pide y que
+   *   ademas seria falso.
+   *
+   *   El perfil publico del cocinero lo reusa para "Platos disponibles" /
+   *   "Resenas" (US-RES-03), donde la maquetacion no dibuja ningun numero.
+   *
+   * Las cinco pestanas de la bandeja de pedidos si lo exigen: "cada pestana
+   * muestre un contador con la cantidad de pedidos en ese estado".
    */
   cantidad?: number;
 }
@@ -102,13 +110,14 @@ export function Pestanas<T extends string>({
       >
         {opciones.map((opcion) => {
           const seleccionada = opcion.valor === activa;
+          const cantidad = opcion.cantidad;
 
           return (
             <Pressable
               accessibilityLabel={
-                opcion.cantidad === undefined
+                cantidad === undefined
                   ? opcion.etiqueta
-                  : `${opcion.etiqueta}. ${TEXTOS_PEDIDOS.cantidadDePedidos(opcion.cantidad)}`
+                  : `${opcion.etiqueta}. ${TEXTOS_PEDIDOS.cantidadDePedidos(cantidad)}`
               }
               accessibilityRole="tab"
               accessibilityState={{ selected: seleccionada }}
@@ -130,7 +139,7 @@ export function Pestanas<T extends string>({
                 {opcion.etiqueta}
               </Text>
 
-              {opcion.cantidad !== undefined && opcion.cantidad > 0 ? (
+              {cantidad !== undefined && cantidad > 0 ? (
                 <View className="min-w-6 items-center overflow-hidden rounded-full px-1.5 py-0.5">
                   <FondoTenue
                     className={seleccionada ? 'bg-primary' : 'bg-secondary'}
@@ -140,7 +149,7 @@ export function Pestanas<T extends string>({
                       seleccionada ? 'text-primary' : 'text-text-secondary'
                     }`}
                   >
-                    {String(opcion.cantidad)}
+                    {String(cantidad)}
                   </Text>
                 </View>
               ) : null}

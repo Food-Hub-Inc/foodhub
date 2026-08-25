@@ -1,9 +1,11 @@
 import {
+  MENSAJES_MENSAJERIA,
   MENSAJES_PUBLICACION,
   MENSAJES_USUARIO,
   type FormatoImagenPerfil,
   type SolicitarUrlDeCargaCategoriaInput,
   type SolicitarUrlDeCargaInput,
+  type SolicitarUrlDeCargaImagenChatInput,
   type SolicitarUrlDeCargaPlatoInput,
   type UrlDeCarga,
 } from '@foodhub/shared';
@@ -268,4 +270,53 @@ export async function limpiarFotoDePlatoAnterior(entrada: {
       'quedó una foto de plato huérfana en Storage',
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Imagen del chat (US-MSG-03)
+// ---------------------------------------------------------------------------
+
+/**
+ * US-MSG-03 - Permiso para subir una imagen dentro de una conversacion.
+ *
+ * LA CARPETA ES LA CONVERSACION, no el usuario. Es la diferencia con la foto de
+ * perfil y con la del plato: aquellas pertenecen a una persona, y esta al hilo
+ * que comparten dos. Agrupar por conversacion es lo que permite, el dia que
+ * haga falta, borrar de una vez todo lo que se intercambio en un chat.
+ *
+ * LA PERTENENCIA SE VERIFICA ANTES DE FIRMAR. El router le pasa la conversacion
+ * ya validada contra la sesion (`obtenerConversacion` responde 404 si quien pide
+ * no participa): sin ese paso, cualquiera podria subir archivos a la carpeta de
+ * una conversacion ajena con solo conocer su UUID.
+ *
+ * El nombre lleva marca de tiempo por el mismo motivo que en los otros dos
+ * casos: con un nombre reutilizado, el CDN de Storage y la cache de expo-image
+ * seguirian sirviendo la imagen anterior.
+ */
+export async function crearUrlDeCargaDeImagenChat(entrada: {
+  conversacionId: string;
+  datos: SolicitarUrlDeCargaImagenChatInput;
+}): Promise<UrlDeCarga> {
+  const topeBytes = env.STORAGE_MAX_IMAGEN_CHAT_MB * 1024 * 1024;
+  if (entrada.datos.tamano > topeBytes) {
+    throw new AppError(
+      400,
+      MENSAJES_MENSAJERIA.imagenInvalida,
+      'IMAGEN_INVALIDA',
+    );
+  }
+
+  const extension = EXTENSION[entrada.datos.mimeType];
+  const ruta = `${entrada.conversacionId}/${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_MENSAJES);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
 }

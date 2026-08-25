@@ -97,7 +97,7 @@ export function PanelDeParametros() {
           <SeccionResenas valorInicial={resenas} />
         </Tabs.Panel>
 
-        <Tabs.Panel className="max-w-lg pt-4" id="institucional">
+        <Tabs.Panel className="pt-4" id="institucional">
           <SeccionInstitucional valorInicial={institucional} />
         </Tabs.Panel>
       </Tabs>

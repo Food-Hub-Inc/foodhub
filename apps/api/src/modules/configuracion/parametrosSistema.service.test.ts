@@ -37,8 +37,11 @@ const {
 
 const ADMIN_ID = '11111111-1111-1111-1111-111111111111';
 
+const HORARIO_JSON =
+  '{"LUNES":{"inicio":"09:00","fin":"18:00"},"MARTES":{"inicio":"09:00","fin":"18:00"},"MIERCOLES":{"inicio":"09:00","fin":"18:00"},"JUEVES":{"inicio":"09:00","fin":"18:00"},"VIERNES":{"inicio":"09:00","fin":"18:00"},"SABADO":null,"DOMINGO":null}';
+
 /**
- * Las 10 filas que siembra la migración 0004 más la de la 0011, con valores de
+ * Las filas que siembran las migraciones 0004, 0012 y 0013, con valores de
  * ejemplo. `resena_terminos_moderacion` se siembra vacía a propósito: con la
  * lista vacía el filtro de moderación no bloquea nada (RF080).
  */
@@ -54,6 +57,10 @@ const FILAS_SEMBRADAS = [
   { clave: 'plataforma_nombre', valor: 'FoodHub' },
   { clave: 'plataforma_logo_url', valor: '' },
   { clave: 'plataforma_correo_soporte', valor: 'soporte@foodhub.com' },
+  {
+    clave: 'plataforma_horario_atencion_soporte',
+    valor: HORARIO_JSON,
+  },
 ];
 
 describe('obtenerParametrosSistema', () => {
@@ -85,6 +92,15 @@ describe('obtenerParametrosSistema', () => {
         nombrePlataforma: 'FoodHub',
         logoPlataformaUrl: null,
         correoSoporte: 'soporte@foodhub.com',
+        horarioAtencionSoporte: {
+          LUNES: { inicio: '09:00', fin: '18:00' },
+          MARTES: { inicio: '09:00', fin: '18:00' },
+          MIERCOLES: { inicio: '09:00', fin: '18:00' },
+          JUEVES: { inicio: '09:00', fin: '18:00' },
+          VIERNES: { inicio: '09:00', fin: '18:00' },
+          SABADO: null,
+          DOMINGO: null,
+        },
       },
     });
   });
@@ -109,7 +125,7 @@ describe('obtenerParametrosSistema', () => {
   });
 
   it('trata la lista de términos ausente como vacía, sin romper', async () => {
-    // Un ambiente con la 0004 aplicada pero sin la 0011 no tiene la fila. No
+    // Un ambiente con la 0004 aplicada pero sin la 0013 no tiene la fila. No
     // puede fallar: la lista vacía es el valor de fábrica.
     aplicarSelect.mockResolvedValue(
       FILAS_SEMBRADAS.filter(

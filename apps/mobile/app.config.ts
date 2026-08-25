@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { ExpoConfig } from 'expo/config';
 
 /**
@@ -13,6 +15,11 @@ import type { ExpoConfig } from 'expo/config';
  */
 
 const esProduccion = process.env.APP_ENV === 'production';
+const rutaGoogleServices =
+  process.env.GOOGLE_SERVICES_JSON ??
+  resolve(__dirname, 'google-services.json');
+const tieneGoogleServices =
+  Boolean(process.env.GOOGLE_SERVICES_JSON) || existsSync(rutaGoogleServices);
 
 const config: ExpoConfig = {
   name: esProduccion ? 'FoodHub' : 'FoodHub (dev)',
@@ -85,8 +92,9 @@ const config: ExpoConfig = {
     },
     // Archivo de configuración de Firebase Cloud Messaging. Fuera del
     // repositorio: se inyecta como secreto de EAS (ver eas.json).
-    googleServicesFile:
-      process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
+    // En desarrollo local, si el archivo no existe en disco, se omite para
+    // permitir compilar sin requerir FCM.
+    ...(tieneGoogleServices ? { googleServicesFile: rutaGoogleServices } : {}),
   },
 
   // Android es la plataforma principal del proyecto (punto 1.3.1.7). El bloque

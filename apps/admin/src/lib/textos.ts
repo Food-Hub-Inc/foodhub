@@ -430,6 +430,15 @@ export const TEXTOS_PARAMETROS = {
   campoLogo: 'Logo de la plataforma',
   logoAyuda: 'JPG, PNG o WEBP de hasta 2 MB.',
   logoQuitar: 'Quitar logo',
+  /** [PROPIO] US-AYU-04, horario que se muestra al usuario en "Contacto del soporte". */
+  campoHorarioAtencionSoporte: 'Horario de atención del soporte',
+  /** [PROPIO] Ayuda del selector de días y horas del horario de atención. */
+  ayudaHorarioAtencion:
+    'Marcá los días en los que la plataforma atiende y su tramo horario. Los días sin marcar se muestran cerrados.',
+  /** [PROPIO] Rótulo del campo de hora de apertura de un día. */
+  apertura: 'Apertura',
+  /** [PROPIO] Rótulo del campo de hora de cierre de un día. */
+  cierre: 'Cierre',
   logoSubiendo: 'Subiendo logo…',
   logoSeleccionar: 'Elegir logo',
   campoCorreoSoporte: 'Correo de contacto de soporte',
