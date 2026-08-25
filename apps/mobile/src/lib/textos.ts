@@ -828,6 +828,10 @@ export const TEXTOS_RESENA = {
   ayudaFoto: 'Opcional. JPG, PNG o WEBP de hasta 5 MB.',
   quitarFoto: 'Quitar foto',
 
+  /** [PROPIO] La ruta se abrio sin indicar a que cliente se califica. */
+  sinCliente:
+    'No pudimos saber a qué cliente querés calificar. Volvé al pedido y entrá desde ahí.',
+
   /** [PROPIO] La ruta se abrio sin indicar que plato se resena. */
   sinPublicacion:
     'No pudimos saber qué plato querés reseñar. Volvé al pedido y entrá desde el plato.',

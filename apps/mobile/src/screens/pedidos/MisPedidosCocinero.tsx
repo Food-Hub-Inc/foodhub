@@ -402,7 +402,13 @@ function AccionCalificarCliente({ pedido }: { pedido: PedidoResumen }) {
         onPress={() => {
           router.push({
             pathname: '/resenas/calificar-cliente',
-            params: { clienteId: pedido.participante.id },
+            params: {
+              clienteId: pedido.participante.id,
+              nombre: `${pedido.participante.nombre} ${pedido.participante.apellido}`,
+              ...(pedido.participante.fotoPerfilUrl === null
+                ? {}
+                : { fotoPerfilUrl: pedido.participante.fotoPerfilUrl }),
+            },
           });
         }}
         tamano="sm"

@@ -261,7 +261,15 @@ function CalificarAlCliente({ pedido }: { pedido: PedidoDetalle }) {
       onPress={() => {
         router.push({
           pathname: '/resenas/calificar-cliente',
-          params: { clienteId: pedido.participante.id },
+          params: {
+            clienteId: pedido.participante.id,
+            // El nombre y la foto viajan porque no hay endpoint que le
+            // permita a un cocinero consultar los datos de un cliente.
+            nombre: `${pedido.participante.nombre} ${pedido.participante.apellido}`,
+            ...(pedido.participante.fotoPerfilUrl === null
+              ? {}
+              : { fotoPerfilUrl: pedido.participante.fotoPerfilUrl }),
+          },
         });
       }}
     >
