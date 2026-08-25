@@ -21,6 +21,7 @@ import {
   PASOS_DEL_SEGUIMIENTO,
   encabezadoDeCierre,
   indicadorDeCierre,
+  type VistaDePedido,
   motivoVisible,
 } from './estados';
 import { BotonMensajesDelPedido } from '../mensajeria/BotonDeMensajes';
@@ -111,7 +112,7 @@ function Contenido({
   pedido: PedidoDetalle;
   esCocinero: boolean;
 }) {
-  const motivo = motivoVisible(pedido);
+  const vista: VistaDePedido = esCocinero ? 'COCINERO' : 'CLIENTE';
 
   return (
     <ScrollView contentContainerClassName="px-4 py-4 gap-4">
@@ -124,39 +125,35 @@ function Contenido({
         </Text>
       </View>
 
-      {/* "El mensaje de motivo enviado por el cocinero de forma íntegra y
-          destacada" (US-PED-07). Va arriba de todo: es la primera pregunta que
-          el cliente trae al abrir un pedido que no llegó a destino. */}
       {pedido.estado === 'RECHAZADO' ? (
-        <View className="gap-2">
-          <Aviso
-            mensaje={indicadorDeCierre(pedido)}
-            tono={pedido.origenRechazo === 'COCINERO' ? 'error' : 'informativo'}
-          />
-          {motivo !== null ? (
-            <View className="rounded-md border border-border bg-surface p-3">
-              <Text className="text-body text-text-primary">{motivo}</Text>
-            </View>
-          ) : null}
-        </View>
+        <BannerDeCierre pedido={pedido} vista={vista} />
       ) : null}
 
+      {/*
+        US-EXP-04: la ficha del cocinero lleva a su perfil público, que es donde
+        están sus publicaciones. Del otro lado NO es tocable: `/clientes/[id]`
+        todavía es una pantalla pendiente, y un toque que no hace nada se lee
+        como que la app está rota.
+      */}
       <FichaDeParticipante
         conValoracion
         participante={pedido.participante}
         rotulo={esCocinero ? TEXTOS_PEDIDOS.cliente : TEXTOS_PEDIDOS.cocinero}
+        {...(esCocinero
+          ? {}
+          : {
+              onPress: () => {
+                router.push({
+                  pathname: '/cocineros/[id]',
+                  params: { id: pedido.participante.id },
+                });
+              },
+            })}
       />
 
       <BotonMensajesDelPedido participanteId={pedido.participante.id} />
 
-      <View className="overflow-hidden rounded-md border border-border bg-surface">
-        <Text className="px-3 pt-3 text-caption font-bold uppercase text-text-secondary">
-          {TEXTOS_PEDIDOS.platosDelPedido}
-        </Text>
-        {pedido.items.map((item) => (
-          <FilaDeItem item={item} key={item.id} />
-        ))}
-      </View>
+      <PlatosDelPedido esCocinero={esCocinero} pedido={pedido} />
 
       {/* "Nota opcional del cliente (si fue ingresada)" (US-PED-03 y US-PED-08).
           Se muestra también del lado del cliente: es lo que él mismo escribió y
@@ -174,7 +171,7 @@ function Contenido({
 
       <LineaDeTiempo
         historial={pedido.historial}
-        nombreDelEvento={nombreDelEvento}
+        nombreDelEvento={nombreDelEventoPara(vista)}
       />
 
       <View className="flex-row items-center justify-between rounded-md border border-border bg-surface p-3">
@@ -192,6 +189,79 @@ function Contenido({
 }
 
 /**
+ * Cómo terminó el pedido, con el motivo que dejó quien lo cerró.
+ *
+ * "El mensaje de motivo enviado por el cocinero de forma íntegra y destacada"
+ * (US-PED-07). Va arriba de todo: es la primera pregunta que el usuario trae al
+ * abrir un pedido que no llegó a destino.
+ */
+function BannerDeCierre({
+  pedido,
+  vista,
+}: {
+  pedido: PedidoDetalle;
+  vista: VistaDePedido;
+}) {
+  const motivo = motivoVisible(pedido);
+
+  return (
+    <View className="gap-2">
+      <Aviso
+        mensaje={indicadorDeCierre(pedido, vista)}
+        tono={pedido.origenRechazo === 'COCINERO' ? 'error' : 'informativo'}
+      />
+      {motivo !== null ? (
+        <View className="rounded-md border border-border bg-surface p-3">
+          <Text className="text-body text-text-primary">{motivo}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** Los platos del pedido, cada uno con acceso a su publicación. */
+function PlatosDelPedido({
+  pedido,
+  esCocinero,
+}: {
+  pedido: PedidoDetalle;
+  esCocinero: boolean;
+}) {
+  return (
+    <View className="overflow-hidden rounded-md border border-border bg-surface">
+      <Text className="px-3 pt-3 text-caption font-bold uppercase text-text-secondary">
+        {TEXTOS_PEDIDOS.platosDelPedido}
+      </Text>
+      {pedido.items.map((item) => (
+        <FilaDeItem
+          item={item}
+          key={item.id}
+          onPress={() => {
+            irALaPublicacion(item.publicacionId, esCocinero);
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
+/**
+ * A dónde lleva tocar un plato del pedido.
+ *
+ * EL DESTINO DEPENDE DEL ROL y no es una preferencia de diseño: `/platos/[id]`
+ * consulta el módulo de Exploración, que es `requiereRol('CLIENTE')` y le
+ * respondería 403 al cocinero. Para él el equivalente es su propia publicación,
+ * que puede ver porque los platos de un pedido que recibió son suyos.
+ */
+function irALaPublicacion(publicacionId: string, esCocinero: boolean): void {
+  router.push(
+    esCocinero
+      ? { pathname: '/publicaciones/[id]', params: { id: publicacionId } }
+      : { pathname: '/platos/[id]', params: { id: publicacionId } },
+  );
+}
+
+/**
  * Nombre visible de un evento de la línea de tiempo.
  *
  * Usa las leyendas del CLIENTE (US-PED-02) también en la pantalla del cocinero:
@@ -202,16 +272,20 @@ function Contenido({
  * la expiración- se nombra por cómo terminó el pedido, que es el dato que ese
  * renglón tiene que comunicar.
  */
-function nombreDelEvento(evento: EventoPedido): string {
-  const paso = PASOS_DEL_SEGUIMIENTO.find(
-    (candidato) => candidato.estado === evento.estado,
-  );
-  if (paso) return paso.leyenda;
+function nombreDelEventoPara(
+  vista: VistaDePedido,
+): (evento: EventoPedido) => string {
+  return (evento) => {
+    const paso = PASOS_DEL_SEGUIMIENTO.find(
+      (candidato) => candidato.estado === evento.estado,
+    );
+    if (paso) return paso.leyenda;
 
-  return indicadorDeCierre({
-    estado: evento.estado,
-    origenRechazo: evento.origen,
-  });
+    return indicadorDeCierre(
+      { estado: evento.estado, origenRechazo: evento.origen },
+      vista,
+    );
+  };
 }
 
 /**

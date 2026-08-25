@@ -1,12 +1,14 @@
-import type {
-  AgregarAlCarritoRespuesta,
-  Carrito,
-  CarritoRespuesta,
+import {
+  CANTIDAD_MAXIMA_POR_PLATO,
+  type AgregarAlCarritoRespuesta,
+  type Carrito,
+  type CarritoRespuesta,
 } from '@foodhub/shared';
 import {
   useMutation,
   useQuery,
   useQueryClient,
+  type QueryClient,
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query';
@@ -85,62 +87,156 @@ export function useAgregarAlCarrito(): UseMutationResult<
   });
 }
 
-/** Estado previo del carrito, para revertir un "+"/"−" que el servidor rechace. */
-interface CarritoPrevio {
-  previo: CarritoRespuesta | undefined;
+/**
+ * Cambios de cantidad de un ítem que todavía no llegaron al servidor.
+ *
+ * POR QUÉ HACE FALTA UNA COLA Y NO ALCANZA CON MANDAR CADA TOQUE
+ * ---------------------------------------------------------------------------
+ * El endpoint recibe una cantidad ABSOLUTA y hace un UPDATE ciego, no un
+ * incremento. Con quince toques seguidos salían quince PATCH en paralelo y
+ * nada garantizaba el orden de llegada: si la respuesta de `cantidad: 5` caía
+ * después de la de `cantidad: 7`, el servidor quedaba guardando 5 y la pantalla
+ * lo reflejaba. Ese es el "empieza a bajar en vez de sumar".
+ *
+ * La cola deja UNA request en vuelo por ítem y guarda solo la ÚLTIMA cantidad
+ * deseada mientras esa viaja. No es un debounce: el primer toque sale al
+ * instante, y los que se acumulan durante el viaje se resuelven en una sola
+ * request más con el valor final. El optimismo de la interfaz no se toca, así
+ * que el criterio de US-EXP-07 —"actualice el precio total de forma
+ * inmediata"— se sigue cumpliendo.
+ */
+const enVuelo = new Set<string>();
+const cantidadPendiente = new Map<string, number>();
+
+/**
+ * Manda la cantidad y absorbe los toques que lleguen mientras tanto.
+ *
+ * Devuelve `null` cuando la llamada se fusionó con una que ya estaba viajando:
+ * en ese caso quien la absorbió es el único que va a escribir la respuesta en
+ * la caché, y este `mutate` no tiene nada que reportar.
+ */
+async function enviarCantidad(
+  itemId: string,
+  cantidad: number,
+): Promise<CarritoRespuesta | null> {
+  if (enVuelo.has(itemId)) {
+    cantidadPendiente.set(itemId, cantidad);
+    return null;
+  }
+
+  enVuelo.add(itemId);
+  try {
+    let respuesta = await cambiarCantidadItem(itemId, cantidad);
+
+    for (;;) {
+      const siguiente = cantidadPendiente.get(itemId);
+      if (siguiente === undefined) return respuesta;
+      cantidadPendiente.delete(itemId);
+      respuesta = await cambiarCantidadItem(itemId, siguiente);
+    }
+  } finally {
+    // Ante un fallo se descarta lo pendiente: `onError` va a resincronizar
+    // contra el servidor y mandar un valor viejo encima sería pelearse con él.
+    cantidadPendiente.delete(itemId);
+    enVuelo.delete(itemId);
+  }
+}
+
+/** Cantidad que la caché tiene AHORA para un ítem, o `undefined` si ya no está. */
+function cantidadEnCache(
+  cliente: QueryClient,
+  itemId: string,
+): number | undefined {
+  const actual = cliente.getQueryData<CarritoRespuesta>(CLAVE_CARRITO);
+  return actual?.carrito?.items.find((item) => item.id === itemId)?.cantidad;
+}
+
+/**
+ * Aplica el "+" o el "−" sobre la caché y recalcula el total.
+ *
+ * El total se recalcula acá con aritmética de punto flotante -a diferencia del
+ * servidor, que lo suma en `numeric`- porque es un valor provisorio que vive
+ * milisegundos: la respuesta del PATCH lo reemplaza por el exacto. Sin este
+ * cálculo, el precio del pie de pantalla quedaría un instante desfasado de las
+ * cantidades de arriba, que es justo lo que el criterio pide evitar.
+ */
+function conDelta(
+  actual: CarritoRespuesta | undefined,
+  itemId: string,
+  delta: number,
+): CarritoRespuesta | undefined {
+  if (!actual?.carrito) return actual;
+
+  const items = actual.carrito.items.map((item) =>
+    item.id === itemId
+      ? {
+          ...item,
+          cantidad: Math.min(
+            CANTIDAD_MAXIMA_POR_PLATO,
+            Math.max(1, item.cantidad + delta),
+          ),
+        }
+      : item,
+  );
+  const total = items.reduce(
+    (suma, item) => suma + Number(item.precioUnitario) * item.cantidad,
+    0,
+  );
+
+  return {
+    ...actual,
+    carrito: { ...actual.carrito, items, total: total.toFixed(2) },
+  };
 }
 
 /**
  * US-EXP-07 · Botones "+" y "−" de un ítem.
  *
- * Actualiza la cantidad Y el total de forma optimista. El total se recalcula acá
- * con aritmética de punto flotante -a diferencia del servidor, que lo suma en
- * `numeric`- porque es un valor provisorio que vive milisegundos: la respuesta
- * del PATCH lo reemplaza por el exacto. Sin este cálculo, el precio del pie de
- * pantalla quedaría un instante desfasado de las cantidades de arriba, que es
- * justo lo que el criterio pide evitar.
+ * Recibe un DELTA y no una cantidad absoluta: la cantidad de la que hay que
+ * partir sale de la caché en el momento del toque, no del prop que se renderizó
+ * la última vez. Con toques más rápidos que un frame de React, ese prop está
+ * viejo y dos "+" seguidos mandaban dos veces el mismo número.
  */
 export function useCambiarCantidad(): UseMutationResult<
-  CarritoRespuesta,
+  CarritoRespuesta | null,
   Error,
-  { itemId: string; cantidad: number },
-  CarritoPrevio
+  { itemId: string; delta: number }
 > {
   const cliente = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ itemId, cantidad }) => cambiarCantidadItem(itemId, cantidad),
-
-    onMutate: async ({ itemId, cantidad }) => {
-      await cliente.cancelQueries({ queryKey: CLAVE_CARRITO });
-      const previo = cliente.getQueryData<CarritoRespuesta>(CLAVE_CARRITO);
-
-      cliente.setQueryData<CarritoRespuesta>(CLAVE_CARRITO, (actual) => {
-        if (!actual?.carrito) return actual;
-
-        const items = actual.carrito.items.map((item) =>
-          item.id === itemId ? { ...item, cantidad } : item,
-        );
-        const total = items.reduce(
-          (suma, item) => suma + Number(item.precioUnitario) * item.cantidad,
-          0,
-        );
-
-        return {
-          ...actual,
-          carrito: { ...actual.carrito, items, total: total.toFixed(2) },
-        };
-      });
-
-      return { previo };
+    /**
+     * La cantidad que viaja sale de la caché que `onMutate` acaba de dejar al
+     * día, así que siempre es la última deseada aunque se hayan encadenado
+     * varios toques.
+     */
+    mutationFn: ({ itemId }) => {
+      const cantidad = cantidadEnCache(cliente, itemId);
+      return cantidad === undefined
+        ? Promise.resolve(null)
+        : enviarCantidad(itemId, cantidad);
     },
 
-    onError: (_error, _variables, contexto) => {
-      cliente.setQueryData(CLAVE_CARRITO, contexto?.previo);
+    onMutate: async ({ itemId, delta }) => {
+      await cliente.cancelQueries({ queryKey: CLAVE_CARRITO });
+      cliente.setQueryData<CarritoRespuesta>(CLAVE_CARRITO, (actual) =>
+        conDelta(actual, itemId, delta),
+      );
+    },
+
+    onError: () => {
+      /**
+       * No se restaura ningún snapshot: con varios toques encadenados, el
+       * "estado previo" de esta mutación es un intermedio optimista y no lo que
+       * el servidor tiene guardado. Ante un fallo, la verdad la tiene él.
+       */
+      void cliente.invalidateQueries({ queryKey: CLAVE_CARRITO });
     },
 
     onSuccess: (respuesta) => {
-      cliente.setQueryData<CarritoRespuesta>(CLAVE_CARRITO, respuesta);
+      if (respuesta !== null) {
+        cliente.setQueryData<CarritoRespuesta>(CLAVE_CARRITO, respuesta);
+      }
     },
   });
 }

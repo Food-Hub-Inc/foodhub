@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   MENSAJES_PEDIDO,
@@ -12,6 +12,7 @@ import { Boton } from '../../components/ui/Boton';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
+import { PantallaConTeclado } from '../../components/ui/PantallaConTeclado';
 import { usePedido, useRechazarPedido } from '../../hooks/usePedidos';
 import { mensajeDeError } from '../../lib/api';
 import { TEXTOS_PEDIDOS } from '../../lib/textos';
@@ -90,7 +91,7 @@ function Formulario({ pedido }: { pedido: PedidoDetalle }) {
 
   return (
     <>
-      <ScrollView contentContainerClassName="px-4 py-4 gap-4">
+      <PantallaConTeclado contentContainerClassName="px-4 py-4 gap-4">
         <Text className="text-caption text-text-secondary">
           {pedido.numeroPedido}
         </Text>
@@ -117,7 +118,7 @@ function Formulario({ pedido }: { pedido: PedidoDetalle }) {
         {rechazar.isError ? (
           <Aviso mensaje={mensajeDeError(rechazar.error)} tono="error" />
         ) : null}
-      </ScrollView>
+      </PantallaConTeclado>
 
       <View className="border-t border-border bg-surface px-4 pb-2 pt-3">
         <Boton

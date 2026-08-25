@@ -1,4 +1,4 @@
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { MENSAJES_USUARIO } from '@foodhub/shared';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { IconoEngranaje } from '../../components/iconos';
@@ -7,6 +7,7 @@ import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
 import { HojaDeOrigenDeFoto } from '../../components/ui/HojaDeOrigenDeFoto';
+import { PantallaConTeclado } from '../../components/ui/PantallaConTeclado';
 import { useCambiarFotoDePerfil } from '../../hooks/useCambiarFotoDePerfil';
 import { usePerfil } from '../../hooks/usePerfil';
 import { TEXTOS_PERFIL } from '../../lib/textos';
@@ -58,10 +59,7 @@ export function MiPerfil() {
       ) : null}
 
       {perfil.data ? (
-        <ScrollView
-          contentContainerClassName="px-4 pt-4 pb-10"
-          keyboardShouldPersistTaps="handled"
-        >
+        <PantallaConTeclado contentContainerClassName="px-4 pt-4 pb-10">
           <TarjetaDeIdentidad
             errorDeFoto={foto.error}
             onCambiarFoto={foto.abrir}
@@ -70,7 +68,7 @@ export function MiPerfil() {
           />
           <FormularioDePerfil perfil={perfil.data} />
           <AccionesDeCuenta />
-        </ScrollView>
+        </PantallaConTeclado>
       ) : null}
 
       <HojaDeOrigenDeFoto

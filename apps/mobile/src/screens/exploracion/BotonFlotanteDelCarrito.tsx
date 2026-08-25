@@ -21,7 +21,27 @@ import { TEXTOS_CARRITO } from '../../lib/textos';
  * Lee el carrito de la caché compartida (`useCarrito`): no dispara una consulta
  * por pantalla, porque las cinco comparten la misma clave.
  */
-export function BotonFlotanteDelCarrito() {
+/**
+ * Aire hasta el borde inferior cuando no hay nada más abajo. Es el valor que
+ * tenía como clase (`bottom-6`); pasa a número porque ahora se le suma lo que
+ * ocupe el pie fijo o la tarjeta emergente de la pantalla que lo monta.
+ */
+const SEPARACION_BASE = 24;
+
+export function BotonFlotanteDelCarrito({
+  separacionInferior = 0,
+}: {
+  /**
+   * Alto de lo que ya está apoyado en el borde inferior de la pantalla.
+   *
+   * Sin esto el botón se dibujaba ENCIMA del pie fijo de "Agregar al carrito"
+   * del detalle del plato y de la tarjeta del cocinero del mapa, y como se
+   * pinta después, además se comía el toque en esa zona. Quien lo monta mide
+   * ese elemento con `onLayout` y pasa el alto: un número fijo se volvería a
+   * solapar en cuanto el pie creciera con un aviso de error.
+   */
+  separacionInferior?: number;
+}) {
   const carrito = useCarrito();
   const cantidad = cantidadDeItems(carrito.data?.carrito);
 
@@ -32,7 +52,8 @@ export function BotonFlotanteDelCarrito() {
       onPress={() => {
         router.push('/carrito');
       }}
-      className="absolute bottom-6 right-5 h-14 w-14 items-center justify-center rounded-full bg-primary"
+      className="absolute right-5 h-14 w-14 items-center justify-center rounded-full bg-primary"
+      style={{ bottom: SEPARACION_BASE + separacionInferior }}
       accessibilityRole="button"
       accessibilityLabel={TEXTOS_CARRITO.irAlCarrito}
       accessibilityValue={{ text: TEXTOS_CARRITO.unidadesEnCarrito(cantidad) }}

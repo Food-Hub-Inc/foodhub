@@ -1,11 +1,6 @@
 import { useState } from 'react';
-import {
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  View,
-} from 'react-native';
+import { FlatList, Text, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import type { ConversacionDetalle, Mensaje } from '@foodhub/shared';
 import { IconoMensaje } from '../../components/iconos';
 import { SafeAreaView } from '../../components/SafeAreaView';
@@ -112,17 +107,26 @@ function ChatCargado({
           setMenuAbierto(true);
         }}
         onArchivar={() => {
-          archivar.mutate({ conversacionId: conversacion.id, archivada: true });
+          // Alterna, no fija: la hoja de la cabecera es el mismo botón para
+          // archivar y para devolver la conversación al listado principal.
+          archivar.mutate({
+            conversacionId: conversacion.id,
+            archivada: !conversacion.archivada,
+          });
         }}
         onCerrarMenu={() => {
           setMenuAbierto(false);
         }}
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1"
-      >
+      {/*
+        El `KeyboardAvoidingView` es el de `react-native-keyboard-controller` y
+        no el del core: el del core solo acepta un `behavior` útil en iOS y en
+        Android -la plataforma del proyecto- dejaba el campo de escritura debajo
+        del teclado. `style` en vez de `className` porque el componente viene de
+        una librería de terceros y uniwind solo parchea los de React Native.
+      */}
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <Hilo
           chat={chat}
           filas={filas}

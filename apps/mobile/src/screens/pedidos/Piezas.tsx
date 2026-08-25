@@ -16,6 +16,7 @@ import {
   PASOS_DEL_SEGUIMIENTO,
   etiquetaDeEstado,
   tonoDeEstado,
+  type VistaDePedido,
 } from './estados';
 
 /**
@@ -42,14 +43,20 @@ import {
  * por vos", "Rechazado por el cocinero", "Expirado - sin respuesta del
  * cocinero"), indistinguibles por color porque dos de las tres comparten tono.
  */
-export function EtiquetaDeEstado({ pedido }: { pedido: PedidoResumen }) {
+export function EtiquetaDeEstado({
+  pedido,
+  vista,
+}: {
+  pedido: PedidoResumen;
+  vista: VistaDePedido;
+}) {
   const tono = tonoDeEstado(pedido);
 
   return (
     <View className="self-start overflow-hidden rounded-full px-2.5 py-1">
       <FondoTenue className={tono.fondo} />
       <Text className={`text-caption font-semibold ${tono.texto}`}>
-        {etiquetaDeEstado(pedido)}
+        {etiquetaDeEstado(pedido, vista)}
       </Text>
     </View>
   );
@@ -190,14 +197,21 @@ export function FichaDeParticipante({
   rotulo,
   conValoracion = false,
   accion,
+  onPress,
 }: {
   participante: ParticipantePedido;
   rotulo?: string;
   conValoracion?: boolean;
   accion?: React.ReactNode;
+  /**
+   * Cuando llega, la ficha entera se vuelve tocable. Es opcional porque de las
+   * seis pantallas que la usan solo el detalle tiene a dónde ir: el perfil
+   * público del cocinero existe (US-EXP-04) y el del cliente todavía no.
+   */
+  onPress?: () => void;
 }) {
-  return (
-    <View className="flex-row items-center gap-3 rounded-md border border-border bg-surface p-3">
+  const contenido = (
+    <>
       <AvatarDeParticipante fotoPerfilUrl={participante.fotoPerfilUrl} />
 
       <View className="flex-1">
@@ -213,14 +227,44 @@ export function FichaDeParticipante({
       </View>
 
       {accion}
-    </View>
+    </>
+  );
+
+  const clases =
+    'flex-row items-center gap-3 rounded-md border border-border bg-surface p-3';
+
+  if (onPress === undefined) {
+    return <View className={clases}>{contenido}</View>;
+  }
+
+  return (
+    <Pressable
+      accessibilityLabel={TEXTOS_PEDIDOS.verPerfilDe(participante.nombre)}
+      accessibilityRole="button"
+      className={clases}
+      onPress={onPress}
+    >
+      {contenido}
+    </Pressable>
   );
 }
 
-/** Una línea del pedido: miniatura, nombre, cantidad y su importe. */
-export function FilaDeItem({ item }: { item: ItemPedido }) {
-  return (
-    <View className="flex-row items-center gap-3 border-t border-border px-3 py-3">
+/**
+ * Una línea del pedido: miniatura, nombre, cantidad y su importe.
+ *
+ * `onPress` es opcional por lo mismo que en `FichaDeParticipante`: solo el
+ * detalle del pedido tiene a dónde llevar, y el destino además depende del rol
+ * (el cliente va al plato de Exploración, el cocinero a su propia publicación).
+ */
+export function FilaDeItem({
+  item,
+  onPress,
+}: {
+  item: ItemPedido;
+  onPress?: () => void;
+}) {
+  const contenido = (
+    <>
       <MiniaturaDePlato
         className="h-14 w-14 rounded-sm"
         imagenDeCategoria={null}
@@ -244,7 +288,24 @@ export function FilaDeItem({ item }: { item: ItemPedido }) {
           (Number(item.precioUnitario) * item.cantidad).toFixed(2),
         )}
       </Text>
-    </View>
+    </>
+  );
+
+  const clases = 'flex-row items-center gap-3 border-t border-border px-3 py-3';
+
+  if (onPress === undefined) {
+    return <View className={clases}>{contenido}</View>;
+  }
+
+  return (
+    <Pressable
+      accessibilityLabel={TEXTOS_PEDIDOS.verPublicacion(item.nombre)}
+      accessibilityRole="button"
+      className={clases}
+      onPress={onPress}
+    >
+      {contenido}
+    </Pressable>
   );
 }
 

@@ -155,7 +155,9 @@ function HojaDeCierre({
       etiquetaAccesible={TEXTOS_CERRAR_SESION.titulo}
       onCerrar={onCancelar}
     >
-      <View className="items-center px-6 pt-2 pb-8">
+      {/* Sin padding horizontal propio: `HojaInferior` ya envuelve a sus
+          children en `px-6 pb-10 pt-2`, y repetirlo angostaba el contenido. */}
+      <View className="items-center pb-2">
         <View className="mb-4 h-16 w-16 items-center justify-center overflow-hidden rounded-full">
           <FondoTenue className="bg-error" />
           <IconoSalir className="text-error" size={28} />

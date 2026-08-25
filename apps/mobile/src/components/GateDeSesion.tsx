@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { View } from 'react-native';
+import type { Session } from '@supabase/supabase-js';
 import { router, useSegments, type Href } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import type { PerfilUsuario } from '@foodhub/shared';
@@ -12,7 +13,8 @@ import {
 } from '../hooks/useEnlaceDeAcceso';
 import { usePerfil } from '../hooks/usePerfil';
 import { useSesion, useEscucharSesion } from '../hooks/useSesion';
-import { TEXTOS_LOGIN } from '../lib/textos';
+import { TEXTOS_LOGIN, TEXTOS_PERFIL } from '../lib/textos';
+import { BotonDeTexto } from './ui/Boton';
 import { EstadoDeError } from './ui/EstadoDeError';
 
 /**
@@ -58,7 +60,14 @@ export function GateDeSesion({ children }: { children: ReactNode }) {
   const perfil = usePerfil();
   const segmentos = useSegments() as readonly string[];
 
-  const esAdministrador = perfil.data?.tipo === 'ADMINISTRADOR';
+  const { perfilDeLaSesion, esAdministrador, arrancando, esperandoPerfil } =
+    situacionDelGate({
+      perfil: perfil.data,
+      hayErrorDePerfil: perfil.isError,
+      paso,
+      resuelta,
+      sesion,
+    });
 
   /**
    * Decisión del equipo: la administración se opera desde el panel web. Si un
@@ -73,27 +82,16 @@ export function GateDeSesion({ children }: { children: ReactNode }) {
   }, [esAdministrador, fijarAviso]);
 
   /**
-   * Lo único que puede faltar EN EL ARRANQUE Y NUNCA DESPUÉS. Los dos son
-   * monótonos por construcción: la máquina del enlace no vuelve a `sinResolver`
-   * y `resuelta` no vuelve a `false`. Que sean monótonos es lo que hace seguro
-   * no dibujar nada mientras duran.
-   */
-  const arrancando = paso === 'sinResolver' || !resuelta;
-
-  /**
    * Para elegir el destino hace falta además el rol, y ese sí se puede volver a
-   * pedir en mitad de la sesión —el login lo pide de nuevo—. Por eso la espera
-   * del perfil NO apaga el dibujado: solo posterga la decisión. Mientras tanto
-   * se ve la pantalla anterior, o el splash si todavía no hubo ninguna.
+   * pedir en mitad de la sesión —el login lo pide de nuevo—.
    */
-  const puedeDecidir =
-    !arrancando && !(sesion !== null && perfil.isPending && !perfil.isError);
+  const puedeDecidir = !arrancando && !esperandoPerfil;
 
   const destino = puedeDecidir
     ? calcularDestino({
         haySesion: sesion !== null,
         conEnlaceEnCurso: mandaElEnlace(paso),
-        perfil: esAdministrador ? undefined : perfil.data,
+        perfil: esAdministrador ? undefined : perfilDeLaSesion,
         segmentos,
       })
     : null;
@@ -119,6 +117,13 @@ export function GateDeSesion({ children }: { children: ReactNode }) {
    * El perfil no cargó y sin él no se sabe el rol. Se muestra el error con
    * reintento en lugar de adivinar una barra de tabs: entrar como cliente a
    * alguien que es cocinero es peor que pedirle que reintente.
+   *
+   * VA TAMBIÉN UNA SALIDA, y no solo el reintento. Esta rama reemplaza el árbol
+   * de navegación entero, así que mientras dura no hay pestañas ni "Mi perfil"
+   * —donde vive el único "Cerrar sesión" de la app—. Con un error que el
+   * reintento no puede resolver, eso dejaba al usuario encerrado sin manera de
+   * cambiar de cuenta ni siquiera reiniciando, porque la sesión sigue en el
+   * Keystore.
    */
   if (sesion !== null && perfil.isError) {
     return (
@@ -129,11 +134,101 @@ export function GateDeSesion({ children }: { children: ReactNode }) {
             void perfil.refetch();
           }}
         />
+        <View className="items-center pb-8">
+          <BotonDeTexto
+            onPress={() => {
+              void cerrarSesion();
+            }}
+          >
+            {TEXTOS_PERFIL.cerrarSesion}
+          </BotonDeTexto>
+        </View>
       </View>
     );
   }
 
+  /**
+   * MIENTRAS NO SEPAMOS DE QUIÉN ES LA SESIÓN NO SE DIBUJA LA APP.
+   *
+   * Es el arreglo del cambio de cuenta. Los dos grupos de rutas montan
+   * `NativeTabs`, o sea una barra de pestañas NATIVA: si el gate sigue
+   * renderizando `children` mientras carga el perfil del usuario nuevo, el host
+   * nativo del rol anterior no se desmonta y el `router.replace` posterior
+   * termina apoyándose sobre un árbol que todavía tiene viva la mitad de la
+   * interfaz vieja. Cerrar sesión como cliente y entrar como cocinero dejaba a
+   * la vista las pestañas del cliente; reiniciar la app lo tapaba porque ahí no
+   * hay ningún árbol previo que sobreviva.
+   *
+   * Un `View` con el color de fondo y no `null`: `null` deja ver el vacío que
+   * hay debajo por un frame, que es el mismo parpadeo que el splash evita en el
+   * arranque.
+   */
+  if (esperandoPerfil) {
+    return <View className="flex-1 bg-background" />;
+  }
+
   return <>{children}</>;
+}
+
+/**
+ * En qué situación está el gate, resuelto de una vez.
+ *
+ * Vive afuera del componente porque son cuatro decisiones sobre los mismos
+ * datos y dejarlas adentro lo llevaba por encima del umbral de complejidad que
+ * fija ESLint.
+ */
+function situacionDelGate({
+  perfil,
+  hayErrorDePerfil,
+  paso,
+  resuelta,
+  sesion,
+}: {
+  perfil: PerfilUsuario | undefined;
+  hayErrorDePerfil: boolean;
+  paso: string;
+  resuelta: boolean;
+  sesion: Session | null;
+}): {
+  perfilDeLaSesion: PerfilUsuario | undefined;
+  esAdministrador: boolean;
+  arrancando: boolean;
+  esperandoPerfil: boolean;
+} {
+  /**
+   * EL PERFIL QUE HAY EN MANO NO SIEMPRE ES EL DE QUIEN ESTÁ AUTENTICADO.
+   *
+   * `usePerfil` cuelga de una clave sin id (`['perfil','yo']`), así que entre el
+   * `SIGNED_IN` de una cuenta nueva y la llegada de su perfil la consulta puede
+   * seguir devolviendo el del usuario anterior. Comparar contra `sesion.user.id`
+   * lo detecta con exactitud y no con una heurística de tiempos: `usuario.id` ES
+   * el id que emite GoTrue, porque el registro crea el perfil con ese valor.
+   */
+  const perfilDeLaSesion =
+    perfil !== undefined && perfil.id === sesion?.user.id ? perfil : undefined;
+
+  return {
+    perfilDeLaSesion,
+    esAdministrador: perfilDeLaSesion?.tipo === 'ADMINISTRADOR',
+
+    /**
+     * Lo único que puede faltar EN EL ARRANQUE Y NUNCA DESPUÉS. Los dos son
+     * monótonos por construcción: la máquina del enlace no vuelve a
+     * `sinResolver` y `resuelta` no vuelve a `false`. Que sean monótonos es lo
+     * que hace seguro no dibujar nada mientras duran.
+     */
+    arrancando: paso === 'sinResolver' || !resuelta,
+
+    /**
+     * Hay sesión pero todavía no sabemos de quién: o el perfil está viajando, o
+     * el que tenemos es del usuario anterior.
+     *
+     * Un refetch del MISMO usuario no entra acá —el dato viejo se conserva y su
+     * id coincide—, así que editar el perfil no apaga la pantalla.
+     */
+    esperandoPerfil:
+      sesion !== null && perfilDeLaSesion === undefined && !hayErrorDePerfil,
+  };
 }
 
 /** A dónde hay que mandar al usuario, o `null` si ya está donde corresponde. */

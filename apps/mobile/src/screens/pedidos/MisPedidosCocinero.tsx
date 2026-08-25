@@ -243,7 +243,7 @@ function TarjetaDePedido({
           </View>
 
           {cerrado ? (
-            <EtiquetaDeEstado pedido={pedido} />
+            <EtiquetaDeEstado pedido={pedido} vista="COCINERO" />
           ) : (
             <Text className="text-body font-bold text-text-primary">
               {formatearPrecio(pedido.total)}

@@ -1,5 +1,5 @@
 import { useState, type ReactElement } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import {
   restablecerPasswordSchema,
@@ -11,6 +11,7 @@ import { Boton, BotonDeTexto } from '../../src/components/ui/Boton';
 import { CampoContrasena } from '../../src/components/ui/CampoContrasena';
 import { EncabezadoPantalla } from '../../src/components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../src/components/ui/Esqueleto';
+import { PantallaConTeclado } from '../../src/components/ui/PantallaConTeclado';
 import { useEnlaceDeAcceso } from '../../src/hooks/useEnlaceDeAcceso';
 import {
   useFormulario,
@@ -104,12 +105,9 @@ export default function NuevaPassword() {
         titulo={TEXTOS_NUEVA_PASSWORD.titulo}
       />
 
-      <ScrollView
-        contentContainerClassName="grow px-6 pt-6 pb-10"
-        keyboardShouldPersistTaps="handled"
-      >
+      <PantallaConTeclado contentContainerClassName="grow px-6 pt-6 pb-10">
         {contenido()}
-      </ScrollView>
+      </PantallaConTeclado>
     </SafeAreaView>
   );
 }
