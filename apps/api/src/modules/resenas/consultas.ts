@@ -1,4 +1,4 @@
-import { and, eq, sql, type SQL } from 'drizzle-orm';
+import { and, eq, max, sql, type SQL } from 'drizzle-orm';
 import {
   historialEstadoPedido,
   itemPedido,
@@ -55,6 +55,12 @@ export function todas(condiciones: SQL[]): SQL {
  * Se toma el MAXIMO y no el primero: un cliente que pidio el mismo plato tres
  * veces tiene derecho a opinar sobre la ultima experiencia, no sobre la
  * primera.
+ *
+ * SE USA EL `max` DE DRIZZLE Y NO UN `sql<Date>` ESCRITO A MANO. La plantilla
+ * `sql<T>` es una AFIRMACION de tipo, no una conversion: el compilador cree lo
+ * que se le declara y el driver igual devuelve el `timestamp` como string, con
+ * lo cual `.getTime()` revienta recien en ejecucion. `max()` conoce la columna y
+ * aplica su mapeador, asi que el `Date` que promete el tipo es el que llega.
  */
 export async function ultimoCompletadoDelPlato(entrada: {
   clienteId: string;
@@ -62,7 +68,7 @@ export async function ultimoCompletadoDelPlato(entrada: {
 }): Promise<Date | null> {
   const [fila] = await db
     .select({
-      fecha: sql<Date | null>`max(${historialEstadoPedido.fechaTransicion})`,
+      fecha: max(historialEstadoPedido.fechaTransicion),
     })
     .from(itemPedido)
     .innerJoin(pedido, eq(pedido.id, itemPedido.pedidoId))
