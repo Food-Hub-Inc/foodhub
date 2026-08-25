@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { z } from 'zod';
+import { TIPO_VERSION_TERMINOS } from '@foodhub/shared';
 import { sesionDe } from '../../lib/request.js';
 import { requiereAutenticacion } from '../../middleware/auth.middleware.js';
 import { noAutorizado } from '../../middleware/error.middleware.js';
@@ -13,12 +15,43 @@ import * as catalogoService from './catalogo.service.js';
  * Publicaciones, el flujo de rechazo/cancelacion de un pedido (US-PED-04) y
  * la pantalla de re-aceptacion obligatoria solo consultan.
  *
- * Exige sesion pero no un rol puntual: cliente, cocinero y administrador
- * necesitan las categorias por igual (el formulario de plato, los filtros del
- * feed, el ABM del panel), y cada ruta que sí necesita acotar por rol filtra
- * puntualmente la que lo requiere.
+ * Casi todo exige sesion pero no un rol puntual: cliente, cocinero y
+ * administrador necesitan las categorias por igual (el formulario de plato,
+ * los filtros del feed, el ABM del panel). La unica excepcion es la lectura de
+ * un documento legal vigente, que se hace PUBLICO a proposito: el registro de
+ * cuenta (PAN-AUT-01/PAN-AUT-02) ocurre sin sesion y el usuario debe poder
+ * leer los terminos antes de aceptarlos (ver mas abajo).
  */
 export const catalogoRouter: Router = Router();
+
+/**
+ * Valida que el parametro `:tipo` de las rutas de documentos legales sea
+ * uno de los dos valores que `version_terminos.tipo` admite (es varchar en
+ * la base, no un ENUM). Cualquier otro valor produce 400 VALIDACION sin
+ * llegar a la base.
+ */
+const tipoVersionTerminosParamsSchema = z.object({
+  tipo: z.enum(TIPO_VERSION_TERMINOS),
+});
+
+/**
+ * US-AYU-04 - Documento legal vigente de un tipo (terminos o privacidad).
+ *
+ * RUTA PUBLICA, sin sesion: el registro de cuenta la consulta antes de crear
+ * la cuenta para mostrarle al usuario que esta aceptando. Es informacion de
+ * solo lectura y publica por naturaleza (los terminos y la politica de
+ * privacidad son documentos publicos en cualquier producto), y a diferencia
+ * del endpoint anterior esta variante agrega `fechaPublicacion` y
+ * `adminAutor` para la leyenda de "Ultima actualizacion" y la trazabilidad.
+ *
+ * Por vivir antes del `use(requiereAutenticacion)` de abajo, es la unica ruta
+ * de este router que no exige token.
+ */
+catalogoRouter.get('/terminos-vigentes/:tipo', async (req, res) => {
+  const { tipo } = tipoVersionTerminosParamsSchema.parse(req.params);
+  const documento = await catalogoService.obtenerDocumentoLegalVigente(tipo);
+  res.json(documento);
+});
 
 catalogoRouter.use(requiereAutenticacion);
 
@@ -51,4 +84,37 @@ catalogoRouter.get('/motivos-cancelacion', async (req, res) => {
 catalogoRouter.get('/terminos-vigentes', async (_req, res) => {
   const vigentes = await catalogoService.obtenerTerminosVigentesParaAceptar();
   res.json(vigentes);
+});
+
+/**
+ * US-AYU-04, CA5 - Descarga del documento legal vigente en formato PDF.
+ * Pensado para el boton "Descargar PDF" de la barra superior de PAN-AYU-04.
+ *
+ * Responde binario (application/pdf) con `Content-Disposition: attachment`
+ * para que el navegador/dispositivo abra el dialogo de guardar y no intente
+ * mostrarlo inline.
+ */
+catalogoRouter.get('/terminos-vigentes/:tipo/pdf', async (req, res) => {
+  const { tipo } = tipoVersionTerminosParamsSchema.parse(req.params);
+  const { buffer, nombreArchivo } =
+    await catalogoService.generarPdfDeDocumentoLegal(tipo);
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="${nombreArchivo}"`,
+  );
+  res.setHeader('Content-Length', String(buffer.byteLength));
+  res.send(buffer);
+});
+
+/**
+ * US-AYU-04 - Correo electronico y horario de atencion del equipo de
+ * soporte, para "Contacto del soporte" de PAN-AYU-04. Se leen de
+ * `configuracion_sistema` (claves plataforma_correo_soporte y
+ * plataforma_horario_atencion_soporte).
+ */
+catalogoRouter.get('/informacion-de-contacto', async (_req, res) => {
+  const contacto = await catalogoService.obtenerInformacionDeContacto();
+  res.json(contacto);
 });

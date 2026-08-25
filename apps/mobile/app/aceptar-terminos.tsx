@@ -19,9 +19,31 @@ import { TEXTOS_ACEPTAR_TERMINOS } from '../src/lib/textos';
 const ESTILO_BASE = { color: '#1f1a17', fontSize: 15, lineHeight: 22 };
 
 const ESTILOS_POR_ETIQUETA = {
-  h1: { fontSize: 20, fontWeight: '700' as const, color: '#1f1a17' },
-  h2: { fontSize: 18, fontWeight: '700' as const, color: '#1f1a17' },
-  h3: { fontSize: 16, fontWeight: '700' as const, color: '#1f1a17' },
+  h1: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#1f1a17',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  h2: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#1f1a17',
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  h3: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#1f1a17',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  p: { marginTop: 0, marginBottom: 8 },
+  ul: { marginTop: 4, marginBottom: 8, paddingLeft: 16 },
+  ol: { marginTop: 4, marginBottom: 8, paddingLeft: 16 },
+  li: { marginTop: 0, marginBottom: 4 },
   a: { color: '#ec6829', textDecorationLine: 'underline' as const },
 };
 

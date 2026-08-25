@@ -25,6 +25,7 @@ export const CLAVE_PARAMETRO = {
   plataformaNombre: 'plataforma_nombre',
   plataformaLogoUrl: 'plataforma_logo_url',
   plataformaCorreoSoporte: 'plataforma_correo_soporte',
+  plataformaHorarioAtencionSoporte: 'plataforma_horario_atencion_soporte',
 } as const;
 
 export const SECCION_PARAMETROS_SISTEMA = [
@@ -116,6 +117,79 @@ export const PARAMETROS_RESENAS_DEFAULT: ParametrosResenas = {
 };
 
 // ---------------------------------------------------------------------------
+// Horario de atencion del soporte (US-AYU-04)
+// ---------------------------------------------------------------------------
+
+/** Orden canónico de los días de la semana, de lunes a domingo. */
+export const DIAS_HORARIO = [
+  'LUNES',
+  'MARTES',
+  'MIERCOLES',
+  'JUEVES',
+  'VIERNES',
+  'SABADO',
+  'DOMINGO',
+] as const;
+export type DiaHorario = (typeof DIAS_HORARIO)[number];
+
+const patronHora = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/**
+ * Tramo horario de un día ("HH:MM" en formato de 24 horas). `null` significa
+ * que ese día no hay atención.
+ */
+export const horarioDiaSchema = z
+  .object({
+    inicio: z
+      .string()
+      .regex(patronHora, MENSAJES_CONFIGURACION.horarioHoraInvalida),
+    fin: z
+      .string()
+      .regex(patronHora, MENSAJES_CONFIGURACION.horarioHoraInvalida),
+  })
+  .nullable();
+export type HorarioDia = z.infer<typeof horarioDiaSchema>;
+
+/**
+ * Semana completa de atención: siempre los siete días, `null` en los que no
+ * hay servicio. Es la única representación del horario en el sistema; se
+ * guarda serializada como JSON en `configuracion_sistema`.
+ *
+ * Reglas: al menos un día activo y, en cada día activo, la hora de cierre
+ * posterior a la de apertura. No se admiten turnos que crucen medianoche.
+ */
+export const horarioAtencionSemanaSchema = z
+  .object({
+    LUNES: horarioDiaSchema,
+    MARTES: horarioDiaSchema,
+    MIERCOLES: horarioDiaSchema,
+    JUEVES: horarioDiaSchema,
+    VIERNES: horarioDiaSchema,
+    SABADO: horarioDiaSchema,
+    DOMINGO: horarioDiaSchema,
+  })
+  .superRefine((semana, ctx) => {
+    for (const dia of DIAS_HORARIO) {
+      const rango = semana[dia];
+      if (rango && rango.fin <= rango.inicio) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [dia],
+          message: MENSAJES_CONFIGURACION.horarioFinPosterior,
+        });
+      }
+    }
+    if (DIAS_HORARIO.every((dia) => semana[dia] === null)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['*'],
+        message: MENSAJES_CONFIGURACION.horarioDiaObligatorio,
+      });
+    }
+  });
+export type HorarioAtencionSemana = z.infer<typeof horarioAtencionSemanaSchema>;
+
+// ---------------------------------------------------------------------------
 // Informacion institucional
 // ---------------------------------------------------------------------------
 
@@ -127,15 +201,36 @@ export const parametrosInstitucionalesSchema = z.object({
     .max(80, 'No puede superar los 80 caracteres.'),
   logoPlataformaUrl: z.url().nullable(),
   correoSoporte: emailSchema,
+  /**
+   * US-AYU-04 - Horario de atencion que la pantalla de Contacto del soporte
+   * muestra al usuario. Se edita en el panel eligiendo los dias y el tramo
+   * horario de cada uno; el formato es el de "semana completa" con horarios
+   * en formato de 24 horas.
+   */
+  horarioAtencionSoporte: horarioAtencionSemanaSchema,
 });
 export type ParametrosInstitucionales = z.infer<
   typeof parametrosInstitucionalesSchema
 >;
 
+/**
+ * De fabrica, el soporte atiende de lunes a viernes de 9 a 18 hs. El
+ * `horarioAtencionSoporte` es un objeto "semana completa" y no un string:
+ * se guarda serializado como JSON en `configuracion_sistema`.
+ */
 export const PARAMETROS_INSTITUCIONALES_DEFAULT: ParametrosInstitucionales = {
   nombrePlataforma: 'FoodHub',
   logoPlataformaUrl: null,
   correoSoporte: 'soporte@foodhub.com',
+  horarioAtencionSoporte: {
+    LUNES: { inicio: '09:00', fin: '18:00' },
+    MARTES: { inicio: '09:00', fin: '18:00' },
+    MIERCOLES: { inicio: '09:00', fin: '18:00' },
+    JUEVES: { inicio: '09:00', fin: '18:00' },
+    VIERNES: { inicio: '09:00', fin: '18:00' },
+    SABADO: null,
+    DOMINGO: null,
+  },
 };
 
 // ---------------------------------------------------------------------------

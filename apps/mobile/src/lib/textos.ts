@@ -209,7 +209,11 @@ export const TEXTOS_AYUDA = {
   titulo: 'Ayuda y soporte',
   preguntasFrecuentes: 'Preguntas frecuentes',
   manual: 'Manual de usuario',
-  contacto: 'Contactar al soporte',
+  /**
+   * [PROPIO] Unica entrada de contacto del hub: abre los datos de contacto
+   * (correo y horarios) y desde ahi el boton lleva al formulario.
+   */
+  contacto: 'Datos de contacto',
   legal: 'Información legal',
   buscar: 'Buscar preguntas',
   buscarPlaceholder: 'Escribí una palabra o frase',
@@ -220,8 +224,29 @@ export const TEXTOS_AYUDA = {
     'El manual reúne instrucciones paso a paso para usar FoodHub según tu rol.',
   contactoPendiente:
     'El formulario permite enviar una consulta, sugerencia o reporte al equipo.',
-  legalPendiente:
-    'Esta sección reúne los términos, condiciones y datos de contacto de FoodHub.',
+} as const;
+
+/**
+ * PAN-AYU-04 - Pantallas del sub-hub de Informacion legal (US-AYU-04).
+ *
+ * Los mensajes LITERALES (boton "Descargar PDF", encabezado "Contacto del
+ * soporte" en el sub-hub) viven en `MENSAJES_AYUDA` (@foodhub/shared) y se
+ * importan de ahi. Acá solo va la copia de cada pantalla: titulos,
+ * placeholders y textos [PROPIO].
+ */
+export const TEXTOS_LEGAL = {
+  pantallaTerminos: {
+    /** [PROPIO] Titulo de la pantalla de Terminos y condiciones. */
+    titulo: 'Términos y condiciones',
+  },
+  pantallaPrivacidad: {
+    /** [PROPIO] Titulo de la pantalla de Politica de privacidad. */
+    titulo: 'Política de privacidad',
+  },
+  pantallaContacto: {
+    /** [PROPIO] Titulo de la pantalla de Contacto del soporte. */
+    titulo: 'Contacto del soporte',
+  },
 } as const;
 
 /** Textos del shell de navegación (barras de tabs y header). */
@@ -660,12 +685,6 @@ export const PANTALLAS_PENDIENTES = {
     modulo: 'Ayuda y soporte',
     titulo: 'Contactar al soporte',
     descripcion: TEXTOS_AYUDA.contactoPendiente,
-  },
-  legalAyuda: {
-    codigo: 'PAN-AYU-04',
-    modulo: 'Ayuda y soporte',
-    titulo: 'Información legal',
-    descripcion: TEXTOS_AYUDA.legalPendiente,
   },
 } as const;
 
