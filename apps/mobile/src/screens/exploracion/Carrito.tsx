@@ -262,7 +262,7 @@ function FilaDeItem({ item }: { item: ItemCarrito }) {
 
   const restar = () => {
     if (item.cantidad > 1) {
-      cambiarCantidad.mutate({ itemId: item.id, cantidad: item.cantidad - 1 });
+      cambiarCantidad.mutate({ itemId: item.id, delta: -1 });
       return;
     }
     setQuitando(true);
@@ -291,10 +291,7 @@ function FilaDeItem({ item }: { item: ItemCarrito }) {
           }}
           onRestar={restar}
           onSumar={() => {
-            cambiarCantidad.mutate({
-              itemId: item.id,
-              cantidad: item.cantidad + 1,
-            });
+            cambiarCantidad.mutate({ itemId: item.id, delta: 1 });
           }}
         />
 

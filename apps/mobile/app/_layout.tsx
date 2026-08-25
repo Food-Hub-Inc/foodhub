@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { HeroUINativeProvider } from 'heroui-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -80,19 +81,24 @@ export default function LayoutRaiz() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <HeroUINativeProvider>
-        <QueryClientProvider client={queryClient}>
-          <BottomSheetModalProvider>
-            <StatusBar style="dark" />
-            {/* El gate va DENTRO del proveedor de consultas y por encima del
+      {/* Mide el teclado y publica su altura por contexto. Va lo más arriba
+          posible: lo consumen `PantallaConTeclado` y el chat, que están en
+          ramas distintas del árbol. */}
+      <KeyboardProvider>
+        <HeroUINativeProvider>
+          <QueryClientProvider client={queryClient}>
+            <BottomSheetModalProvider>
+              <StatusBar style="dark" />
+              {/* El gate va DENTRO del proveedor de consultas y por encima del
                 Stack: necesita React Query para preguntar el perfil, y tiene que
                 poder redirigir antes de que se dibuje ninguna pantalla. */}
-            <GateDeSesion>
-              <Stack screenOptions={{ headerShown: false }} />
-            </GateDeSesion>
-          </BottomSheetModalProvider>
-        </QueryClientProvider>
-      </HeroUINativeProvider>
+              <GateDeSesion>
+                <Stack screenOptions={{ headerShown: false }} />
+              </GateDeSesion>
+            </BottomSheetModalProvider>
+          </QueryClientProvider>
+        </HeroUINativeProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

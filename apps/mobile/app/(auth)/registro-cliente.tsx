@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, Text } from 'react-native';
+import { Text } from 'react-native';
 import { registroClienteSchema } from '@foodhub/shared';
 import { registrarCliente } from '../../src/api/auth';
 import { SafeAreaView } from '../../src/components/SafeAreaView';
@@ -7,6 +7,7 @@ import { CamposDeRegistro } from '../../src/components/registro/CamposDeRegistro
 import { PieDeRegistro } from '../../src/components/registro/PieDeRegistro';
 import { Aviso } from '../../src/components/ui/Aviso';
 import { EncabezadoPantalla } from '../../src/components/ui/EncabezadoPantalla';
+import { PantallaConTeclado } from '../../src/components/ui/PantallaConTeclado';
 import type { FotoElegida } from '../../src/components/ui/SelectorDeFoto';
 import { useFormulario } from '../../src/hooks/useFormulario';
 import { useRegistro } from '../../src/hooks/useRegistro';
@@ -57,10 +58,7 @@ export default function RegistroCliente() {
         titulo={TEXTOS_REGISTRO.tituloCliente}
       />
 
-      <ScrollView
-        contentContainerClassName="px-6 pt-4 pb-10"
-        keyboardShouldPersistTaps="handled"
-      >
+      <PantallaConTeclado contentContainerClassName="px-6 pt-4 pb-10">
         <Text className="mb-6 text-body text-text-secondary">
           {TEXTOS_REGISTRO.bajadaCliente}
         </Text>
@@ -106,7 +104,7 @@ export default function RegistroCliente() {
           puedeEnviar={formulario.esValido}
           terminosAceptados={formulario.valores.terminosAceptados}
         />
-      </ScrollView>
+      </PantallaConTeclado>
     </SafeAreaView>
   );
 }

@@ -707,6 +707,20 @@ export const TEXTOS_PEDIDOS = {
   abrirPedido: (numero: string) => `Abrir el pedido ${numero}`,
 
   /**
+   * [PROPIO] Etiquetas accesibles de los accesos que salen del detalle del
+   * pedido. Los criterios de US-PED-07 y US-PED-08 enumeran qué se muestra,
+   * no cómo se anuncia.
+   */
+  verPublicacion: (nombre: string) => `Ver la publicación de ${nombre}`,
+
+  /**
+   * Neutral respecto del rol a propósito: `FichaDeParticipante` la comparten el
+   * detalle del cliente y el del cocinero, y una etiqueta que nombre al
+   * cocinero volvería a decirle al otro rol algo que no corresponde.
+   */
+  verPerfilDe: (nombre: string) => `Ver el perfil de ${nombre}`,
+
+  /**
    * [PROPIO] Contador de la pestaña, anunciado aparte del rótulo para que un
    * lector de pantalla diga "Nuevos, 2 pedidos" y no "Nuevos 2".
    */

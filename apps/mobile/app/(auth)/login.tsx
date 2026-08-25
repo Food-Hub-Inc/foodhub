@@ -1,7 +1,12 @@
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { loginSchema, MENSAJES_AUTH, type LoginInput } from '@foodhub/shared';
+import {
+  CODIGO_SUPABASE_CUENTA_BANEADA,
+  loginSchema,
+  MENSAJES_AUTH,
+  type LoginInput,
+} from '@foodhub/shared';
 import { iniciarSesion } from '../../src/api/auth';
 import { reportarLoginFallido } from '../../src/api/seguridad';
 import { MarcaFoodHub, PinFoodHub } from '../../src/components/Marca';
@@ -12,8 +17,10 @@ import { Boton, BotonDeTexto } from '../../src/components/ui/Boton';
 import { CampoContrasena } from '../../src/components/ui/CampoContrasena';
 import { CampoTexto } from '../../src/components/ui/CampoTexto';
 import { EncabezadoPantalla } from '../../src/components/ui/EncabezadoPantalla';
+import { PantallaConTeclado } from '../../src/components/ui/PantallaConTeclado';
 import { useFormulario, type Formulario } from '../../src/hooks/useFormulario';
 import { useSesion } from '../../src/hooks/useSesion';
+import { codigoDeSupabase } from '../../src/lib/api';
 import { TEXTOS_LOGIN } from '../../src/lib/textos';
 
 /**
@@ -50,15 +57,16 @@ export default function Login() {
     try {
       await iniciarSesion(datos.email, datos.password);
       // No se navega: el gate redirige solo cuando cambia el estado de sesión.
-    } catch {
+    } catch (fallo) {
       /**
        * US-AUD-01, segundo criterio. El intento fallido no pasa por la API
        * —el login va contra Supabase— así que lo reporta el cliente. Es "fire
        * and forget": no se espera ni se reintenta, y un fallo del registro no
-       * puede cambiar lo que ve el usuario.
+       * puede cambiar lo que ve el usuario. Una cuenta suspendida también es un
+       * intento rechazado y también se reporta.
        */
       reportarLoginFallido(datos.email);
-      setError(MENSAJES_AUTH.credencialesInvalidas);
+      setError(mensajeDeIngresoFallido(fallo));
     } finally {
       setEnviando(false);
     }
@@ -68,10 +76,7 @@ export default function Login() {
     <SafeAreaView className="flex-1 bg-background">
       <EncabezadoPantalla destinoAlternativo="/bienvenida" titulo="" />
 
-      <ScrollView
-        contentContainerClassName="grow justify-center px-6 pb-10"
-        keyboardShouldPersistTaps="handled"
-      >
+      <PantallaConTeclado contentContainerClassName="grow justify-center px-6 pb-10">
         <Encabezado />
 
         {/* El aviso de expulsión del administrador lo deja el gate al cerrarle
@@ -100,9 +105,24 @@ export default function Login() {
         </Boton>
 
         <PieDeIngreso />
-      </ScrollView>
+      </PantallaConTeclado>
     </SafeAreaView>
   );
+}
+
+/**
+ * Qué se le dice al usuario cuando GoTrue rechaza el ingreso.
+ *
+ * El caso normal sigue siendo el literal de US-AUT-03 para credenciales
+ * inválidas, que a propósito no distingue si falló el correo o la contraseña.
+ * La única excepción es la cuenta suspendida, que el mismo criterio pide
+ * distinguir: `suspenderUsuario` la deja baneada en GoTrue, así que el rechazo
+ * llega acá y no como el 403 de la API.
+ */
+function mensajeDeIngresoFallido(error: unknown): string {
+  return codigoDeSupabase(error) === CODIGO_SUPABASE_CUENTA_BANEADA
+    ? MENSAJES_AUTH.cuentaSuspendida
+    : MENSAJES_AUTH.credencialesInvalidas;
 }
 
 /**

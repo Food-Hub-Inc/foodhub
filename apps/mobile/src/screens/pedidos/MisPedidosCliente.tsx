@@ -244,7 +244,7 @@ function TarjetaDePedido({
         </View>
 
         <View className="items-end gap-2">
-          <EtiquetaDeEstado pedido={pedido} />
+          <EtiquetaDeEstado pedido={pedido} vista="CLIENTE" />
           <Text className="text-body font-extrabold text-text-primary">
             {formatearPrecio(pedido.total)}
           </Text>

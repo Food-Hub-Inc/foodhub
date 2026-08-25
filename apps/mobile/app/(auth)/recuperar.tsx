@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { solicitarRecuperacionSchema } from '@foodhub/shared';
 import { solicitarRecuperacion } from '../../src/api/auth';
@@ -9,6 +9,7 @@ import { Aviso } from '../../src/components/ui/Aviso';
 import { Boton, BotonDeTexto } from '../../src/components/ui/Boton';
 import { CampoTexto } from '../../src/components/ui/CampoTexto';
 import { EncabezadoPantalla } from '../../src/components/ui/EncabezadoPantalla';
+import { PantallaConTeclado } from '../../src/components/ui/PantallaConTeclado';
 import { useFormulario } from '../../src/hooks/useFormulario';
 import { mensajeDeError } from '../../src/lib/api';
 import { TEXTOS_RECUPERAR } from '../../src/lib/textos';
@@ -62,10 +63,7 @@ export default function Recuperar() {
         titulo={TEXTOS_RECUPERAR.titulo}
       />
 
-      <ScrollView
-        contentContainerClassName="grow px-6 pt-6 pb-10"
-        keyboardShouldPersistTaps="handled"
-      >
+      <PantallaConTeclado contentContainerClassName="grow px-6 pt-6 pb-10">
         <Text className="text-h2 font-bold text-text-primary">
           {TEXTOS_RECUPERAR.encabezado}
         </Text>
@@ -114,7 +112,7 @@ export default function Recuperar() {
             {TEXTOS_RECUPERAR.volverAlLogin}
           </BotonDeTexto>
         </View>
-      </ScrollView>
+      </PantallaConTeclado>
     </SafeAreaView>
   );
 }

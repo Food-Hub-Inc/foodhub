@@ -49,6 +49,13 @@ const AMPLITUD_INICIAL = 0.02;
  * pisarse; a partir de zoom 16 -media cuadra en pantalla- ya no tiene sentido
  * agrupar porque los cocineros se ven separados.
  */
+/**
+ * Despegue de la tarjeta emergente respecto del borde inferior. Era la clase
+ * `bottom-4`; se nombra porque ahora también lo necesita el botón flotante del
+ * carrito para calcular cuánto tiene que subir.
+ */
+const SEPARACION_DE_LA_TARJETA = 16;
+
 const RADIO_DE_AGRUPAMIENTO = 60;
 const ZOOM_SIN_AGRUPAMIENTO = 16;
 
@@ -126,6 +133,15 @@ export function MapaDeCocineros() {
   const [region, setRegion] = useState<Region | null>(null);
   const [seleccionado, setSeleccionado] = useState<CocineroMapa | null>(null);
 
+  /**
+   * Alto de la tarjeta emergente, para correr el botón flotante del carrito.
+   *
+   * Sin esto el flotante le pisaba la esquina inferior derecha —justo sobre
+   * "Ver perfil"— cuando había algo en el carrito. Vuelve a cero al cerrar la
+   * tarjeta, así que el botón recupera su posición de siempre.
+   */
+  const [altoDeLaTarjeta, setAltoDeLaTarjeta] = useState(0);
+
   const consulta = useCocinerosDelMapa(region ? aZonaVisible(region) : null);
 
   // El `?? []` va en su propio `useMemo`: sin esto crea un arreglo nuevo en cada
@@ -186,6 +202,7 @@ export function MapaDeCocineros() {
         {seleccionado ? (
           <TarjetaDelCocinero
             cocinero={seleccionado}
+            onAlto={setAltoDeLaTarjeta}
             onVerPerfil={() => {
               router.push({
                 pathname: '/cocineros/[id]',
@@ -196,7 +213,13 @@ export function MapaDeCocineros() {
         ) : null}
       </View>
 
-      <BotonFlotanteDelCarrito />
+      {/* A lo que mide la tarjeta hay que sumarle su propio despegue del borde
+          (`bottom-4`), que es desde donde arranca a ocupar espacio. */}
+      <BotonFlotanteDelCarrito
+        separacionInferior={
+          seleccionado ? altoDeLaTarjeta + SEPARACION_DE_LA_TARJETA : 0
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -370,12 +393,20 @@ function GrupoDeMarcadores({
 function TarjetaDelCocinero({
   cocinero,
   onVerPerfil,
+  onAlto,
 }: {
   cocinero: CocineroMapa;
   onVerPerfil: () => void;
+  onAlto: (alto: number) => void;
 }) {
   return (
-    <View className="absolute bottom-4 left-4 right-4 rounded-md border border-border bg-surface p-4">
+    <View
+      className="absolute left-4 right-4 rounded-md border border-border bg-surface p-4"
+      onLayout={(evento) => {
+        onAlto(evento.nativeEvent.layout.height);
+      }}
+      style={{ bottom: SEPARACION_DE_LA_TARJETA }}
+    >
       <View className="flex-row items-center gap-3">
         <AvatarDeCocinero
           fotoPerfilUrl={cocinero.fotoPerfilUrl}

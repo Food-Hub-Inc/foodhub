@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  CODIGO_SUPABASE_CUENTA_BANEADA,
   loginSchema,
   MENSAJES_AUTH,
   MENSAJES_USUARIO,
@@ -11,7 +12,7 @@ import { consultaPerfil } from '../api/perfil.js';
 import { reportarLoginFallido } from '../api/seguridad.js';
 import { MarcoDeAcceso } from '../components/MarcoDeAcceso.js';
 import { useSesion } from '../hooks/useSesion.js';
-import { ErrorApi, mensajeDeError } from '../lib/api.js';
+import { codigoDeSupabase, ErrorApi, mensajeDeError } from '../lib/api.js';
 import { RUTAS } from '../lib/rutas.js';
 import { supabase } from '../lib/supabase.js';
 import { TEXTOS_LOGIN } from '../lib/textos.js';
@@ -71,7 +72,7 @@ export function Login() {
         // US-AUD-01: el intento fallido queda registrado aunque el login no
         // pase por la API. Es "fire and forget": no se espera ni se reintenta.
         void reportarLoginFallido(credenciales.email);
-        setErrorGeneral(MENSAJES_AUTH.credencialesInvalidas);
+        setErrorGeneral(mensajeDeIngresoFallido(error));
         return;
       }
 
@@ -134,6 +135,21 @@ async function verificarQueSeaAdministrador(
   if (perfil.tipo !== 'ADMINISTRADOR') {
     throw new RechazoDeAcceso(MENSAJES_USUARIO.accesoNoAutorizado);
   }
+}
+
+/**
+ * Qué se le dice al usuario cuando GoTrue rechaza el ingreso.
+ *
+ * El caso normal sigue siendo el literal de US-AUT-03 para credenciales
+ * inválidas, que a propósito no distingue si falló el correo o la contraseña.
+ * La única excepción es la cuenta suspendida, que el mismo criterio pide
+ * distinguir: `suspenderUsuario` la deja baneada en GoTrue, así que el rechazo
+ * llega acá y no como el 403 de la API.
+ */
+function mensajeDeIngresoFallido(error: unknown): string {
+  return codigoDeSupabase(error) === CODIGO_SUPABASE_CUENTA_BANEADA
+    ? MENSAJES_AUTH.cuentaSuspendida
+    : MENSAJES_AUTH.credencialesInvalidas;
 }
 
 function mensajeDeRechazo(error: unknown): string {

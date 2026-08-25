@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import MapView, { type Region } from 'react-native-maps';
 import type { Ubicacion } from '@foodhub/shared';
@@ -48,6 +48,22 @@ export function SelectorDeUbicacion({
   const [region, setRegion] = useState<Region | null>(null);
 
   /**
+   * `onCambiar` SE LEE DE UN REF Y NUNCA ENTRA EN UNA LISTA DE DEPENDENCIAS.
+   *
+   * Quien monta este componente le pasa un handler creado durante el render
+   * —el registro de cocinero escribe `onUbicacion={(valor) => formulario.fijar(…)}`—,
+   * así que su identidad cambia cada vez que el formulario se redibuja. Cuando
+   * ese handler estaba en las dependencias, el efecto de abajo volvía a
+   * consultar el GPS en CADA render y el resultado volvía a llamar al handler,
+   * que redibujaba el formulario: un ciclo infinito que hacía titilar el mapa,
+   * impedía escribir en los campos y pisaba la ubicación elegida a mano.
+   */
+  const refOnCambiar = useRef(onCambiar);
+  useEffect(() => {
+    refOnCambiar.current = onCambiar;
+  }, [onCambiar]);
+
+  /**
    * Vuelca el resultado del GPS al estado del componente.
    *
    * Está separado de `consultarGps` a propósito: la consulta es una función
@@ -57,24 +73,24 @@ export function SelectorDeUbicacion({
    * continuación y no de forma sincrónica, que es lo que produce renders en
    * cascada.
    */
-  const aplicar = useCallback(
-    (resultado: ResultadoGps) => {
-      if (resultado.estado !== 'listo') {
-        setEstado(resultado.estado);
-        return;
-      }
-      setRegion({
-        latitude: resultado.punto.lat,
-        longitude: resultado.punto.lng,
-        latitudeDelta: AMPLITUD,
-        longitudeDelta: AMPLITUD,
-      });
-      onCambiar(resultado.punto);
-      setEstado('listo');
-    },
-    [onCambiar],
-  );
+  const aplicar = useCallback((resultado: ResultadoGps) => {
+    if (resultado.estado !== 'listo') {
+      setEstado(resultado.estado);
+      return;
+    }
+    setRegion({
+      latitude: resultado.punto.lat,
+      longitude: resultado.punto.lng,
+      latitudeDelta: AMPLITUD,
+      longitudeDelta: AMPLITUD,
+    });
+    refOnCambiar.current(resultado.punto);
+    setEstado('listo');
+  }, []);
 
+  // UNA consulta por montaje, igual que `useUbicacionActual`. `aplicar` es
+  // estable, así que esta lista es efectivamente vacía: agregarle cualquier
+  // cosa que dependa de un prop reintroduce el ciclo descrito arriba.
   useEffect(() => {
     // Si la pantalla se abandona mientras el GPS todavía busca posición, el
     // resultado llega a un componente desmontado. La bandera lo descarta.
@@ -89,10 +105,19 @@ export function SelectorDeUbicacion({
     };
   }, [aplicar]);
 
-  const reintentar = () => {
+  const reintentar = useCallback(() => {
     setEstado('pidiendo');
     void consultarGps().then(aplicar);
-  };
+  }, [aplicar]);
+
+  /**
+   * Arrastrar el mapa mueve el punto elegido. Va memorizado para que
+   * `CuerpoDelSelector` no reciba un handler nuevo en cada render del padre.
+   */
+  const cambiarRegion = useCallback((nueva: Region) => {
+    setRegion(nueva);
+    refOnCambiar.current({ lat: nueva.latitude, lng: nueva.longitude });
+  }, []);
 
   return (
     <View>
@@ -104,10 +129,7 @@ export function SelectorDeUbicacion({
       <CuerpoDelSelector
         estado={estado}
         region={region}
-        onRegionCambiada={(nueva) => {
-          setRegion(nueva);
-          onCambiar({ lat: nueva.latitude, lng: nueva.longitude });
-        }}
+        onRegionCambiada={cambiarRegion}
         onReintentar={reintentar}
       />
 

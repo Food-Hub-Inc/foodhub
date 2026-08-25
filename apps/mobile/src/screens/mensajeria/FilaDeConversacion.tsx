@@ -57,7 +57,7 @@ export function FilaDeConversacion({
    * desactiva en lugar de dejar un botón que no hace nada.
    */
   const etiquetaDeAccion = conversacion.archivada
-    ? TEXTOS_MENSAJERIA.filtroActivas
+    ? MENSAJES_MENSAJERIA.desarchivar
     : MENSAJES_MENSAJERIA.archivar;
 
   const fila = (

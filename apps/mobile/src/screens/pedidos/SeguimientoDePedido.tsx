@@ -222,8 +222,9 @@ function BannerDeCierre({ pedido }: { pedido: PedidoDetalle }) {
 
   return (
     <View className="gap-2">
+      {/* PAN-PED-03 es exclusiva del cliente, así que la vista va fija. */}
       <Aviso
-        mensaje={indicadorDeCierre(pedido)}
+        mensaje={indicadorDeCierre(pedido, 'CLIENTE')}
         tono={pedido.origenRechazo === 'COCINERO' ? 'error' : 'informativo'}
       />
       {motivo !== null ? (

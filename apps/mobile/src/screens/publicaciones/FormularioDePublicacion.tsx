@@ -1,4 +1,4 @@
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { z } from 'zod';
 import {
   crearPublicacionSchema,
@@ -14,6 +14,7 @@ import {
   type OpcionDesplegable,
 } from '../../components/ui/CampoDesplegable';
 import { CampoTexto } from '../../components/ui/CampoTexto';
+import { PantallaConTeclado } from '../../components/ui/PantallaConTeclado';
 import {
   SelectorDeFoto,
   type FotoElegida,
@@ -178,10 +179,7 @@ export function FormularioDePublicacion({
   const sinCategorias = categorias.isSuccess && categorias.data.length === 0;
 
   return (
-    <ScrollView
-      contentContainerClassName="px-4 pb-10 pt-4"
-      keyboardShouldPersistTaps="handled"
-    >
+    <PantallaConTeclado contentContainerClassName="px-4 pb-10 pt-4">
       {sinCategorias ? (
         <Aviso
           className="mb-4"
@@ -217,7 +215,7 @@ export function FormularioDePublicacion({
         puedeEnviar={formulario.esValido}
         textoBoton={textoBoton}
       />
-    </ScrollView>
+    </PantallaConTeclado>
   );
 }
 
