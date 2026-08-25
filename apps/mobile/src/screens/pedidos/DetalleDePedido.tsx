@@ -286,6 +286,19 @@ function ResenarCadaPlato({ pedido }: { pedido: PedidoDetalle }) {
   const publicacionIds = pedido.items.map((item) => item.publicacionId);
   const estado = useEstadoDeResenas(publicacionIds);
 
+  /**
+   * El fallo se MUESTRA en lugar de devolver `null`.
+   *
+   * Con `null` la pantalla queda idéntica a la de un pedido sin nada por
+   * reseñar, y el cliente no tiene forma de distinguir "ya no podés opinar" de
+   * "algo se rompió". Es el estado de error que exige la regla de los cuatro
+   * estados del proyecto, y su ausencia ya escondió un bug de navegación una
+   * vez.
+   */
+  if (estado.isError) {
+    return <Aviso mensaje={mensajeDeError(estado.error)} tono="error" />;
+  }
+
   if (!estado.data) return null;
 
   const porPublicacion = new Map(
