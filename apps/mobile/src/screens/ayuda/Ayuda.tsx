@@ -35,7 +35,7 @@ export function Ayuda() {
           etiqueta={TEXTOS_AYUDA.contacto}
           icono={<IconoSobre className="text-text-secondary" size={20} />}
           onPress={() => {
-            router.push('/ayuda/contacto');
+            router.push('/ayuda/legal/contacto');
           }}
         />
         <FilaDeNavegacion

@@ -209,7 +209,11 @@ export const TEXTOS_AYUDA = {
   titulo: 'Ayuda y soporte',
   preguntasFrecuentes: 'Preguntas frecuentes',
   manual: 'Manual de usuario',
-  contacto: 'Contactar al soporte',
+  /**
+   * [PROPIO] Unica entrada de contacto del hub: abre los datos de contacto
+   * (correo y horarios) y desde ahi el boton lleva al formulario.
+   */
+  contacto: 'Datos de contacto',
   legal: 'Información legal',
   buscar: 'Buscar preguntas',
   buscarPlaceholder: 'Escribí una palabra o frase',
