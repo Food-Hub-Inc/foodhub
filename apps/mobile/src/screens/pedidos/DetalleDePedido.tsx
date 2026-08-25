@@ -15,7 +15,10 @@ import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
 import { usePedido } from '../../hooks/usePedidos';
 import { usePerfil } from '../../hooks/usePerfil';
-import { useEstadoDeResenas } from '../../hooks/useResenas';
+import {
+  useEstadoDeResenas,
+  useReputacionDeCliente,
+} from '../../hooks/useResenas';
 import { mensajeDeError } from '../../lib/api';
 import { formatearFecha, formatearPrecio } from '../../lib/formato';
 import { TEXTOS_PEDIDOS } from '../../lib/textos';
@@ -25,6 +28,7 @@ import {
   indicadorDeCierre,
   motivoVisible,
 } from './estados';
+import { Valoracion } from '../exploracion/Piezas';
 import { FichaDeParticipante, FilaDeItem, LineaDeTiempo } from './Piezas';
 
 /**
@@ -142,11 +146,20 @@ function Contenido({
         </View>
       ) : null}
 
+      {/*
+        La tarjeta pinta el promedio crudo, sin la regla de "Cliente nuevo" de
+        US-RES-02. Para el cocinero se apaga y la reputación va debajo con esa
+        regla aplicada: mostrar las dos sería contradecirse en la misma pantalla.
+      */}
       <FichaDeParticipante
-        conValoracion
+        conValoracion={!esCocinero}
         participante={pedido.participante}
         rotulo={esCocinero ? TEXTOS_PEDIDOS.cliente : TEXTOS_PEDIDOS.cocinero}
       />
+
+      {esCocinero ? (
+        <ReputacionDelCliente clienteId={pedido.participante.id} />
+      ) : null}
 
       <View className="overflow-hidden rounded-md border border-border bg-surface">
         <Text className="px-3 pt-3 text-caption font-bold uppercase text-text-secondary">
@@ -211,6 +224,46 @@ function nombreDelEvento(evento: EventoPedido): string {
     estado: evento.estado,
     origenRechazo: evento.origen,
   });
+}
+
+/**
+ * Reputación del cliente, tal como la ve el cocinero — US-RES-02 (RF081).
+ *
+ * "Muestre en el detalle del pedido el promedio de estrellas del cliente y la
+ * cantidad total de cocineros que lo calificaron. Si el cliente registra menos
+ * de 3 pedidos completados en la plataforma, muestre el texto 'Cliente nuevo'
+ * en lugar del promedio."
+ *
+ * EL UMBRAL SON PEDIDOS COMPLETADOS, NO CALIFICACIONES RECIBIDAS: un cliente
+ * con diez compras y ninguna calificación no es nuevo, solo no tiene reputación
+ * todavía. Por eso `esClienteNuevo` viene resuelto del servidor y no se deriva
+ * de `cantidadCocineros`.
+ *
+ * Se calla si la consulta falla: es información de contexto sobre la otra
+ * parte, no una acción. Un cartel de error acá le taparía al cocinero el
+ * detalle del pedido, que es lo que vino a ver.
+ */
+function ReputacionDelCliente({ clienteId }: { clienteId: string }) {
+  const reputacion = useReputacionDeCliente(clienteId);
+  if (!reputacion.data) return null;
+
+  const { promedio, cantidadCocineros, esClienteNuevo } = reputacion.data;
+
+  return (
+    <View className="flex-row items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
+      <Text className="text-caption text-text-secondary">
+        {TEXTOS_PEDIDOS.cliente}
+      </Text>
+
+      {esClienteNuevo ? (
+        <Text className="text-caption font-semibold text-text-primary">
+          {MENSAJES_RESENA.clienteNuevo}
+        </Text>
+      ) : (
+        <Valoracion cantidadResenas={cantidadCocineros} promedio={promedio} />
+      )}
+    </View>
+  );
 }
 
 /**
