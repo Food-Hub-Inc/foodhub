@@ -11,6 +11,7 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "crear-admin": "tsx src/scripts/crear-administrador.ts",
+    "seed": "tsx src/scripts/sembrar-datos-de-prueba.ts",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest"
   },
