@@ -41,11 +41,12 @@ const BORRADOR_VACIO: BorradorConsulta = {
 const DEBOUNCE_MS = 600;
 
 function borradorTieneDatos(b: BorradorConsulta): boolean {
-  return (
-    b.tipoConsultaId !== null ||
-    b.asunto.trim() !== '' ||
-    b.descripcion.trim() !== ''
-  );
+  // `''` cuenta como vacio: el form usa `''` para "tipo sin elegir" pero
+  // aca queremos saber si hay un borrador CON DATOS. Si solo se trata del
+  // tipo, no se persiste (asi un form vacio no se queda "pegado" como
+  // borrador para la proxima sesion).
+  const tipoConValor = b.tipoConsultaId !== null && b.tipoConsultaId !== '';
+  return tipoConValor || b.asunto.trim() !== '' || b.descripcion.trim() !== '';
 }
 
 /**
@@ -163,9 +164,16 @@ export function useBorradorDeConsulta(usuarioId: string | null): {
 
   const guardar = useCallback(
     (siguiente: BorradorConsulta) => {
-      setBorrador(siguiente);
+      // NO tocamos `borrador` ni `hayBorrador`: el estado `borrador`
+      // representa el valor CARGADO (de disco o BORRADOR_VACIO), no una
+      // copia en memoria del form. Si lo actualizaramos aca, cada vez que
+      // el usuario tipea se crearia un objeto nuevo y el efecto de
+      // hidratacion de `useBorradorConFormulario` (que depende de
+      // `borrador.borrador`) se volveria a ejecutar, entrando en un
+      // bucle de re-renders ("Maximum update depth exceeded"). El form
+      // es la unica fuente de verdad via `useFormulario`; este hook
+      // solo persiste.
       ultimoValor.current = siguiente;
-      setHayBorrador(borradorTieneDatos(siguiente));
 
       if (usuarioId === null) return;
 

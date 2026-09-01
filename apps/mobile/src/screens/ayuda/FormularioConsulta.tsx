@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { PantallaConTeclado } from '../../components/ui/PantallaConTeclado';
 import { BloqueDeCorreo } from '../../components/ayuda/BloqueDeCorreo';
 import { ListaDeAdjuntos } from '../../components/ayuda/ListaDeAdjuntos';
 import { AreaTexto } from '../../components/ui/AreaTexto';
@@ -6,7 +7,6 @@ import { Aviso } from '../../components/ui/Aviso';
 import { Boton, BotonDeTexto } from '../../components/ui/Boton';
 import { CampoDesplegable } from '../../components/ui/CampoDesplegable';
 import { CampoTexto } from '../../components/ui/CampoTexto';
-import { PantallaConTeclado } from '../../components/ui/PantallaConTeclado';
 import type { Formulario } from '../../hooks/useFormulario';
 import type { ValoresConsulta } from '../../hooks/useEnvioDeConsultaInterno';
 import type { useSelectorDeAdjuntos } from '../../hooks/useSelectorDeAdjuntos';
@@ -24,7 +24,50 @@ import { TEXTOS_AYUDA } from '../../lib/textos';
  * y la persistencia del borrador viven en el padre (`Contacto.tsx`);
  * este componente solo recibe los valores y emite cambios.
  */
-export function FormularioConsulta({
+export function FormularioConsulta(props: {
+  correo: string;
+  asunto: string;
+  descripcion: string;
+  tipoConsultaId: string;
+  opcionesTipoConsulta: readonly {
+    valor: string;
+    etiqueta: EtiquetaTipoConsulta;
+  }[];
+  selector: ReturnType<typeof useSelectorDeAdjuntos>;
+  formulario: Formulario<ValoresConsulta, EnviarConsultaInput>;
+  errorSubida: string | undefined;
+  errorSubidaAdjuntos: Error | null;
+  errorEnvio: Error | null;
+  onTipoConsultaChange: (valor: string) => void;
+  onAsuntoChange: (valor: string) => void;
+  onDescripcionChange: (valor: string) => void;
+}) {
+  return (
+    <CuerpoFormularioConsulta
+      asunto={props.asunto}
+      correo={props.correo}
+      descripcion={props.descripcion}
+      errorEnvio={props.errorEnvio}
+      errorSubida={props.errorSubida}
+      errorSubidaAdjuntos={props.errorSubidaAdjuntos}
+      formulario={props.formulario}
+      onAsuntoChange={props.onAsuntoChange}
+      onDescripcionChange={props.onDescripcionChange}
+      onTipoConsultaChange={props.onTipoConsultaChange}
+      opcionesTipoConsulta={props.opcionesTipoConsulta}
+      selector={props.selector}
+      tipoConsultaId={props.tipoConsultaId}
+    />
+  );
+}
+
+/**
+ * Cuerpo del formulario: bloque de correo + campos + lista de adjuntos +
+ * avisos de error. Encapsulado en un sub-componente para que
+ * `FormularioConsulta` (que solo delega) quede por debajo del limite
+ * de 80 lineas de ESLint.
+ */
+function CuerpoFormularioConsulta({
   correo,
   asunto,
   descripcion,
@@ -93,9 +136,7 @@ export function FormularioConsulta({
         archivos={selector.estado.archivos}
         error={errorSubida}
         habilitado={selector.estado.habilitado}
-        alAdjuntar={() => {
-          void selector.acciones.agregar();
-        }}
+        alAdjuntar={() => void selector.acciones.agregar()}
         alQuitar={selector.acciones.quitar}
       />
       <AvisosDeFormulario
@@ -107,8 +148,7 @@ export function FormularioConsulta({
 }
 
 /**
- * Avisos de error del envio. Separados de `FormularioConsulta` para que
- * esa funcion quede por debajo del limite de lineas de ESLint.
+ * Avisos de error del envio.
  */
 function AvisosDeFormulario({
   errorSubidaAdjuntos,
@@ -130,8 +170,7 @@ function AvisosDeFormulario({
 /**
  * Pie del formulario: boton "Enviar consulta" con su estado cargando y,
  * debajo, una accion secundaria para vaciar todos los campos y los
- * adjuntos (empezar de cero). Encapsulado para que `FormularioConsulta`
- * (y el padre) queden por debajo del limite de lineas.
+ * adjuntos (empezar de cero).
  */
 export function PieDeFormularioDeConsulta({
   enviando,
