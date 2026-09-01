@@ -20,7 +20,7 @@ export interface PropsCampoTexto {
   error?: string | undefined;
   obligatorio?: boolean;
   placeholder?: string;
-  /** Ícono a la izquierda: sobre para el correo, candado para la contraseña. */
+  /** A?cono a la izquierda: sobre para el correo, candado para la contraseA±a. */
   icono?: ReactNode;
   /** Control a la derecha: el toggle de visibilidad de PAN-AUT-03. */
   accion?: ReactNode;
@@ -29,6 +29,12 @@ export interface PropsCampoTexto {
   autoCompletar?:
     'email' | 'name' | 'family-name' | 'password' | 'password-new' | 'off';
   mayusculas?: 'none' | 'words' | 'sentences';
+  /**
+   * Longitud maxima del valor. Se pasa al `TextInput` nativo, que
+   * trunca la entrada. Esta validacion la refuerza el schema de zod en
+   * el server; lo de aca es solo UX.
+   */
+  maxLength?: number;
   className?: string;
 }
 
@@ -46,6 +52,7 @@ export function CampoTexto({
   tipoTeclado,
   autoCompletar = 'off',
   mayusculas = 'none',
+  maxLength,
   className = '',
 }: PropsCampoTexto) {
   const estiloPlaceholder = useResolveClassNames('text-text-disabled');
@@ -76,6 +83,7 @@ export function CampoTexto({
           autoComplete={autoCompletar}
           autoCapitalize={mayusculas}
           autoCorrect={false}
+          maxLength={maxLength}
           className="flex-1 text-body text-text-primary"
           accessibilityLabel={etiqueta}
           accessibilityLabelledBy={`${nombre}-label`}
