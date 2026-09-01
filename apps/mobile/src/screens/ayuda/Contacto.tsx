@@ -15,8 +15,7 @@ import {
   PieDeFormularioDeConsulta,
 } from './FormularioConsulta';
 
-export type DialogoConsulta =
-  null | 'borrador' | 'confirmar' | 'exito' | 'error';
+export type DialogoConsulta = null | 'confirmar' | 'exito' | 'error';
 
 /**
  * PAN-AYU-03 · Formulario "Contactar al soporte" (US-AYU-03).
@@ -68,10 +67,6 @@ function FlujoDeEnvio({
 
   const { tipoConsultaId, asunto, descripcion } = envio.valores;
 
-  const abrirDialogoBorrador = useCallback(() => {
-    setDialogo('borrador');
-  }, []);
-
   useBorradorConFormulario({
     borrador,
     tipoConsultaId: tipoConsultaId || null,
@@ -80,14 +75,18 @@ function FlujoDeEnvio({
     fijarTipoConsultaId: envio.fijarTipoConsultaId,
     fijarAsunto: envio.fijarAsunto,
     fijarDescripcion: envio.fijarDescripcion,
-    abrirDialogoBorrador,
   });
+
+  const limpiarFormulario = useCallback(() => {
+    envio.reiniciar();
+    selector.acciones.limpiar();
+    void borrador.descartar();
+  }, [envio, selector, borrador]);
 
   const opcionesTipoConsulta = useOpcionesDeTipoConsulta(mapaTipos);
 
   return (
     <VistaConsulta
-      borrador={borrador}
       correo={correo}
       dialogo={dialogo}
       enviarConsulta={envio.enviarConsulta}
@@ -104,7 +103,7 @@ function FlujoDeEnvio({
       fijarAsunto={envio.fijarAsunto}
       fijarDescripcion={envio.fijarDescripcion}
       fijarTipoConsultaId={envio.fijarTipoConsultaId}
-      reiniciar={envio.reiniciar}
+      limpiar={limpiarFormulario}
       reintentar={() => {
         setDialogo(null);
         envio.intentarEnviar();
@@ -134,7 +133,6 @@ function useOpcionesDeTipoConsulta(
 }
 
 function VistaConsulta({
-  borrador,
   correo,
   dialogo,
   enviarConsulta,
@@ -149,10 +147,9 @@ function VistaConsulta({
   fijarAsunto,
   fijarDescripcion,
   fijarTipoConsultaId,
-  reiniciar,
+  limpiar,
   reintentar,
 }: {
-  borrador: ReturnType<typeof useBorradorDeConsulta>;
   correo: string;
   dialogo: DialogoConsulta;
   enviarConsulta: () => void;
@@ -170,7 +167,7 @@ function VistaConsulta({
   fijarAsunto: (v: string) => void;
   fijarDescripcion: (v: string) => void;
   fijarTipoConsultaId: (v: string) => void;
-  reiniciar: () => void;
+  limpiar: () => void;
   reintentar: () => void;
 }) {
   return (
@@ -191,18 +188,19 @@ function VistaConsulta({
         onTipoConsultaChange={fijarTipoConsultaId}
       />
 
-      <PieDeFormularioDeConsulta enviando={enviar} onEnviar={intentarEnviar} />
+      <PieDeFormularioDeConsulta
+        enviando={enviar}
+        onEnviar={intentarEnviar}
+        onLimpiar={limpiar}
+      />
 
       <DialogosConsulta
-        borrador={borrador}
         cerrar={cerrarDialogo}
         correo={correo}
         dialogo={dialogo}
         enviarConsulta={enviarConsulta}
         enviando={enviar}
         onConfirmarError={reintentar}
-        reiniciarFormulario={reiniciar}
-        selector={selector}
       />
     </>
   );

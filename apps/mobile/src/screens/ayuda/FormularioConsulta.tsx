@@ -3,7 +3,7 @@ import { BloqueDeCorreo } from '../../components/ayuda/BloqueDeCorreo';
 import { ListaDeAdjuntos } from '../../components/ayuda/ListaDeAdjuntos';
 import { AreaTexto } from '../../components/ui/AreaTexto';
 import { Aviso } from '../../components/ui/Aviso';
-import { Boton } from '../../components/ui/Boton';
+import { Boton, BotonDeTexto } from '../../components/ui/Boton';
 import { CampoDesplegable } from '../../components/ui/CampoDesplegable';
 import { CampoTexto } from '../../components/ui/CampoTexto';
 import { PantallaConTeclado } from '../../components/ui/PantallaConTeclado';
@@ -98,31 +98,60 @@ export function FormularioConsulta({
         }}
         alQuitar={selector.acciones.quitar}
       />
-      {errorSubidaAdjuntos ? (
-        <Aviso mensaje={errorSubidaAdjuntos.message} tono="error" />
-      ) : null}
-      {errorEnvio ? <Aviso mensaje={errorEnvio.message} tono="error" /> : null}
+      <AvisosDeFormulario
+        errorSubidaAdjuntos={errorSubidaAdjuntos}
+        errorEnvio={errorEnvio}
+      />
     </PantallaConTeclado>
   );
 }
 
 /**
- * Pie del formulario: boton "Enviar consulta" con su estado cargando.
- * Encapsulado para que `FormularioConsulta` quede por debajo del
- * limite de lineas.
+ * Avisos de error del envio. Separados de `FormularioConsulta` para que
+ * esa funcion quede por debajo del limite de lineas de ESLint.
+ */
+function AvisosDeFormulario({
+  errorSubidaAdjuntos,
+  errorEnvio,
+}: {
+  errorSubidaAdjuntos: Error | null;
+  errorEnvio: Error | null;
+}) {
+  return (
+    <>
+      {errorSubidaAdjuntos ? (
+        <Aviso mensaje={errorSubidaAdjuntos.message} tono="error" />
+      ) : null}
+      {errorEnvio ? <Aviso mensaje={errorEnvio.message} tono="error" /> : null}
+    </>
+  );
+}
+
+/**
+ * Pie del formulario: boton "Enviar consulta" con su estado cargando y,
+ * debajo, una accion secundaria para vaciar todos los campos y los
+ * adjuntos (empezar de cero). Encapsulado para que `FormularioConsulta`
+ * (y el padre) queden por debajo del limite de lineas.
  */
 export function PieDeFormularioDeConsulta({
   enviando,
   onEnviar,
+  onLimpiar,
 }: {
   enviando: boolean;
   onEnviar: () => void;
+  onLimpiar: () => void;
 }) {
   return (
     <View className="border-t border-border bg-surface px-4 pb-2 pt-3">
       <Boton cargando={enviando} onPress={onEnviar}>
         {MENSAJES_AYUDA.consulta.botonEnviar}
       </Boton>
+      <View className="items-center">
+        <BotonDeTexto className="text-text-secondary" onPress={onLimpiar}>
+          {TEXTOS_AYUDA.consulta.limpiar}
+        </BotonDeTexto>
+      </View>
     </View>
   );
 }

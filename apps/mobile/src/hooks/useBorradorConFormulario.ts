@@ -5,19 +5,22 @@ import type { useBorradorDeConsulta } from './useBorradorDeConsulta';
  * Sincroniza el formulario de "Contactar al soporte" con el borrador
  * persistido (US-AYU-03, noveno criterio).
  *
- * Concentra tres responsabilidades chiquitas en un solo hook para que
- * la pantalla quede por debajo del limite de 80 lineas de ESLint:
+ * Alcance de este hook:
  *
- *   1. Al cargar el borrador, copia sus valores al state del form.
+ *   1. Al cargar el borrador, copia sus valores al state del form
+ *      (auto-carga sin preguntar).
  *   2. En cada cambio, persiste el state en AsyncStorage.
- *   3. Si hay borrador, abre el dialogo de "borrador guardado".
+ *
+ * La carga del borrador es AUTOMATICA: el formulario se hidrata con lo
+ * guardado al entrar, sin dialogo de confirmacion. Si el usuario quiso
+ * empezar de cero, usa el boton "Limpiar" (ver `FlujoDeEnvio`), que
+ * reinicia el formulario, vacia los adjuntos y descarta el borrador.
  *
  * Las dependencias de los `useEffect` son las referencias ESTABLES
  * (`set` de `useState`, `borrador.guardar` y los primitivos
  * `borrador.cargado`/`borrador.hayBorrador`). Si se dependiera del
- * objeto `borrador` completo o de un `fijar`/`abrirDialogoBorrador`
- * construidos inline, cada render los recrearia y el efecto correria
- * en bucle infinito ("Maximum update depth exceeded").
+ * objeto `borrador` completo o de un `fijar` construidos inline, cada
+ * render los recrearia y el efecto correria en bucle infinito.
  */
 export function useBorradorConFormulario({
   borrador,
@@ -27,7 +30,6 @@ export function useBorradorConFormulario({
   fijarTipoConsultaId,
   fijarAsunto,
   fijarDescripcion,
-  abrirDialogoBorrador,
 }: {
   borrador: ReturnType<typeof useBorradorDeConsulta>;
   tipoConsultaId: string | null;
@@ -36,7 +38,6 @@ export function useBorradorConFormulario({
   fijarTipoConsultaId: (v: string) => void;
   fijarAsunto: (v: string) => void;
   fijarDescripcion: (v: string) => void;
-  abrirDialogoBorrador: () => void;
 }) {
   // (1) Hidratar el form con el borrador cuando termina de cargar.
   //
@@ -70,11 +71,4 @@ export function useBorradorConFormulario({
     if (!cargado) return;
     guardar({ tipoConsultaId, asunto, descripcion });
   }, [asunto, descripcion, tipoConsultaId, cargado, guardar]);
-
-  // (3) Mostrar el dialogo de "borrador guardado" al volver a entrar.
-  useEffect(() => {
-    if (borrador.cargado && borrador.hayBorrador) {
-      abrirDialogoBorrador();
-    }
-  }, [borrador.cargado, borrador.hayBorrador, abrirDialogoBorrador]);
 }

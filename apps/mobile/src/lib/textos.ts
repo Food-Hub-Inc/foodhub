@@ -271,6 +271,8 @@ export const TEXTOS_AYUDA = {
     tamanoDeAdjunto: (texto: string) => texto,
     /** Etiqueta accesible del boton Quitar. */
     quitarAccesible: (nombre: string) => `Quitar el adjunto ${nombre}`,
+    /** Accion secundaria que vacia todos los campos y los adjuntos. */
+    limpiar: 'Limpiar todos los campos',
   },
 } as const;
 
