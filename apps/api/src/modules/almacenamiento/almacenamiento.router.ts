@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import {
+  solicitarUrlCargaAdjuntoTicketSchema,
   solicitarUrlDeCargaCategoriaSchema,
   solicitarUrlDeCargaImagenChatSchema,
   solicitarUrlDeCargaPlatoSchema,
@@ -133,3 +134,30 @@ almacenamientoRouter.post('/imagen-chat/:conversacionId', async (req, res) => {
   });
   res.status(201).json(urlDeCarga);
 });
+
+/**
+ * US-AYU-03 - Adjunto JPG/PNG/PDF de hasta 5 MB para una consulta al soporte.
+ *
+ * Cualquier cliente o cocinero autenticado puede pedir una URL de carga: el
+ * ticket lo va a crear el mismo usuario mas tarde en `POST /soporte/tickets`,
+ * y el id de la fila en `adjunto_ticket` lo resuelve la API mirando el
+ * `url` que devuelve el cliente.
+ *
+ * Mismo criterio que `/foto-perfil`: la ruta del archivo la arma el servicio
+ * con `req.usuario.id`, asi que un cliente no puede pisar el adjunto de otro
+ * ni manipular la URL. La validacion de tamano y formato la hace `zod`
+ * (ver `solicitarUrlCargaAdjuntoTicketSchema`), y un rechazo del schema se
+ * traduce en un 400 con el mensaje literal del criterio.
+ */
+almacenamientoRouter.post(
+  '/adjunto-ticket',
+  requiereRol('CLIENTE', 'COCINERO'),
+  async (req, res) => {
+    const urlDeCarga =
+      await almacenamientoService.crearUrlDeCargaDeAdjuntoTicket({
+        usuarioId: sesionDe(req).id,
+        datos: solicitarUrlCargaAdjuntoTicketSchema.parse(req.body),
+      });
+    res.status(201).json(urlDeCarga);
+  },
+);

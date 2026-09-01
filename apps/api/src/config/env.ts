@@ -130,6 +130,25 @@ const envSchema = z.object({
    */
   STORAGE_BUCKET_MENSAJES: z.string().default('mensajes'),
   STORAGE_MAX_IMAGEN_CHAT_MB: z.coerce.number().positive().default(8),
+
+  // --- Correo transaccional (US-AYU-03) -------------------------------------
+  /**
+   * API key de Resend, el servicio que envia el correo de acuse de recibo del
+   * formulario de contacto al soporte (US-AYU-03). Es OBLIGATORIA en
+   * produccion: sin un canal de salida, la consulta queda registrada pero el
+   * usuario no recibe el acuse, y eso rompe el criterio de aceptacion.
+   *
+   * En desarrollo es opcional para no bloquear a quien levanta la API sin
+   * todavia tener una cuenta en Resend: si falta, `lib/email.ts` loguea con
+   * `info` y simula un envio exitoso. La idea es que la consulta se cree
+   * normalmente y la falla del correo se vea en los logs, no en pantalla.
+   */
+  RESEND_API_KEY: z.string().optional(),
+  /**
+   * Remitente del correo (`From:`). El formato es el de Resend:
+   * `"FoodHub <soporte@foodhub.com>"`. Tambien opcional en dev.
+   */
+  RESEND_REMITENTE: z.string().default('FoodHub <soporte@foodhub.com>'),
 });
 
 const parsed = envSchema.safeParse(process.env);
