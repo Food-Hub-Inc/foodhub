@@ -15,6 +15,7 @@ import {
   useFonts,
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { GateDeSesion } from '../src/components/GateDeSesion';
+import { useNotificacionesPush } from '../src/hooks/useNotificacionesPush';
 import '../global.css';
 
 /**
@@ -58,6 +59,16 @@ const queryClient = new QueryClient({
   },
 });
 
+/**
+ * US-NOT · Registra el token push, escucha los taps sobre un push y navega al
+ * recurso relacionado. Va dentro de `GateDeSesion` -necesita saber si hay
+ * sesión- y no dibuja nada.
+ */
+function NotificacionesPush(): null {
+  useNotificacionesPush();
+  return null;
+}
+
 export default function LayoutRaiz() {
   const [fuentesListas, errorFuentes] = useFonts({
     PlusJakartaSans_400Regular,
@@ -93,6 +104,7 @@ export default function LayoutRaiz() {
                 Stack: necesita React Query para preguntar el perfil, y tiene que
                 poder redirigir antes de que se dibuje ninguna pantalla. */}
               <GateDeSesion>
+                <NotificacionesPush />
                 <Stack screenOptions={{ headerShown: false }} />
               </GateDeSesion>
             </BottomSheetModalProvider>

@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { BarraDeBusqueda } from '../../components/ui/BarraDeBusqueda';
 import { Boton } from '../../components/ui/Boton';
+import { BotonDeNotificaciones } from '../../components/ui/BotonDeNotificaciones';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
@@ -104,7 +105,11 @@ export function MisPublicaciones() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <EncabezadoPantalla titulo={TEXTOS_PUBLICACIONES.titulo} />
+      {/* US-NOT-07 · La campana del menú de inicio del cocinero (PAN-PUB-01). */}
+      <EncabezadoPantalla
+        titulo={TEXTOS_PUBLICACIONES.titulo}
+        accion={<BotonDeNotificaciones />}
+      />
 
       <BarraSuperior
         busqueda={busqueda}

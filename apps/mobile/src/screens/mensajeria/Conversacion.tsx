@@ -13,6 +13,7 @@ import {
   useArchivarConversacion,
   useConversacion,
 } from '../../hooks/useMensajeria';
+import { usePresenciaDeChat } from '../../hooks/usePresenciaDeChat';
 import { useSesion } from '../../hooks/useSesion';
 import { mensajeDeError } from '../../lib/api';
 import { TEXTOS_MENSAJERIA } from '../../lib/textos';
@@ -46,6 +47,10 @@ export function Conversacion({ conversacionId }: { conversacionId: string }) {
   const sesion = useSesion((estado) => estado.sesion);
   const detalle = useConversacion(conversacionId);
   const miId = sesion?.user.id;
+
+  // US-NOT-02 · mientras esta pantalla está enfocada, un mensaje nuevo de este
+  // hilo no dispara push (ya se ve acá por Realtime).
+  usePresenciaDeChat(conversacionId);
 
   if (detalle.isError) {
     return (
