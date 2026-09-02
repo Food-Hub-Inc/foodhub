@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   MENSAJES_CONFIGURACION,
   MENSAJES_PUBLICACION,
+  MENSAJES_RESENA,
   MENSAJES_USUARIO,
 } from '../constants/mensajes.js';
 
@@ -139,4 +140,40 @@ export const solicitarUrlDeCargaPlatoSchema = z.object({
 
 export type SolicitarUrlDeCargaPlatoInput = z.infer<
   typeof solicitarUrlDeCargaPlatoSchema
+>;
+
+/**
+ * US-RES-01 - "Foto del plato (Archivo de imagen, máximo 5 MB) — opcional".
+ *
+ * Constantes propias por el mismo motivo que las del plato: el criterio es
+ * otro (US-RES-01, no US-PUB-01) y los límites de uno no deberían moverse al
+ * tocar los del otro. Que hoy coincidan los tres formatos y los 5 MB es una
+ * coincidencia del documento, no una regla compartida.
+ *
+ * QUIEN SUBE ACA ES UN CLIENTE, no un cocinero. Es la única subida del sistema
+ * que hace el comprador sobre contenido público, y por eso el endpoint pide
+ * rol CLIENTE en lugar de reusar `/foto-plato`, que exige COCINERO.
+ */
+export const FORMATOS_FOTO_RESENA = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+] as const;
+export type FormatoFotoResena = (typeof FORMATOS_FOTO_RESENA)[number];
+
+export const MAXIMO_FOTO_RESENA_BYTES = 5 * 1024 * 1024;
+
+export const solicitarUrlDeCargaFotoResenaSchema = z.object({
+  mimeType: z.enum(FORMATOS_FOTO_RESENA, {
+    message: MENSAJES_RESENA.fotoInvalida,
+  }),
+  tamano: z
+    .number()
+    .int()
+    .positive(MENSAJES_RESENA.fotoInvalida)
+    .max(MAXIMO_FOTO_RESENA_BYTES, MENSAJES_RESENA.fotoInvalida),
+});
+
+export type SolicitarUrlDeCargaFotoResenaInput = z.infer<
+  typeof solicitarUrlDeCargaFotoResenaSchema
 >;

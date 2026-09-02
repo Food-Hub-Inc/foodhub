@@ -1233,6 +1233,15 @@ export const MENSAJES_RESENA = {
   /** PROPIO - el cocinero nunca tuvo un pedido aceptado con ese cliente. */
   sinDerechoACalificar:
     'Solo podés calificar a un cliente con el que hayas tenido un pedido aceptado.',
+
+  /**
+   * PROPIO - la foto adjunta no es una imagen admitida o supera los 5 MB.
+   *
+   * RF080 fija el tope ("foto del plato en formato de imagen de hasta 5 MB")
+   * pero no redacta el rechazo. Se calca la forma de `MENSAJES_PUBLICACION` y
+   * `MENSAJES_USUARIO`, que ya resuelven lo mismo para el plato y el perfil.
+   */
+  fotoInvalida: 'La foto debe ser una imagen JPG, PNG o WEBP de hasta 5 MB.',
 } as const;
 
 /**
