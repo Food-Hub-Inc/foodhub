@@ -1,8 +1,11 @@
 import {
   keepPreviousData,
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
+  type InfiniteData,
+  type UseInfiniteQueryResult,
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query';
@@ -128,19 +131,28 @@ export function useEditarResena(
 // ---------------------------------------------------------------------------
 
 /**
- * Listado y resumen de reseñas de un cocinero.
+ * Listado y resumen de reseñas de un cocinero, paginado de a bloques.
+ *
+ * US-RES-03 pide diez reseñas por defecto y bloques adicionales de diez al
+ * hacer scroll, así que es `useInfiniteQuery` y no `useQuery`: la pantalla
+ * acumula las páginas en lugar de reemplazarlas.
  *
  * `keepPreviousData` por el mismo motivo que el dashboard: al cambiar el orden
  * o un filtro la clave cambia, y sin esto la sección entera parpadearía a
  * esqueleto en vez de actualizar el listado en el lugar.
+ *
+ * EL CORTE SE CALCULA CONTRA `total` Y NO CONTRA EL LARGO DE LA ÚLTIMA PÁGINA.
+ * Una página puede venir corta sin ser la última si la moderación ocultó alguna
+ * fila entre dos consultas; comparar cuántas se acumularon contra el total que
+ * informa el servidor no depende de ese detalle.
  */
 export function useResenasDeCocinero(
   cocineroId: string,
   filtros: Partial<FiltrosResenas>,
-): UseQueryResult<PaginaResenas, Error> {
+): UseInfiniteQueryResult<InfiniteData<PaginaResenas>, Error> {
   const sesion = useSesion((estado) => estado.sesion);
 
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: [
       ...CLAVE_RESENAS,
       'cocinero',
@@ -148,9 +160,14 @@ export function useResenasDeCocinero(
       filtros.orden ?? 'MAS_RECIENTES',
       (filtros.estrellas ?? []).join(','),
       filtros.soloConFoto ?? false,
-      filtros.pagina ?? 1,
     ],
-    queryFn: () => obtenerResenasDeCocinero(cocineroId, filtros),
+    queryFn: ({ pageParam }) =>
+      obtenerResenasDeCocinero(cocineroId, { ...filtros, pagina: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (ultima) =>
+      ultima.pagina * ultima.porPagina < ultima.total
+        ? ultima.pagina + 1
+        : undefined,
     enabled: sesion !== null && cocineroId.length > 0,
     placeholderData: keepPreviousData,
     staleTime: 60_000,

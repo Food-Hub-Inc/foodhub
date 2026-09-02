@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
+import type {
+  InfiniteData,
+  UseInfiniteQueryResult,
+} from '@tanstack/react-query';
 import {
   MENSAJES_RESENA,
   ORDEN_RESENAS,
   type OrdenResenas,
+  type PaginaResenas,
 } from '@foodhub/shared';
 import { IconoEstrella } from '../../components/iconos';
 import { Esqueleto } from '../../components/ui/Esqueleto';
@@ -37,14 +42,12 @@ export function ListaDeResenas({
   accionVacio?: React.ReactNode;
   encabezado?: React.ReactNode;
 }) {
-  const [orden, setOrden] = useState<OrdenResenas>('MAS_RECIENTES');
-  const [estrellas, setEstrellas] = useState<number[]>([]);
-  const [soloConFoto, setSoloConFoto] = useState(false);
+  const filtros = useFiltrosDeResenas();
 
   const consulta = useResenasDeCocinero(cocineroId, {
-    orden,
-    estrellas,
-    soloConFoto,
+    orden: filtros.orden,
+    estrellas: filtros.estrellas,
+    soloConFoto: filtros.soloConFoto,
   });
 
   if (consulta.isError) {
@@ -68,8 +71,70 @@ export function ListaDeResenas({
     );
   }
 
-  const { datos, resumen } = consulta.data;
-  const hayFiltros = estrellas.length > 0 || soloConFoto;
+  return (
+    <CuerpoDelListado
+      accionVacio={accionVacio}
+      consulta={consulta}
+      encabezado={encabezado}
+      filtros={filtros}
+    />
+  );
+}
+
+/**
+ * Estado de orden y filtros, agrupado para que no viaje suelto por tres
+ * componentes. Vive acá y no en el cuerpo del listado porque la consulta
+ * -que se hace un nivel más arriba- depende de él.
+ */
+interface ControlesDeFiltro {
+  orden: OrdenResenas;
+  estrellas: number[];
+  soloConFoto: boolean;
+  cambiarOrden: (orden: OrdenResenas) => void;
+  cambiarEstrellas: (estrellas: number[]) => void;
+  cambiarSoloConFoto: (valor: boolean) => void;
+}
+
+function useFiltrosDeResenas(): ControlesDeFiltro {
+  const [orden, cambiarOrden] = useState<OrdenResenas>('MAS_RECIENTES');
+  const [estrellas, cambiarEstrellas] = useState<number[]>([]);
+  const [soloConFoto, cambiarSoloConFoto] = useState(false);
+
+  return {
+    orden,
+    estrellas,
+    soloConFoto,
+    cambiarOrden,
+    cambiarEstrellas,
+    cambiarSoloConFoto,
+  };
+}
+
+/**
+ * El listado propiamente dicho, con el scroll infinito de US-RES-03: diez
+ * reseñas por defecto y bloques adicionales de diez al llegar al final.
+ *
+ * El resumen sale de la PRIMERA página y no de la última: es el mismo objeto en
+ * todas -lo calcula el servidor sobre el total, no sobre el bloque- y tomarlo
+ * de `pages[0]` lo deja quieto mientras se cargan las siguientes.
+ */
+function CuerpoDelListado({
+  consulta,
+  filtros,
+  accionVacio,
+  encabezado,
+}: {
+  consulta: UseInfiniteQueryResult<InfiniteData<PaginaResenas>, Error>;
+  filtros: ControlesDeFiltro;
+  accionVacio?: React.ReactNode;
+  encabezado?: React.ReactNode;
+}) {
+  const paginas = consulta.data?.pages ?? [];
+  const datos = paginas.flatMap((pagina) => pagina.datos);
+  const resumen = paginas[0]?.resumen;
+  const hayFiltros = filtros.estrellas.length > 0 || filtros.soloConFoto;
+
+  if (!resumen) return null;
 
   return (
     <FlatList
@@ -83,22 +148,24 @@ export function ListaDeResenas({
           total={resumen.total}
         />
       }
+      ListFooterComponent={
+        consulta.isFetchingNextPage ? (
+          <Esqueleto className="h-28 rounded-md" />
+        ) : null
+      }
       ListHeaderComponent={
         <View className="gap-3 pt-4">
           {encabezado}
           <ResumenDeResenas resumen={resumen} />
-          {resumen.total === 0 ? null : (
-            <Filtros
-              estrellas={estrellas}
-              onCambiarEstrellas={setEstrellas}
-              onCambiarOrden={setOrden}
-              onCambiarSoloConFoto={setSoloConFoto}
-              orden={orden}
-              soloConFoto={soloConFoto}
-            />
-          )}
+          {resumen.total === 0 ? null : <Filtros filtros={filtros} />}
         </View>
       }
+      onEndReached={() => {
+        if (consulta.hasNextPage && !consulta.isFetchingNextPage) {
+          void consulta.fetchNextPage();
+        }
+      }}
+      onEndReachedThreshold={0.5}
       renderItem={({ item }) => <TarjetaDeResena resena={item} />}
     />
   );
@@ -146,21 +213,9 @@ function VacioDelListado({
  * las respuestas (US-RES-05). Las dos historias van en el segundo PR del
  * módulo, y una opción que siempre devuelve lo mismo es peor que no ofrecerla.
  */
-function Filtros({
-  orden,
-  estrellas,
-  soloConFoto,
-  onCambiarOrden,
-  onCambiarEstrellas,
-  onCambiarSoloConFoto,
-}: {
-  orden: OrdenResenas;
-  estrellas: number[];
-  soloConFoto: boolean;
-  onCambiarOrden: (orden: OrdenResenas) => void;
-  onCambiarEstrellas: (estrellas: number[]) => void;
-  onCambiarSoloConFoto: (valor: boolean) => void;
-}) {
+function Filtros({ filtros }: { filtros: ControlesDeFiltro }) {
+  const { orden, estrellas, soloConFoto } = filtros;
+
   return (
     <View className="gap-2">
       <View className="flex-row flex-wrap gap-2">
@@ -169,7 +224,7 @@ function Filtros({
             activo={orden === valor}
             key={valor}
             onPress={() => {
-              onCambiarOrden(valor);
+              filtros.cambiarOrden(valor);
             }}
             texto={ETIQUETA_DE_ORDEN[valor]}
           />
@@ -182,7 +237,7 @@ function Filtros({
             activo={estrellas.includes(nivel)}
             key={nivel}
             onPress={() => {
-              onCambiarEstrellas(
+              filtros.cambiarEstrellas(
                 estrellas.includes(nivel)
                   ? estrellas.filter((n) => n !== nivel)
                   : [...estrellas, nivel],
@@ -195,7 +250,7 @@ function Filtros({
         <Chip
           activo={soloConFoto}
           onPress={() => {
-            onCambiarSoloConFoto(!soloConFoto);
+            filtros.cambiarSoloConFoto(!soloConFoto);
           }}
           texto={MENSAJES_RESENA.filtroSoloConFoto}
         />
