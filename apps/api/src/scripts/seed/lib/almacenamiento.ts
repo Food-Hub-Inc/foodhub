@@ -23,6 +23,7 @@ import { supabaseAdmin } from '../../../lib/supabase.js';
  *   publicaciones/{cocineroId}/{marcaDeTiempo}.jpg
  *   configuracion/{categoriaId}/{marcaDeTiempo}.jpg
  *   mensajes/{conversacionId}/{marcaDeTiempo}.jpg
+ *   tickets/{ticketId}/{marcaDeTiempo}.{jpg|pdf}
  *
  * Asi la limpieza de fotos anteriores y el borrado en cascada que hace la API
  * encuentran los archivos donde esperan encontrarlos.
@@ -56,13 +57,14 @@ function nombreDeArchivo(extension: string): string {
 }
 
 export type Bucket =
-  'perfiles' | 'publicaciones' | 'configuracion' | 'mensajes';
+  'perfiles' | 'publicaciones' | 'configuracion' | 'mensajes' | 'tickets';
 
 const NOMBRE_BUCKET: Record<Bucket, string> = {
   perfiles: env.STORAGE_BUCKET_PERFILES,
   publicaciones: env.STORAGE_BUCKET_PUBLICACIONES,
   configuracion: env.STORAGE_BUCKET_CONFIGURACION,
   mensajes: env.STORAGE_BUCKET_MENSAJES,
+  tickets: env.STORAGE_BUCKET_TICKETS,
 };
 
 function tipoMimeDe(archivoLocal: string): string {
@@ -167,4 +169,5 @@ export const BUCKETS: readonly Bucket[] = [
   'publicaciones',
   'configuracion',
   'mensajes',
+  'tickets',
 ];

@@ -403,6 +403,124 @@ export const MENSAJES_AYUDA = {
     /** [PROPIO] Validacion server-side: el horario no puede estar vacio. */
     horarioVacio: 'El horario de atención no puede estar vacío.',
   },
+
+  /**
+   * US-AYU-03 - Formulario de envio de consulta, sugerencia o reporte
+   * (PAN-AYU-03). La pantalla carga el correo del usuario como solo
+   * lectura desde la sesion; los tres campos de texto son obligatorios
+   * y los adjuntos son opcionales, hasta tres, en formato JPG/PNG/PDF
+   * de hasta 5 MB.
+   *
+   * Los mensajes del criterio se transcriben como `LITERAL`; los que la
+   * documentacion no fija quedan como `PROPIO` y se distinguen en la
+   * declaracion. La lista de los CUATRO tipos de consulta se conserva
+   * como bloque aparte (`tTipoConsulta`) porque la UI la consume tal
+   * cual y porque sumarla como cuatro claves sueltas en este bloque
+   * impediria tipar el `CampoDesplegable` que las muestra.
+   */
+  consulta: {
+    /** [PROPIO] Titulo de la pantalla del formulario (PAN-AYU-03). */
+    titulo: 'Contactar al soporte',
+
+    /** [PROPIO] Etiqueta del correo del usuario, mostrado como solo lectura. */
+    correoTitulo: 'Tu correo electrónico',
+
+    /** [PROPIO] Etiqueta del desplegable de tipo de consulta. */
+    etiquetaTipoConsulta: 'Tipo de consulta',
+    /** [PROPIO] Etiqueta del campo de asunto. */
+    etiquetaAsunto: 'Asunto',
+    /** [PROPIO] Etiqueta del area de texto de la descripcion. */
+    etiquetaDescripcion: 'Descripción',
+    /** [PROPIO] Etiqueta del bloque de adjuntos. */
+    etiquetaAdjuntos: 'Archivos adjuntos',
+
+    /** [PROPIO] Placeholder del campo asunto. */
+    placeholderAsunto: 'Contanos brevemente de qué se trata',
+    /** [PROPIO] Placeholder del area de descripcion. */
+    placeholderDescripcion: 'Detallá tu consulta, sugerencia o reporte',
+
+    /** [PROPIO] Accion que abre el selector de archivos. */
+    botonAdjuntar: 'Adjuntar archivo',
+    /** [PROPIO] Accion que quita un adjunto ya elegido. */
+    botonQuitar: 'Quitar',
+    /** [PROPIO] Accion principal que abre la confirmacion de envio. */
+    botonEnviar: 'Enviar consulta',
+
+    /**
+     * LITERAL - US-AYU-03, "Tipo de consulta (Consulta general / Reporte de
+     * problema / Sugerencia de mejora / Denuncia) - obligatorio". La barra
+     * separa los cuatro valores y no es texto a mostrar; se transcriben
+     * cuatro entradas.
+     */
+    tTipoConsulta: {
+      /** [PROPIO] Etiqueta del desplegable cuando no hay valor elegido. */
+      placeholder: 'Elegí un tipo de consulta',
+      consultaGeneral: 'Consulta general',
+      reporteProblema: 'Reporte de problema',
+      sugerenciaMejora: 'Sugerencia de mejora',
+      denuncia: 'Denuncia',
+    },
+
+    /** LITERAL - US-AYU-03, longitud maxima del asunto. */
+    asuntoMaximo: 'El asunto no puede tener más de 100 caracteres.',
+    /** LITERAL - US-AYU-03, longitud maxima de la descripcion. */
+    descripcionMaxima: 'La descripción no puede tener más de 1500 caracteres.',
+
+    /**
+     * LITERAL - US-AYU-03, "El archivo debe ser JPG, PNG o PDF de hasta 5
+     * MB." La cadena vive tambien en `schemas/soporte.schema.ts` para que
+     * el `zod` del server la muestre sin un import circular; los dos
+     * lugares tienen que coincidir palabra por palabra.
+     */
+    adjuntoInvalido: 'El archivo debe ser JPG, PNG o PDF de hasta 5 MB.',
+
+    /** LITERAL - US-AYU-03, "Podés adjuntar hasta 3 archivos por consulta." */
+    maximoAdjuntos: 'Podés adjuntar hasta 3 archivos por consulta.',
+
+    /**
+     * LITERAL - US-AYU-03, dialogo de confirmacion previo al envio. La
+     * oracion completa va como titulo (mismo criterio de DialogoSevero en
+     * otros modulos) y se omite el `mensaje` para que el modal no duplique
+     * la pregunta.
+     */
+    confirmarEnvioTitulo:
+      '¿Confirmás el envío de tu consulta? Recibirás una respuesta en tu correo electrónico.',
+    /** LITERAL - US-AYU-03, opcion que confirma el envio. */
+    confirmarEnvioBotonSi: 'Sí, enviar',
+    /** LITERAL - US-AYU-03, opcion que vuelve al formulario. */
+    confirmarEnvioBotonNo: 'No, volver',
+
+    /**
+     * LITERAL - US-AYU-03, exito del envio. El placeholder [correo] del
+     * criterio se interpola con la direccion del usuario que envia.
+     */
+    envioExitoso: (correo: string) =>
+      `Consulta enviada con éxito. Te responderemos a ${correo} en un plazo aproximado de 48 horas hábiles.`,
+
+    /**
+     * LITERAL - US-AYU-03, mensaje que se muestra cuando falla la conexion
+     * con el servidor de correo. El mismo dialogo lleva las dos opciones.
+     */
+    errorEnvio:
+      'No pudimos enviar tu consulta. Revisa tu conexión a internet y vuelve a intentarlo.',
+    /** LITERAL - US-AYU-03, reintenta el envio sin cambios. */
+    errorEnvioBotonReintentar: 'Reintentar',
+    /** LITERAL - US-AYU-03, guarda el formulario como borrador local. */
+    errorEnvioBotonBorrador: 'Guardar borrador',
+
+    /**
+     * LITERAL - US-AYU-03, "Conserve los datos del formulario de forma
+     * local. Al volver a ingresar, muestre el formulario precargado y el
+     * mensaje: 'Tenés un borrador guardado. ¿Querés continuar editándolo o
+     * empezar uno nuevo?' con los botones 'Continuar' y 'Empezar nuevo'."
+     */
+    borradorTitulo:
+      'Tenés un borrador guardado. ¿Querés continuar editándolo o empezar uno nuevo?',
+    /** LITERAL - US-AYU-03, opcion que precarga el borrador. */
+    borradorBotonContinuar: 'Continuar',
+    /** LITERAL - US-AYU-03, opcion que descarta el borrador. */
+    borradorBotonNuevo: 'Empezar nuevo',
+  },
 } as const;
 
 /**

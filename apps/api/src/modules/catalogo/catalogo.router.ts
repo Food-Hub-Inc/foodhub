@@ -118,3 +118,17 @@ catalogoRouter.get('/informacion-de-contacto', async (_req, res) => {
   const contacto = await catalogoService.obtenerInformacionDeContacto();
   res.json(contacto);
 });
+
+/**
+ * US-AYU-03 - Tipos de consulta activos para el desplegable del formulario
+ * de "Contactar al soporte" (PAN-AYU-03).
+ *
+ * Cualquier usuario autenticado puede consultarlos: lo mismo que las
+ * categorias del feed o los motivos de cancelacion. El cliente cruza el
+ * resultado con `ETIQUETAS_TIPO_CONSULTA` para decidir que entradas
+ * mostrarle al usuario.
+ */
+catalogoRouter.get('/tipos-consulta', async (_req, res) => {
+  const tipos = await catalogoService.listarTiposConsultaActivos();
+  res.json(tipos);
+});

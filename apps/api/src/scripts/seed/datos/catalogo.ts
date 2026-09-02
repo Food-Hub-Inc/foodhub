@@ -190,6 +190,12 @@ export const TIPOS_CONSULTA: readonly { nombre: string; activo: boolean }[] = [
   { nombre: 'Sugerencia de mejora', activo: true },
   { nombre: 'Consulta general', activo: true },
   { nombre: 'Facturación', activo: false },
+  // US-AYU-03: el formulario de "Contactar al soporte" muestra CUATRO valores
+  // literales (Consulta general, Reporte de problema, Sugerencia de mejora,
+  // Denuncia). Los dos que faltaban contra la base se agregan aca para que un
+  // reset no los pierda; la migracion 0013 los siembra sin resetear.
+  { nombre: 'Reporte de problema', activo: true },
+  { nombre: 'Denuncia', activo: true },
 ];
 
 /** Los dos roles que segmentan el contenido de ayuda (migracion 0002). */

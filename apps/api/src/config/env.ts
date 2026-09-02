@@ -130,6 +130,40 @@ const envSchema = z.object({
    */
   STORAGE_BUCKET_MENSAJES: z.string().default('mensajes'),
   STORAGE_MAX_IMAGEN_CHAT_MB: z.coerce.number().positive().default(8),
+
+  /**
+   * US-AYU-03 - Bucket dedicado para los adjuntos de las consultas de soporte.
+   *
+   * Se separa de `STORAGE_BUCKET_CONFIGURACION` porque ese bucket aloja
+   * archivos administrados por el backoffice (logo institucional, imagenes
+   * de categorias) con una configuracion de `allowedMimeTypes` que NO
+   * incluye `application/pdf`. Un PDF de consulta de soporte seria rechazado
+   * con 415. Un bucket dedicado permite fijar la lista de MIME types del
+   * criterio (image/jpeg, image/png, application/pdf) sin afectar al resto.
+   *
+   * Debe crearse PUBLICO en Supabase Storage: `adjunto_ticket.archivo_url`
+   * se construye con `getPublicUrl` y la URL se sirve directo al cliente.
+   */
+  STORAGE_BUCKET_TICKETS: z.string().default('tickets'),
+
+  // --- Correo transaccional (US-AYU-03) -------------------------------------
+  /**
+   * API key de Resend, el servicio que envia el correo de acuse de recibo del
+   * formulario de contacto al soporte (US-AYU-03). Es OBLIGATORIA en
+   * produccion: sin un canal de salida, la consulta queda registrada pero el
+   * usuario no recibe el acuse, y eso rompe el criterio de aceptacion.
+   *
+   * En desarrollo es opcional para no bloquear a quien levanta la API sin
+   * todavia tener una cuenta en Resend: si falta, `lib/email.ts` loguea con
+   * `info` y simula un envio exitoso. La idea es que la consulta se cree
+   * normalmente y la falla del correo se vea en los logs, no en pantalla.
+   */
+  RESEND_API_KEY: z.string().optional(),
+  /**
+   * Remitente del correo (`From:`). El formato es el de Resend:
+   * `"FoodHub <soporte@foodhub.com>"`. Tambien opcional en dev.
+   */
+  RESEND_REMITENTE: z.string().default('FoodHub <soporte@foodhub.com>'),
 });
 
 const parsed = envSchema.safeParse(process.env);
