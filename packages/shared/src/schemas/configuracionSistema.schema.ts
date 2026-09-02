@@ -22,6 +22,7 @@ export const CLAVE_PARAMETRO = {
   pedidoExpiracionMinutos: 'pedido_expiracion_minutos',
   resenaMinimoParaPromedio: 'resena_minimo_para_promedio',
   resenaLimiteDiasParaResenar: 'resena_limite_dias_para_resenar',
+  resenaTerminosModeracion: 'resena_terminos_moderacion',
   plataformaNombre: 'plataforma_nombre',
   plataformaLogoUrl: 'plataforma_logo_url',
   plataformaCorreoSoporte: 'plataforma_correo_soporte',
@@ -98,6 +99,15 @@ export const PARAMETROS_PEDIDOS_DEFAULT: ParametrosPedidos = {
 // Parametros de resenas
 // ---------------------------------------------------------------------------
 
+/**
+ * Tope de terminos del filtro de moderacion.
+ *
+ * El filtro recorre la lista por cada comentario que se publica; sin un limite,
+ * una lista cargada sin criterio degrada el alta de cada resena. 200 alcanza de
+ * sobra para el vocabulario que el equipo quiera vetar.
+ */
+export const MAXIMO_TERMINOS_MODERACION = 200;
+
 export const parametrosResenasSchema = z.object({
   minimoResenasParaPromedio: z
     .number({ message: 'Ingresá un número válido.' })
@@ -108,12 +118,43 @@ export const parametrosResenasSchema = z.object({
     .int('Debe ser un número entero.')
     .min(1, 'Debe estar entre 1 y 60 días.')
     .max(60, 'Debe estar entre 1 y 60 días.'),
+
+  /**
+   * Terminos que el filtro automatico de moderacion detecta en el comentario de
+   * una resena (RF080) y en la respuesta del cocinero (RF084).
+   *
+   * POR QUE LA LISTA ES UN PARAMETRO Y NO UNA CONSTANTE DEL CODIGO
+   *
+   * Ninguna fuente del proyecto enumera que terminos hay que detectar: los dos
+   * requisitos hablan de "un filtro automatico de moderacion" sin definirlo.
+   * Hornear una lista en el codigo seria inventar un requerimiento, y ademas
+   * cada correccion del vocabulario exigiria un despliegue. Cargarla desde
+   * PAN-ADM-04 deja la decision donde corresponde -en el administrador- y
+   * permite ajustarla en caliente.
+   *
+   * ARRANCA VACIA. Con la lista vacia el filtro no bloquea nada, que es el
+   * comportamiento correcto mientras el equipo no defina el vocabulario: es
+   * preferible no filtrar a filtrar segun un criterio que nadie acordo.
+   */
+  terminosModeracion: z
+    .array(
+      z
+        .string()
+        .trim()
+        .min(1, 'El término no puede estar vacío.')
+        .max(40, 'Un término no puede superar los 40 caracteres.'),
+    )
+    .max(
+      MAXIMO_TERMINOS_MODERACION,
+      `No se pueden cargar más de ${String(MAXIMO_TERMINOS_MODERACION)} términos.`,
+    ),
 });
 export type ParametrosResenas = z.infer<typeof parametrosResenasSchema>;
 
 export const PARAMETROS_RESENAS_DEFAULT: ParametrosResenas = {
   minimoResenasParaPromedio: 3,
   limiteDiasParaResenar: 14,
+  terminosModeracion: [],
 };
 
 // ---------------------------------------------------------------------------

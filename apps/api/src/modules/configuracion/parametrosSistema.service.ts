@@ -64,6 +64,34 @@ function textoDe(mapa: Map<string, string>, clave: string): string {
   return valor;
 }
 
+/**
+ * Lista de terminos guardada en una unica fila de texto, uno por linea.
+ *
+ * Se elige el salto de linea como separador y no la coma porque el campo del
+ * panel es un textarea: una lista por lineas es lo que el administrador ve y
+ * edita, y ademas evita tener que escapar comas dentro de un termino.
+ *
+ * A diferencia de `numeroDe` y `textoDe`, la ausencia de la fila NO es un
+ * error: `resena_terminos_moderacion` se sembro despues que los otros diez
+ * (migracion 0013), asi que un ambiente a medio migrar la puede no tener. La
+ * lista vacia es ademas el valor de fabrica, con el que el filtro no bloquea
+ * nada.
+ */
+function listaDe(mapa: Map<string, string>, clave: string): string[] {
+  return (mapa.get(clave) ?? '')
+    .split('\n')
+    .map((termino) => termino.trim())
+    .filter(Boolean);
+}
+
+/** Serializa la lista al formato de una sola fila de texto. */
+function serializarLista(terminos: readonly string[]): string {
+  return terminos
+    .map((termino) => termino.trim())
+    .filter(Boolean)
+    .join('\n');
+}
+
 /** US-CFG-03 - Los diez parametros vigentes, agrupados por seccion. */
 export async function obtenerParametrosSistema(): Promise<ParametrosSistema> {
   const mapa = await leerMapaDeParametros();
@@ -101,6 +129,10 @@ export async function obtenerParametrosSistema(): Promise<ParametrosSistema> {
       limiteDiasParaResenar: numeroDe(
         mapa,
         CLAVE_PARAMETRO.resenaLimiteDiasParaResenar,
+      ),
+      terminosModeracion: listaDe(
+        mapa,
+        CLAVE_PARAMETRO.resenaTerminosModeracion,
       ),
     },
     institucional: {
@@ -146,6 +178,21 @@ export async function obtenerMinutosDeCancelacion(): Promise<number> {
   return Number.isFinite(minutos) && minutos > 0
     ? minutos
     : PARAMETROS_PEDIDOS_DEFAULT.tiempoCancelacionClienteMinutos;
+}
+
+/**
+ * US-RES-01 a US-RES-03 - Los tres parametros que gobiernan el modulo de
+ * Resenas: el minimo para publicar el promedio, el plazo para resenar y la
+ * lista de terminos del filtro de moderacion.
+ *
+ * Reusa la lectura completa en lugar de consultar las tres filas por separado:
+ * `leerMapaDeParametros` ya resuelve todo en UNA consulta, y tres accesores
+ * sueltos serian tres viajes a la base para lo que hoy cuesta uno. El servicio
+ * de resenas los necesita juntos en cada alta.
+ */
+export async function obtenerParametrosDeResenas(): Promise<ParametrosResenas> {
+  const { resenas } = await obtenerParametrosSistema();
+  return resenas;
 }
 
 // ---------------------------------------------------------------------------
@@ -299,6 +346,9 @@ export async function actualizarParametrosResenas(
       [CLAVE_PARAMETRO.resenaLimiteDiasParaResenar]: String(
         entrada.datos.limiteDiasParaResenar,
       ),
+      [CLAVE_PARAMETRO.resenaTerminosModeracion]: serializarLista(
+        entrada.datos.terminosModeracion,
+      ),
     },
     seccion: 'RESENAS',
     origen: 'guardado',
@@ -319,6 +369,9 @@ export async function restaurarParametrosResenas(
       ),
       [CLAVE_PARAMETRO.resenaLimiteDiasParaResenar]: String(
         PARAMETROS_RESENAS_DEFAULT.limiteDiasParaResenar,
+      ),
+      [CLAVE_PARAMETRO.resenaTerminosModeracion]: serializarLista(
+        PARAMETROS_RESENAS_DEFAULT.terminosModeracion,
       ),
     },
     seccion: 'RESENAS',

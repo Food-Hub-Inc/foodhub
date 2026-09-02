@@ -25,6 +25,7 @@ export * from './schemas/notificacion.schema.js';
 export * from './schemas/pedido.schema.js';
 export * from './schemas/preferenciaNotificacion.schema.js';
 export * from './schemas/publicacion.schema.js';
+export * from './schemas/resena.schema.js';
 export * from './schemas/terminos.schema.js';
 export * from './schemas/usuario.schema.js';
 export * from './schemas/faq.schema.js';

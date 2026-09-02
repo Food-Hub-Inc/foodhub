@@ -3,6 +3,7 @@ import { FlatList, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import {
   MENSAJES_PEDIDO,
+  MENSAJES_RESENA,
   PESTANA_PEDIDOS_COCINERO,
   type ContadoresPedido,
   type PedidoResumen,
@@ -387,22 +388,39 @@ function AccionMarcarEntregado({ pedido }: { pedido: PedidoResumen }) {
 
 /**
  * "Muestre el botón 'Calificar cliente' si el pedido aún no fue calificado"
- * (US-PED-08, PAN-PED-04.3). El módulo de Reseñas todavía no está codificado,
- * así que lleva a su pantalla anunciada.
+ * (US-PED-08, PAN-PED-04.3).
+ *
+ * LLEVA EL ID DEL CLIENTE, no el del pedido: la calificación es una por par
+ * cocinero-cliente (US-RES-02), no una por pedido. El cocinero sale de la
+ * sesión, así que con el cliente el par queda determinado.
  */
 function AccionCalificarCliente({ pedido }: { pedido: PedidoResumen }) {
-  if (!pedido.puedeCalificar) return null;
-
+  /*
+   * El boton aparece calificado o no: con el cliente ya calificado dice "Editar
+   * calificacion" (US-RES-02). Antes desaparecia, y el cocinero se quedaba sin
+   * ninguna via para corregir lo que habia puesto.
+   */
   return (
     <PieDeAccion>
       <Boton
         onPress={() => {
-          router.push('/resenas/calificar-cliente');
+          router.push({
+            pathname: '/resenas/calificar-cliente',
+            params: {
+              clienteId: pedido.participante.id,
+              nombre: `${pedido.participante.nombre} ${pedido.participante.apellido}`,
+              ...(pedido.participante.fotoPerfilUrl === null
+                ? {}
+                : { fotoPerfilUrl: pedido.participante.fotoPerfilUrl }),
+            },
+          });
         }}
         tamano="sm"
         variante="secundario"
       >
-        {MENSAJES_PEDIDO.calificarCliente}
+        {pedido.puedeCalificar
+          ? MENSAJES_PEDIDO.calificarCliente
+          : MENSAJES_RESENA.editarCalificacion}
       </Boton>
     </PieDeAccion>
   );
