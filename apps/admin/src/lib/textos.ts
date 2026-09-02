@@ -413,6 +413,19 @@ export const TEXTOS_PARAMETROS = {
   ayudaLimiteDiasResena:
     'Días, tras completar un pedido, que tiene el cliente para dejar una reseña.',
 
+  /**
+   * Filtro automático de moderación (RF080 y RF084). La lista arranca vacía y
+   * la carga el administrador: ninguna fuente del proyecto define qué términos
+   * hay que detectar, así que la decisión es suya y no del código.
+   */
+  campoTerminosModeracion: 'Términos bloqueados en reseñas',
+  ayudaTerminosModeracion:
+    'Un término por renglón. Se detectan sin distinguir mayúsculas ni tildes, y también dentro de una palabra más larga. Con la lista vacía el filtro no bloquea ninguna reseña.',
+  leyendaTerminosModeracion: (cantidad: number) =>
+    cantidad === 0
+      ? 'Sin términos cargados: el filtro está desactivado.'
+      : `${String(cantidad)} ${cantidad === 1 ? 'término cargado' : 'términos cargados'}.`,
+
   campoNombrePlataforma: 'Nombre de la plataforma',
   campoLogo: 'Logo de la plataforma',
   logoAyuda: 'JPG, PNG o WEBP de hasta 2 MB.',

@@ -10,6 +10,7 @@ import {
 import { errorGeneralDe } from '../../../hooks/useOperacionDeParametros.js';
 import { TEXTOS_PARAMETROS } from '../../../lib/textos.js';
 import { BotonesDeSeccion } from './BotonesDeSeccion.js';
+import { CampoDeLista } from './CampoDeLista.js';
 import { CampoNumerico } from './CampoNumerico.js';
 import { erroresDeSeccion } from './erroresDeSeccion.js';
 import { useFormularioDeSeccion } from './useFormularioDeSeccion.js';
@@ -20,7 +21,18 @@ function aTexto(datos: ParametrosResenas): Record<Campo, string> {
   return {
     minimoResenasParaPromedio: String(datos.minimoResenasParaPromedio),
     limiteDiasParaResenar: String(datos.limiteDiasParaResenar),
+    // La lista viaja como texto mientras se edita, un término por renglón, y
+    // recién se parte al validar. Ver `CampoDeLista`.
+    terminosModeracion: datos.terminosModeracion.join('\n'),
   };
+}
+
+/** Un término por renglón, descartando líneas en blanco y espacios sobrantes. */
+function aListaDeTerminos(valor: string): string[] {
+  return valor
+    .split('\n')
+    .map((termino) => termino.trim())
+    .filter(Boolean);
 }
 
 /** Subsección "Parámetros de reseñas" de PAN-ADM-04 — US-CFG-03. */
@@ -31,9 +43,12 @@ export function SeccionResenas({
 }) {
   const [valores, setValores] = useState(aTexto(valorInicial));
 
+  const terminos = aListaDeTerminos(valores.terminosModeracion);
+
   const validacion = parametrosResenasSchema.safeParse({
     minimoResenasParaPromedio: Number(valores.minimoResenasParaPromedio),
     limiteDiasParaResenar: Number(valores.limiteDiasParaResenar),
+    terminosModeracion: terminos,
   });
   const errores = validacion.success
     ? {}
@@ -67,6 +82,18 @@ export function SeccionResenas({
         error={errores.limiteDiasParaResenar}
         etiqueta={TEXTOS_PARAMETROS.campoLimiteDiasResena}
         valor={valores.limiteDiasParaResenar}
+      />
+
+      <CampoDeLista
+        alCambiar={(terminosModeracion) => {
+          setValores((previo) => ({ ...previo, terminosModeracion }));
+        }}
+        ayuda={TEXTOS_PARAMETROS.ayudaTerminosModeracion}
+        cantidad={terminos.length}
+        error={errores.terminosModeracion}
+        etiqueta={TEXTOS_PARAMETROS.campoTerminosModeracion}
+        leyendaCantidad={TEXTOS_PARAMETROS.leyendaTerminosModeracion}
+        valor={valores.terminosModeracion}
       />
 
       <BotonesDeSeccion

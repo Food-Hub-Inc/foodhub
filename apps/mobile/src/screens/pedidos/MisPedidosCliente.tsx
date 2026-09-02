@@ -252,21 +252,41 @@ function TarjetaDePedido({
         </View>
       </Pressable>
 
-      {/* "Si el pedido completado aún no tiene reseña del cliente, mostrar el
-          botón 'Dejar reseña' sobre la tarjeta" (US-PED-06). */}
-      {pedido.puedeCalificar ? (
-        <View className="border-t border-border p-3">
-          <Boton
-            onPress={() => {
-              router.push('/resenas/dejar');
-            }}
-            tamano="sm"
-            variante="secundario"
-          >
-            {MENSAJES_PEDIDO.dejarResena}
-          </Boton>
-        </View>
-      ) : null}
+      <AccionDejarResena pedido={pedido} />
+    </View>
+  );
+}
+
+/**
+ * "Si el pedido completado aún no tiene reseña del cliente, mostrar el botón
+ * 'Dejar reseña' sobre la tarjeta" (US-PED-06).
+ *
+ * LLEVA AL DETALLE, NO DIRECTO AL FORMULARIO. La reseña es por plato (cambio
+ * del 2026-08-18) y esta tarjeta no sabe cuáles son: `primerItem` trae el
+ * nombre y la imagen del primero, pero no su `publicacionId`, y un pedido puede
+ * tener varios. RF031 puso justamente en el detalle un botón por cada ítem, así
+ * que ahí es donde el cliente elige qué plato reseñar.
+ *
+ * Antes navegaba directo a `/resenas/dejar` sin parámetros, cuando esa ruta
+ * todavía era una pantalla pendiente que no los necesitaba.
+ */
+function AccionDejarResena({ pedido }: { pedido: PedidoResumen }) {
+  if (!pedido.puedeCalificar) return null;
+
+  return (
+    <View className="border-t border-border p-3">
+      <Boton
+        onPress={() => {
+          router.push({
+            pathname: '/pedidos/[id]/detalle',
+            params: { id: pedido.id },
+          });
+        }}
+        tamano="sm"
+        variante="secundario"
+      >
+        {MENSAJES_PEDIDO.dejarResena}
+      </Boton>
     </View>
   );
 }

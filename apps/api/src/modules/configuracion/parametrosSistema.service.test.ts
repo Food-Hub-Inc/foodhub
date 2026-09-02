@@ -37,10 +37,14 @@ const {
 
 const ADMIN_ID = '11111111-1111-1111-1111-111111111111';
 
-/** Las 11 filas que siembran las migraciones 0004 y 0011, con valores de ejemplo. */
 const HORARIO_JSON =
   '{"LUNES":{"inicio":"09:00","fin":"18:00"},"MARTES":{"inicio":"09:00","fin":"18:00"},"MIERCOLES":{"inicio":"09:00","fin":"18:00"},"JUEVES":{"inicio":"09:00","fin":"18:00"},"VIERNES":{"inicio":"09:00","fin":"18:00"},"SABADO":null,"DOMINGO":null}';
 
+/**
+ * Las filas que siembran las migraciones 0004, 0012 y 0013, con valores de
+ * ejemplo. `resena_terminos_moderacion` se siembra vacía a propósito: con la
+ * lista vacía el filtro de moderación no bloquea nada (RF080).
+ */
 const FILAS_SEMBRADAS = [
   { clave: 'radio_busqueda_defecto_km', valor: '5' },
   { clave: 'distancia_maxima_filtro_km', valor: '20' },
@@ -49,6 +53,7 @@ const FILAS_SEMBRADAS = [
   { clave: 'pedido_expiracion_minutos', valor: '15' },
   { clave: 'resena_minimo_para_promedio', valor: '3' },
   { clave: 'resena_limite_dias_para_resenar', valor: '14' },
+  { clave: 'resena_terminos_moderacion', valor: '' },
   { clave: 'plataforma_nombre', valor: 'FoodHub' },
   { clave: 'plataforma_logo_url', valor: '' },
   { clave: 'plataforma_correo_soporte', valor: 'soporte@foodhub.com' },
@@ -78,7 +83,11 @@ describe('obtenerParametrosSistema', () => {
         tiempoCancelacionClienteMinutos: 5,
         tiempoExpiracionCocineroMinutos: 15,
       },
-      resenas: { minimoResenasParaPromedio: 3, limiteDiasParaResenar: 14 },
+      resenas: {
+        minimoResenasParaPromedio: 3,
+        limiteDiasParaResenar: 14,
+        terminosModeracion: [],
+      },
       institucional: {
         nombrePlataforma: 'FoodHub',
         logoPlataformaUrl: null,
@@ -94,6 +103,39 @@ describe('obtenerParametrosSistema', () => {
         },
       },
     });
+  });
+
+  it('parsea los términos de moderación de una fila por línea, descartando vacíos', async () => {
+    aplicarSelect.mockResolvedValue(
+      FILAS_SEMBRADAS.map((fila) =>
+        fila.clave === 'resena_terminos_moderacion'
+          ? // Con líneas en blanco y espacios sobrantes: es lo que deja un
+            // textarea cuando el administrador edita la lista a mano.
+            { ...fila, valor: 'insulto\n  otro insulto  \n\n' }
+          : fila,
+      ),
+    );
+
+    const parametros = await obtenerParametrosSistema();
+
+    expect(parametros.resenas.terminosModeracion).toEqual([
+      'insulto',
+      'otro insulto',
+    ]);
+  });
+
+  it('trata la lista de términos ausente como vacía, sin romper', async () => {
+    // Un ambiente con la 0004 aplicada pero sin la 0013 no tiene la fila. No
+    // puede fallar: la lista vacía es el valor de fábrica.
+    aplicarSelect.mockResolvedValue(
+      FILAS_SEMBRADAS.filter(
+        (fila) => fila.clave !== 'resena_terminos_moderacion',
+      ),
+    );
+
+    const parametros = await obtenerParametrosSistema();
+
+    expect(parametros.resenas.terminosModeracion).toEqual([]);
   });
 
   it('trata el logo vacío ("" en la base) como ausente (null)', async () => {

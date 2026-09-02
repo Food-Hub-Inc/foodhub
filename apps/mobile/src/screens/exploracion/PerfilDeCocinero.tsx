@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { router } from 'expo-router';
@@ -13,8 +14,10 @@ import { useAlternarCocineroFavorito } from '../../hooks/useFavoritos';
 import { useUbicacionActual } from '../../hooks/useUbicacionActual';
 import { mensajeDeError } from '../../lib/api';
 import { formatearPrecio } from '../../lib/formato';
-import { TEXTOS_EXPLORACION } from '../../lib/textos';
+import { TEXTOS_EXPLORACION, TEXTOS_RESENA } from '../../lib/textos';
 import { BotonDeMensajes } from '../mensajeria/BotonDeMensajes';
+import { Pestanas } from '../pedidos/Piezas';
+import { ListaDeResenas } from '../resenas/ListaDeResenas';
 import { BotonFlotanteDelCarrito } from './BotonFlotanteDelCarrito';
 import {
   AvatarDeCocinero,
@@ -60,6 +63,18 @@ export function PerfilDeCocinero({ id }: { id: string | undefined }) {
 }
 
 /** Los cuatro estados: error, carga, y el perfil (que trae su propio vacío). */
+type SolapaDelPerfil = 'PLATOS' | 'RESENAS';
+
+/**
+ * Las dos solapas de PAN-EXP-04: "Platos disponibles" y "Reseñas".
+ *
+ * La maquetación las dibuja lado a lado bajo la ficha del cocinero, y la de
+ * reseñas es donde US-RES-03 pide mostrar el resumen y el listado.
+ *
+ * `Pestanas` se importa del módulo de Pedidos en vez de duplicarlo. Es el mismo
+ * componente genérico y el cruce entre módulos ya existe en la dirección
+ * contraria: Pedidos usa `Valoracion` y `MiniaturaDePlato` de acá.
+ */
 function Contenido({
   consulta,
 }: {
@@ -71,6 +86,8 @@ function Contenido({
     refetch: () => unknown;
   };
 }) {
+  const [solapa, setSolapa] = useState<SolapaDelPerfil>('PLATOS');
+
   if (consulta.isError) {
     return (
       <EstadoDeError
@@ -86,6 +103,24 @@ function Contenido({
 
   const cocinero = consulta.data;
 
+  const cabecera = (
+    <>
+      <FichaDelCocinero cocinero={cocinero} />
+      <Pestanas
+        activa={solapa}
+        onCambiar={setSolapa}
+        opciones={[
+          { valor: 'PLATOS', etiqueta: TEXTOS_EXPLORACION.solapaPlatos },
+          { valor: 'RESENAS', etiqueta: TEXTOS_RESENA.tituloSeccion },
+        ]}
+      />
+    </>
+  );
+
+  if (solapa === 'RESENAS') {
+    return <ListaDeResenas cocineroId={cocinero.id} encabezado={cabecera} />;
+  }
+
   return (
     <FlatList
       contentContainerClassName="pb-24"
@@ -97,7 +132,7 @@ function Contenido({
           titulo={MENSAJES_EXPLORACION.cocineroSinPlatos}
         />
       }
-      ListHeaderComponent={<FichaDelCocinero cocinero={cocinero} />}
+      ListHeaderComponent={cabecera}
       renderItem={({ item }) => (
         <TarjetaDePlatoDelPerfil
           onPress={() => {

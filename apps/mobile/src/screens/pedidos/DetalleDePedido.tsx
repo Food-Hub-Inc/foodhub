@@ -1,11 +1,13 @@
 import { ScrollView, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
+  MENSAJES_EXPLORACION,
   MENSAJES_PEDIDO,
+  MENSAJES_RESENA,
   type EventoPedido,
   type PedidoDetalle,
 } from '@foodhub/shared';
-import { IconoTildeCirculo } from '../../components/iconos';
+import { IconoEstrella } from '../../components/iconos';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { Aviso } from '../../components/ui/Aviso';
 import { Boton } from '../../components/ui/Boton';
@@ -14,9 +16,13 @@ import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
 import { usePedido } from '../../hooks/usePedidos';
 import { usePerfil } from '../../hooks/usePerfil';
+import {
+  useEstadoDeResenas,
+  useReputacionDeCliente,
+} from '../../hooks/useResenas';
 import { mensajeDeError } from '../../lib/api';
 import { formatearFecha, formatearPrecio } from '../../lib/formato';
-import { TEXTOS_PEDIDOS } from '../../lib/textos';
+import { TEXTOS_PEDIDOS, TEXTOS_RESENA } from '../../lib/textos';
 import {
   PASOS_DEL_SEGUIMIENTO,
   encabezadoDeCierre,
@@ -130,13 +136,20 @@ function Contenido({
       ) : null}
 
       {/*
+        DOS REGLAS SOBRE LA MISMA FICHA, y las dos dependen de quién mira.
+
         US-EXP-04: la ficha del cocinero lleva a su perfil público, que es donde
         están sus publicaciones. Del otro lado NO es tocable: `/clientes/[id]`
         todavía es una pantalla pendiente, y un toque que no hace nada se lee
         como que la app está rota.
+
+        US-RES-02: la tarjeta pinta el promedio crudo, sin la regla de "Cliente
+        nuevo". Para el cocinero se apaga y la reputación va debajo con esa
+        regla aplicada: mostrar las dos sería contradecirse en la misma
+        pantalla.
       */}
       <FichaDeParticipante
-        conValoracion
+        conValoracion={!esCocinero}
         participante={pedido.participante}
         rotulo={esCocinero ? TEXTOS_PEDIDOS.cliente : TEXTOS_PEDIDOS.cocinero}
         {...(esCocinero
@@ -150,6 +163,10 @@ function Contenido({
               },
             })}
       />
+
+      {esCocinero ? (
+        <ReputacionDelCliente clienteId={pedido.participante.id} />
+      ) : null}
 
       <BotonMensajesDelPedido participanteId={pedido.participante.id} />
 
@@ -289,19 +306,68 @@ function nombreDelEventoPara(
 }
 
 /**
+ * Reputación del cliente, tal como la ve el cocinero — US-RES-02 (RF081).
+ *
+ * "Muestre en el detalle del pedido el promedio de estrellas del cliente y la
+ * cantidad total de cocineros que lo calificaron. Si el cliente registra menos
+ * de 3 pedidos completados en la plataforma, muestre el texto 'Cliente nuevo'
+ * en lugar del promedio."
+ *
+ * EL UMBRAL SON PEDIDOS COMPLETADOS, NO CALIFICACIONES RECIBIDAS: un cliente
+ * con diez compras y ninguna calificación no es nuevo, solo no tiene reputación
+ * todavía. Por eso `esClienteNuevo` viene resuelto del servidor y no se deriva
+ * de `cantidadCocineros`.
+ *
+ * Se calla si la consulta falla: es información de contexto sobre la otra
+ * parte, no una acción. Un cartel de error acá le taparía al cocinero el
+ * detalle del pedido, que es lo que vino a ver.
+ */
+function ReputacionDelCliente({ clienteId }: { clienteId: string }) {
+  const reputacion = useReputacionDeCliente(clienteId);
+  if (!reputacion.data) return null;
+
+  const { promedio, cantidadCocineros, esClienteNuevo } = reputacion.data;
+
+  return (
+    <View className="flex-row items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2">
+      {esClienteNuevo || promedio === null ? (
+        <Text className="text-caption text-text-secondary">
+          {esClienteNuevo
+            ? MENSAJES_RESENA.clienteNuevo
+            : MENSAJES_EXPLORACION.cocineroSinResenas}
+        </Text>
+      ) : (
+        <>
+          <IconoEstrella className="text-warning" size={14} />
+          <Text className="text-caption font-semibold text-text-primary">
+            {promedio.toFixed(1)}
+          </Text>
+          <Text className="text-caption text-text-secondary">
+            {`· ${TEXTOS_RESENA.cantidadCocinerosQueCalificaron(cantidadCocineros)}`}
+          </Text>
+        </>
+      )}
+    </View>
+  );
+}
+
+/**
  * Lo que queda por calificar, al final del detalle.
  *
- * "Si el pedido está en estado Completado y el cliente todavía no dejó reseña,
- * muestre el botón 'Dejar reseña' de forma prominente al final del detalle"
- * (US-PED-07); "si ya dejó una, muestre en su lugar una indicación de que la
- * reseña ya fue enviada". Para el cocinero, el equivalente es "Calificar
- * cliente" (US-PED-08).
+ * LAS DOS DIRECCIONES NO TIENEN LA MISMA FORMA, y por eso se separan:
  *
- * `puedeCalificar` ya viene resuelto por la API contra `resena` o
- * `calificacion_cocinero`, así que la pantalla no interpreta nada.
+ *   cliente → plato    UN BOTÓN POR ÍTEM. RF031 lo pide explícitamente:
+ *                      "reemplazar el botón único 'Dejar reseña' por un botón
+ *                      por cada ítem del pedido". La reseña es por publicación
+ *                      (cambio del 2026-08-18), así que un pedido de tres
+ *                      platos habilita tres reseñas independientes, cada una
+ *                      con su propio estado.
+ *   cocinero → cliente UN SOLO BOTÓN. La calificación es una por par
+ *                      cocinero-cliente, no una por pedido ni por plato.
  *
- * Los dos botones llevan a la pantalla anunciada del módulo de Reseñas, que
- * todavía no está codificado (decisión del equipo, 2026-08-19).
+ * La maquetación de PAN-PED-06 dibuja un único botón "Dejar reseña" para todo
+ * el pedido, pero es de la Etapa 5 y anterior al cambio de modelo; RF031 la
+ * corrige de forma explícita.
  */
 function AccionDeCalificacion({
   pedido,
@@ -310,32 +376,150 @@ function AccionDeCalificacion({
   pedido: PedidoDetalle;
   esCocinero: boolean;
 }) {
-  if (pedido.estado !== 'COMPLETADO') return null;
-
-  if (!pedido.puedeCalificar) {
-    return (
-      <View className="flex-row items-center justify-center gap-2 py-2">
-        <IconoTildeCirculo className="text-success" size={18} />
-        <Text className="text-body text-text-secondary">
-          {esCocinero
-            ? MENSAJES_PEDIDO.yaCalificasteAlCliente
-            : MENSAJES_PEDIDO.yaCalificasteEstePedido}
-        </Text>
-      </View>
-    );
+  /*
+   * CADA DIRECCION SE HABILITA CON UN HITO DISTINTO, y confundirlos deja sin
+   * cubrir justo el caso que la historia quiere resolver.
+   *
+   *   cliente → plato    solo si el pedido esta COMPLETADO. "Solo se resena una
+   *                      publicacion que el cliente recibio en un pedido
+   *                      completado" (RF080).
+   *   cocinero → cliente si el pedido ALCANZO ACEPTADO alguna vez, "aun cuando
+   *                      posteriormente sea cancelado" (RF081). Es literal del
+   *                      requisito, y el motivo tambien: el incumplimiento
+   *                      tipico -que el cliente no aparezca a retirar- termina
+   *                      en un pedido cancelado, nunca en uno completado.
+   *
+   * El hito del cocinero se lee del HISTORIAL y no del estado actual: un pedido
+   * aceptado y despues cancelado figura hoy como RECHAZADO, y mirar la cabecera
+   * le sacaria el derecho justo cuando mas lo necesita. Es el mismo criterio que
+   * ya usa el servidor en `hubopedidoAceptado`.
+   */
+  if (esCocinero) {
+    return alcanzoAceptado(pedido) ? (
+      <CalificarAlCliente pedido={pedido} />
+    ) : null;
   }
 
+  if (pedido.estado !== 'COMPLETADO') return null;
+  return <ResenarCadaPlato pedido={pedido} />;
+}
+
+/** `true` si el pedido pasó por ACEPTADO en algún momento de su historia. */
+function alcanzoAceptado(pedido: PedidoDetalle): boolean {
+  return pedido.historial.some((evento) => evento.estado === 'ACEPTADO');
+}
+
+/** US-PED-08 y US-RES-02 — una calificación por cliente, no por pedido. */
+function CalificarAlCliente({ pedido }: { pedido: PedidoDetalle }) {
+  /*
+   * SIEMPRE HAY BOTON, calificado o no. US-RES-02 lo pide explicitamente: "no
+   * muestre el boton 'Calificar cliente'; en su lugar, muestre 'Editar
+   * calificacion' con el formulario precargado". Antes, con el cliente ya
+   * calificado, esta pantalla mostraba un texto fijo y no habia forma de llegar
+   * al modo edicion desde ningun lado.
+   *
+   * `puedeCalificar` viene resuelto por la API contra `calificacion_cocinero` y
+   * es una por par cocinero-cliente: si ya lo califico en OTRO pedido, este
+   * tambien ofrece editar.
+   */
   return (
     <Boton
       onPress={() => {
-        router.push(
-          esCocinero ? '/resenas/calificar-cliente' : '/resenas/dejar',
-        );
+        router.push({
+          pathname: '/resenas/calificar-cliente',
+          params: {
+            clienteId: pedido.participante.id,
+            // El nombre y la foto viajan porque no hay endpoint que le
+            // permita a un cocinero consultar los datos de un cliente.
+            nombre: `${pedido.participante.nombre} ${pedido.participante.apellido}`,
+            ...(pedido.participante.fotoPerfilUrl === null
+              ? {}
+              : { fotoPerfilUrl: pedido.participante.fotoPerfilUrl }),
+          },
+        });
       }}
+      variante={pedido.puedeCalificar ? 'primario' : 'secundario'}
     >
-      {esCocinero
+      {pedido.puedeCalificar
         ? MENSAJES_PEDIDO.calificarCliente
-        : MENSAJES_PEDIDO.dejarResena}
+        : MENSAJES_RESENA.editarCalificacion}
     </Boton>
+  );
+}
+
+/**
+ * RF031 — un botón por plato, con el rótulo que corresponda a su estado.
+ *
+ * El estado sale del servidor porque depende de dos plazos y del historial de
+ * pedidos del cliente con ese plato: "Dejar reseña" si nunca lo reseñó y está
+ * a tiempo, "Editar mi reseña" si ya lo hizo y la ventana de 48 h sigue
+ * abierta, "Ver mi reseña" si se cerró.
+ *
+ * Mientras la consulta viaja no se dibuja nada: mostrar "Dejar reseña" y
+ * cambiarlo a "Editar mi reseña" un segundo después invita a tocar el botón
+ * equivocado.
+ */
+function ResenarCadaPlato({ pedido }: { pedido: PedidoDetalle }) {
+  const publicacionIds = pedido.items.map((item) => item.publicacionId);
+  const estado = useEstadoDeResenas(publicacionIds);
+
+  /**
+   * El fallo se MUESTRA en lugar de devolver `null`.
+   *
+   * Con `null` la pantalla queda idéntica a la de un pedido sin nada por
+   * reseñar, y el cliente no tiene forma de distinguir "ya no podés opinar" de
+   * "algo se rompió". Es el estado de error que exige la regla de los cuatro
+   * estados del proyecto, y su ausencia ya escondió un bug de navegación una
+   * vez.
+   */
+  if (estado.isError) {
+    return <Aviso mensaje={mensajeDeError(estado.error)} tono="error" />;
+  }
+
+  if (!estado.data) return null;
+
+  const porPublicacion = new Map(
+    estado.data.map((fila) => [fila.publicacionId, fila]),
+  );
+
+  return (
+    <View className="gap-3">
+      {pedido.items.map((item) => {
+        const suEstado = porPublicacion.get(item.publicacionId);
+        if (!suEstado) return null;
+
+        // Ni reseñable ni reseñado: venció el plazo sin haber opinado. No hay
+        // acción posible, así que el plato no muestra botón.
+        if (suEstado.resenaId === null && !suEstado.puedeResenar) return null;
+
+        const etiqueta =
+          suEstado.resenaId === null
+            ? MENSAJES_PEDIDO.dejarResena
+            : suEstado.puedeEditar
+              ? MENSAJES_RESENA.editarMiResena
+              : MENSAJES_RESENA.verMiResena;
+
+        return (
+          <Boton
+            key={item.id}
+            onPress={() => {
+              router.push({
+                pathname: '/resenas/dejar',
+                params: { publicacionId: item.publicacionId },
+              });
+            }}
+            variante={suEstado.resenaId === null ? 'primario' : 'secundario'}
+          >
+            {/*
+              El nombre del plato va en el botón porque con varios ítems tres
+              botones idénticos no dicen cuál es cuál.
+            */}
+            {pedido.items.length > 1
+              ? `${etiqueta} · ${item.nombre}`
+              : etiqueta}
+          </Boton>
+        );
+      })}
+    </View>
   );
 }

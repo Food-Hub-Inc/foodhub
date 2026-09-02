@@ -67,10 +67,19 @@ export interface OpcionDePestana<T extends string> {
   valor: T;
   etiqueta: string;
   /**
-   * Ausente cuando la pestana no cuenta nada. Los filtros del listado de
-   * conversaciones (US-MSG-04) son dos vistas del mismo conjunto, no dos grupos
-   * con cantidades distintas: mostrarles un contador -aunque fuera cero- diria
-   * algo que el criterio no pide y que ademas seria falso.
+   * Contador que acompana a la etiqueta. OPCIONAL, por dos motivos que
+   * aparecieron por separado y llevan a lo mismo:
+   *
+   *   Los filtros del listado de conversaciones (US-MSG-04) son dos vistas del
+   *   mismo conjunto, no dos grupos con cantidades distintas: mostrarles un
+   *   contador -aunque fuera cero- diria algo que el criterio no pide y que
+   *   ademas seria falso.
+   *
+   *   El perfil publico del cocinero lo reusa para "Platos disponibles" /
+   *   "Resenas" (US-RES-03), donde la maquetacion no dibuja ningun numero.
+   *
+   * Las cinco pestanas de la bandeja de pedidos si lo exigen: "cada pestana
+   * muestre un contador con la cantidad de pedidos en ese estado".
    */
   cantidad?: number;
 }
