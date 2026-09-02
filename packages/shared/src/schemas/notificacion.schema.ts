@@ -130,14 +130,24 @@ export const marcarLeidasSchema = z.object({
  * iniciar sesion y cada vez que el token rota. Es idempotente: mismo token = la
  * misma fila reactivada, no una nueva.
  */
+const expoPushTokenSchema = z
+  .string()
+  .trim()
+  .max(255)
+  .regex(EXPO_PUSH_TOKEN_RE, 'El token de notificaciones no es válido.');
+
 export const registrarDispositivoSchema = z.object({
-  expoPushToken: z
-    .string()
-    .trim()
-    .max(255)
-    .regex(EXPO_PUSH_TOKEN_RE, 'El token de notificaciones no es válido.'),
+  expoPushToken: expoPushTokenSchema,
   plataforma: z.enum(PLATAFORMA_PUSH),
   dispositivoInfo: z.string().trim().max(200).optional(),
+});
+
+/**
+ * Baja de un dispositivo (la app la llama al cerrar sesion). Solo el token: el
+ * dueno sale del JWT y la API acota el UPDATE a sus propias filas.
+ */
+export const bajaDispositivoSchema = z.object({
+  expoPushToken: expoPushTokenSchema,
 });
 
 // ---------------------------------------------------------------------------
@@ -174,4 +184,5 @@ export type MarcarLeidasInput = z.infer<typeof marcarLeidasSchema>;
 export type RegistrarDispositivoInput = z.infer<
   typeof registrarDispositivoSchema
 >;
+export type BajaDispositivoInput = z.infer<typeof bajaDispositivoSchema>;
 export type MarcarPresenciaInput = z.infer<typeof marcarPresenciaSchema>;

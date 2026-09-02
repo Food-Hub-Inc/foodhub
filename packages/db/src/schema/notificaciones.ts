@@ -22,8 +22,10 @@ import { usuario } from './usuarios.js';
  * eso vive como `varchar` con un tipo de TypeScript y no como un ENUM de
  * PostgreSQL ni como literal de `@foodhub/shared`: ningun cliente lo ve.
  *
- *   PENDIENTE    fila escrita, push todavia no intentado (o el intento sincrono
- *                del handler fallo de forma transitoria). El poller la toma.
+ *   PENDIENTE    fila escrita, push todavia no intentado. El despachador la toma.
+ *   ENVIANDO     un despachador la reclamo (UPDATE ... FOR UPDATE SKIP LOCKED)
+ *                y esta hablando con Expo. Estado transitorio: si el proceso
+ *                muere aca, el reaper la devuelve a PENDIENTE pasado un margen.
  *   ENVIADO      Expo acepto el mensaje para al menos un dispositivo.
  *   SIN_DESTINO  fila escrita pero el usuario no tiene ningun `dispositivo_push`
  *                activo al que enviar. Terminal, sin reintento.
@@ -32,6 +34,7 @@ import { usuario } from './usuarios.js';
  */
 export const PUSH_ESTADO_NOTIFICACION = [
   'PENDIENTE',
+  'ENVIANDO',
   'ENVIADO',
   'SIN_DESTINO',
   'FALLIDO',

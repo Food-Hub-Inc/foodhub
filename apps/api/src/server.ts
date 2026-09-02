@@ -2,6 +2,7 @@ import { cerrarConexion } from '@foodhub/db';
 import { crearApp } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
+import { iniciarDespachadorDePush } from './modules/notificaciones/despacho.service.js';
 
 /**
  * Punto de entrada del proceso: levanta el servidor HTTP y gestiona su ciclo
@@ -18,6 +19,14 @@ const servidor = app.listen(env.PORT, () => {
 });
 
 /**
+ * Despachador de notificaciones push (US-NOT-01 a US-NOT-06). Vive aca y no en
+ * `crearApp` a proposito: es un proceso periodico, no un middleware, y las
+ * pruebas de integracion levantan `crearApp` con supertest sin que un timer se
+ * quede corriendo entre casos.
+ */
+const detenerDespachador = iniciarDespachadorDePush();
+
+/**
  * Apagado ordenado.
  *
  * Al desplegar una version nueva, Railway envia SIGTERM y espera. Sin este
@@ -28,6 +37,8 @@ const servidor = app.listen(env.PORT, () => {
  */
 function apagar(senal: NodeJS.Signals): void {
   logger.info({ senal }, 'apagando el servidor');
+
+  detenerDespachador();
 
   servidor.close(() => {
     void cerrarConexion().then(() => {

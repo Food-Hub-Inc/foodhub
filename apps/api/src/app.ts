@@ -20,6 +20,7 @@ import { dashboardRouter } from './modules/dashboard/dashboard.router.js';
 import { carritoRouter } from './modules/exploracion/carrito.router.js';
 import { exploracionRouter } from './modules/exploracion/exploracion.router.js';
 import { mensajeriaRouter } from './modules/mensajeria/mensajeria.router.js';
+import { notificacionesRouter } from './modules/notificaciones/notificaciones.router.js';
 import { pedidosRouter } from './modules/pedidos/pedidos.router.js';
 import { publicacionesRouter } from './modules/publicaciones/publicaciones.router.js';
 import { categoriasRouter } from './modules/configuracion/categorias.router.js';
@@ -156,6 +157,14 @@ export function crearApp(): Express {
   // "Leido" y "Escribiendo..."- no pasa por aca: va por Supabase Realtime
   // directo contra la base, con las politicas RLS de la migracion 0011.
   app.use(`${PREFIJO_API}/mensajeria`, mensajeriaRouter);
+
+  // Modulo de Notificaciones y Alertas (US-NOT-01 a US-NOT-08). Cliente y
+  // cocinero: el administrador no recibe push. La EMISION la disparan pedidos,
+  // mensajeria y publicaciones; estas rutas son el historial in-app
+  // (PAN-NOT-01), el contador de la campana y el registro de Expo Push Tokens.
+  // El despachador de push corre como proceso periodico y se arranca en
+  // server.ts, no aca (ver `iniciarDespachadorDePush`).
+  app.use(`${PREFIJO_API}/notificaciones`, notificacionesRouter);
 
   // Modulo de Dashboard del cocinero (US-DASH-01 a US-DASH-05). Solo lectura y
   // solo sobre los datos del cocinero de la sesion.
