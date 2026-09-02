@@ -190,7 +190,14 @@ async function sembrarAvisos(contexto: ContextoSeed): Promise<void> {
     // Cuanto mas reciente, mas chance de seguir sin leer.
     const antiguedad = diasEntre(aviso.fechaCreacion, FIN_VENTANA);
     const chanceSinLeer = antiguedad <= 2 ? 0.6 : antiguedad <= 7 ? 0.25 : 0.05;
-    return { ...aviso, leida: !azar.probabilidad(chanceSinLeer) };
+    return {
+      ...aviso,
+      leida: !azar.probabilidad(chanceSinLeer),
+      // Historicas: el push ya se "envio". Sin esto quedarian 'PENDIENTE' y el
+      // despachador, al levantar la API contra una base sembrada, intentaria
+      // pushear cientos de filas contra los Expo Push Tokens falsos de la seed.
+      pushEstado: 'ENVIADO' as const,
+    };
   });
 
   for (let i = 0; i < filas.length; i += 300) {
