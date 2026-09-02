@@ -116,8 +116,8 @@ export function useSubirAdjuntos() {
           throw new Error('Falta la URL firmada de uno de los adjuntos.');
         }
         return {
-          url: '',
-          urlPublica: '',
+          url: url.urlPublica,
+          urlPublica: url.urlPublica,
           nombreArchivo: archivo.nombre,
           tipoMime: archivo.mimeType,
           tamanoBytes: archivo.tamano,
@@ -137,7 +137,7 @@ export function useSubirAdjuntos() {
           cargados += 1;
           setProgreso({ cargados, total: archivos.length });
           subidos[indice] = {
-            url: url.ruta,
+            url: url.urlPublica,
             urlPublica: url.urlPublica,
             nombreArchivo: archivo.nombre,
             tipoMime: archivo.mimeType,
