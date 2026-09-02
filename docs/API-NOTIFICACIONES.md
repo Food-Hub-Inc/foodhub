@@ -6,8 +6,11 @@ RF034 a RF041). Prefijo: `/api/v1`. Los schemas viven en `@foodhub/shared`
 
 Alcance implementado: **US-NOT-01, 02, 06, 07, 08**. US-NOT-03 (el admin elimina
 una publicación), US-NOT-04 (aviso general del admin) y US-NOT-05 (reseña
-recibida) quedan como enganches documentados hasta que existan la moderación del
-panel (US-ADM-04) y el módulo de Reseñas — ver `PENDIENTE_NOTIFICACIONES_*.md`.
+recibida) quedan pendientes hasta que existan la moderación del panel
+(US-ADM-04) y el módulo de Reseñas: cuando esos módulos emitan su evento, solo
+tienen que llamar a `emitirNotificacion` con el tipo y el texto de
+`MENSAJES_NOTIFICACION`, como hacen hoy pedidos, mensajería y publicaciones
+(`disparadores.service.ts`).
 
 ---
 
