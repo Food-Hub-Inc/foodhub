@@ -427,3 +427,55 @@ export async function notificarPublicacionDeFavoritos(datos: {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// US-NOT-05 - Nueva reseña recibida
+// ---------------------------------------------------------------------------
+
+/**
+ * US-NOT-05 - Un cliente publicó una reseña sobre un plato -> al COCINERO. Se
+ * llama después de `crearResena` (no corre en transacción), con `void`: un
+ * fallo de la notificación no puede tocar la reseña, que ya quedó publicada.
+ *
+ * Solo al CREAR, no al editar: la edición no es una reseña nueva (mismo
+ * criterio que US-NOT-06).
+ *
+ * `objetoAfectadoId` es el id de la reseña. El deep link lleva a
+ * `/resenas/mis-resenas` (PAN-RES-02); posicionar la lista en la reseña
+ * puntual necesita un cambio en esa pantalla del módulo de Reseñas.
+ */
+export async function notificarResenaRecibida(datos: {
+  resenaId: string;
+  cocineroId: string;
+  clienteId: string;
+  calificacion: number;
+  comentario: string | null;
+}): Promise<void> {
+  try {
+    const [cliente] = await db
+      .select({ nombre: usuario.nombre, apellido: usuario.apellido })
+      .from(usuario)
+      .where(eq(usuario.id, datos.clienteId))
+      .limit(1);
+    if (!cliente) return;
+
+    const { titulo, cuerpo } = MENSAJES_NOTIFICACION.resenaRecibida(
+      nombreCompleto(cliente.nombre, cliente.apellido),
+      datos.calificacion,
+      datos.comentario,
+    );
+
+    await emitirNotificacion({
+      usuarioDestinoId: datos.cocineroId,
+      tipo: 'RESENA_RECIBIDA',
+      titulo,
+      cuerpo,
+      objetoAfectadoId: datos.resenaId,
+    });
+  } catch (error) {
+    logger.error(
+      { err: error, resenaId: datos.resenaId },
+      'no se pudo notificar la reseña recibida',
+    );
+  }
+}

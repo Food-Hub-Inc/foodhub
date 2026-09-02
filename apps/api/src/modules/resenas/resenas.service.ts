@@ -15,6 +15,7 @@ import {
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
 import { AppError, noEncontrado } from '../../middleware/error.middleware.js';
+import { notificarResenaRecibida } from '../notificaciones/disparadores.service.js';
 import { obtenerParametrosDeResenas } from '../configuracion/parametrosSistema.service.js';
 import {
   aResenaPublica,
@@ -125,6 +126,16 @@ export async function crearResena(entrada: {
     clienteId,
     cocineroId: plato.cocineroId,
     datos,
+  });
+
+  // US-NOT-05 - Aviso al cocinero. `void` + try/catch propio en el disparador:
+  // un fallo de la notificación no puede tocar la reseña ya publicada.
+  void notificarResenaRecibida({
+    resenaId: filaNueva.id,
+    cocineroId: plato.cocineroId,
+    clienteId,
+    calificacion: datos.calificacion,
+    comentario: datos.comentario ?? null,
   });
 
   return leerResenaPublica(filaNueva.id);

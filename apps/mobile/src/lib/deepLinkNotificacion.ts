@@ -9,13 +9,19 @@ import type { TipoNotificacion } from '@foodhub/shared';
  * expo-router. Se usa al tocar una tarjeta de PAN-NOT-01 y al tocar el push
  * desde la bandeja del sistema (`useNotificacionesPush`).
  *
- * Los tipos que todavía no se emiten (US-NOT-03/04/05) no tienen destino real y
- * caen al historial, igual que cualquier notificación sin `objetoAfectadoId`.
+ * US-NOT-03 (eliminación por admin) y US-NOT-04 (aviso del sistema) todavía no
+ * se emiten y caen al historial, igual que cualquier notificación sin
+ * `objetoAfectadoId`.
  */
 export function deepLinkDeNotificacion(
   tipo: TipoNotificacion,
   objetoAfectadoId: string | null,
 ): Href {
+  // US-NOT-05: a "Mis reseñas" (PAN-RES-02). No lleva `objetoAfectadoId` en la
+  // ruta: la pantalla resuelve el cocinero de la sesión y todavía no admite
+  // posicionarse en una reseña puntual.
+  if (tipo === 'RESENA_RECIBIDA') return '/resenas/mis-resenas';
+
   if (!objetoAfectadoId) return '/notificaciones';
 
   if (tipo === 'MENSAJE_NUEVO') {
@@ -36,6 +42,6 @@ export function deepLinkDeNotificacion(
     };
   }
 
-  // RESENA_RECIBIDA, PUBLICACION_ELIMINADA_ADMIN, AVISO_SISTEMA (US-NOT-03/04/05).
+  // PUBLICACION_ELIMINADA_ADMIN, AVISO_SISTEMA (US-NOT-03/04).
   return '/notificaciones';
 }

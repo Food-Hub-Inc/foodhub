@@ -88,6 +88,45 @@ describe('MENSAJES_NOTIFICACION · US-NOT-02 (mensaje nuevo)', () => {
   });
 });
 
+describe('MENSAJES_NOTIFICACION · US-NOT-05 (reseña recibida)', () => {
+  it('con comentario: extracto a 80 y calificación en plural', () => {
+    expect(
+      MENSAJES_NOTIFICACION.resenaRecibida('Ana Pérez', 5, 'Todo riquísimo')
+        .cuerpo,
+    ).toBe(
+      'Ana Pérez dejó una reseña sobre tu pedido: Todo riquísimo. Calificación: 5 estrellas.',
+    );
+  });
+
+  it('sin comentario: solo la calificación', () => {
+    expect(
+      MENSAJES_NOTIFICACION.resenaRecibida('Ana Pérez', 3, null).cuerpo,
+    ).toBe(
+      'Ana Pérez dejó una reseña sobre tu pedido. Calificación: 3 estrellas.',
+    );
+  });
+
+  it('una estrella también va en plural ("[N] estrellas" del criterio)', () => {
+    expect(MENSAJES_NOTIFICACION.resenaRecibida('Ana', 1, null).cuerpo).toBe(
+      'Ana dejó una reseña sobre tu pedido. Calificación: 1 estrellas.',
+    );
+  });
+
+  it('trunca el comentario largo a 80 caracteres como máximo', () => {
+    const { cuerpo } = MENSAJES_NOTIFICACION.resenaRecibida(
+      'Ana',
+      4,
+      'x'.repeat(200),
+    );
+    const extracto = cuerpo.slice(
+      'Ana dejó una reseña sobre tu pedido: '.length,
+      cuerpo.indexOf('. Calificación:'),
+    );
+    expect(extracto).toHaveLength(80);
+    expect(extracto.endsWith('…')).toBe(true);
+  });
+});
+
 describe('MENSAJES_NOTIFICACION · US-NOT-06 (publicación de favorito)', () => {
   it('nombre del cocinero, plato entre comillas simples y precio $AR', () => {
     expect(

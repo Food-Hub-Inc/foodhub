@@ -220,5 +220,5 @@ Reglas (implementación en `docs/API-NOTIFICACIONES.md`):
   la **Expo Push API** (no FCM directo). El MVP **no** incorpora cola de
   mensajes (punto 1.3.1.12). La expiración automática, que corre en pg_cron,
   la notifica ese mismo planificador.
-- **Alcance implementado**: US-NOT-01, 02, 06, 07, 08. US-NOT-03/04/05 quedan
-  como enganches hasta que existan US-ADM-04 y el módulo de Reseñas.
+- **Alcance implementado**: US-NOT-01, 02, 05, 06, 07, 08. US-NOT-03 y US-NOT-04
+  quedan como enganches hasta que exista la moderación del panel (US-ADM-04).

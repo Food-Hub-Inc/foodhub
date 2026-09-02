@@ -1677,6 +1677,31 @@ export const MENSAJES_NOTIFICACION = {
     titulo: 'Nueva publicación',
     cuerpo: `${nombreCocinero} publicó un nuevo plato: '${nombrePlato}' — ${formatearPrecioArs(precio)}.`,
   }),
+
+  // --- US-NOT-05 · Nueva reseña recibida (RF038) ------------------------
+
+  /**
+   * LITERAL (cuerpo) - US-NOT-05, al COCINERO cuando un cliente publica una
+   * reseña sobre un pedido suyo.
+   *
+   *   con comentario:  "... sobre tu pedido: [80 chars]. Calificación: N estrellas."
+   *   sin comentario:  "... sobre tu pedido. Calificación: N estrellas."
+   *     ("Si el cliente no escribió comentario, el mensaje muestra solo la
+   *      calificación").
+   *
+   * "N estrellas" va en plural tal como el criterio lo escribe (`[N] estrellas`),
+   * incluso para N = 1: es la forma verificable en la Etapa 6.
+   */
+  resenaRecibida: (
+    nombreCliente: string,
+    calificacion: number,
+    comentario: string | null,
+  ) => ({
+    titulo: 'Nueva reseña',
+    cuerpo: comentario
+      ? `${nombreCliente} dejó una reseña sobre tu pedido: ${truncarTexto(comentario, 80)}. Calificación: ${String(calificacion)} estrellas.`
+      : `${nombreCliente} dejó una reseña sobre tu pedido. Calificación: ${String(calificacion)} estrellas.`,
+  }),
 } as const;
 
 /**

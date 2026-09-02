@@ -4,13 +4,12 @@ Superficie HTTP y funcionamiento interno del módulo NOT (US-NOT-01 a US-NOT-08,
 RF034 a RF041). Prefijo: `/api/v1`. Los schemas viven en `@foodhub/shared`
 (`notificacion.schema.ts`, `preferenciaNotificacion.schema.ts`).
 
-Alcance implementado: **US-NOT-01, 02, 06, 07, 08**. US-NOT-03 (el admin elimina
-una publicación), US-NOT-04 (aviso general del admin) y US-NOT-05 (reseña
-recibida) quedan pendientes hasta que existan la moderación del panel
-(US-ADM-04) y el módulo de Reseñas: cuando esos módulos emitan su evento, solo
-tienen que llamar a `emitirNotificacion` con el tipo y el texto de
-`MENSAJES_NOTIFICACION`, como hacen hoy pedidos, mensajería y publicaciones
-(`disparadores.service.ts`).
+Alcance implementado: **US-NOT-01, 02, 05, 06, 07, 08**. US-NOT-03 (el admin
+elimina una publicación) y US-NOT-04 (aviso general del admin) quedan
+pendientes hasta que exista la moderación del panel (US-ADM-04): cuando ese
+módulo emita su evento, solo tiene que llamar a `emitirNotificacion` con el
+tipo y el texto de `MENSAJES_NOTIFICACION`, como hacen hoy pedidos, mensajería,
+publicaciones y reseñas (`disparadores.service.ts`).
 
 ---
 
@@ -146,11 +145,12 @@ de usuarios: `GET|PATCH /usuarios/yo/preferencias-notificacion[/:grupo]`.
 El `data` del mensaje Expo lleva `{ tipo, objetoAfectadoId, notificacionId }`.
 La app mapea `tipo` + `objetoAfectadoId` a una ruta (`deepLinkDeNotificacion`):
 
-| `tipo`                          | Destino                                                    |
-| ------------------------------- | ---------------------------------------------------------- |
-| `PEDIDO_*`                      | `/pedidos/{objetoAfectadoId}/detalle`                      |
-| `MENSAJE_NUEVO`                 | `/mensajes/{objetoAfectadoId}` (id de la **conversación**) |
-| `PUBLICACION_COCINERO_FAVORITO` | `/platos/{objetoAfectadoId}`                               |
+| `tipo`                          | Destino                                                                                     |
+| ------------------------------- | ------------------------------------------------------------------------------------------- |
+| `PEDIDO_*`                      | `/pedidos/{objetoAfectadoId}/detalle`                                                       |
+| `MENSAJE_NUEVO`                 | `/mensajes/{objetoAfectadoId}` (id de la **conversación**)                                  |
+| `PUBLICACION_COCINERO_FAVORITO` | `/platos/{objetoAfectadoId}`                                                                |
+| `RESENA_RECIBIDA`               | `/resenas/mis-resenas` (PAN-RES-02; `objetoAfectadoId` = id de la reseña, sin usar todavía) |
 
 El push incluye `channelId: 'default'`; la app crea ese canal Android al
 registrar el token.
