@@ -2,15 +2,21 @@ import { useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { router } from 'expo-router';
-import { MENSAJES_EXPLORACION, type CocineroPublico } from '@foodhub/shared';
+import {
+  MENSAJES_EXPLORACION,
+  MENSAJES_RESENA,
+  type CocineroPublico,
+} from '@foodhub/shared';
 import { IconoCocinero } from '../../components/iconos';
 import { SafeAreaView } from '../../components/SafeAreaView';
+import { Boton } from '../../components/ui/Boton';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
 import { EstadoVacio } from '../../components/ui/EstadoVacio';
 import { useCocineroPublico } from '../../hooks/useExploracion';
 import { useAlternarCocineroFavorito } from '../../hooks/useFavoritos';
+import { useEstadoDeResenas } from '../../hooks/useResenas';
 import { useUbicacionActual } from '../../hooks/useUbicacionActual';
 import { mensajeDeError } from '../../lib/api';
 import { formatearPrecio } from '../../lib/formato';
@@ -118,7 +124,13 @@ function Contenido({
   );
 
   if (solapa === 'RESENAS') {
-    return <ListaDeResenas cocineroId={cocinero.id} encabezado={cabecera} />;
+    return (
+      <ListaDeResenas
+        accionVacio={<AccionDejarLaPrimera cocinero={cocinero} />}
+        cocineroId={cocinero.id}
+        encabezado={cabecera}
+      />
+    );
   }
 
   return (
@@ -143,6 +155,40 @@ function Contenido({
         />
       )}
     />
+  );
+}
+
+/**
+ * Botón "Dejar una reseña" del estado vacío — US-RES-03, último tramo del
+ * criterio del cocinero sin reseñas.
+ *
+ * El criterio lo condiciona a que el cliente tenga un pedido completado con ese
+ * cocinero, y esa pregunta ya la contesta `/resenas/estado`: `puedeResenar`
+ * significa exactamente "hay pedido completado con este plato, no hay reseña y
+ * el plazo no venció". Se consulta por los platos del perfil y alcanza con que
+ * uno la cumpla; ese es el que abre el formulario.
+ *
+ * Devuelve `null` cuando no hay ninguno, y entonces `EstadoVacio` queda sin
+ * acción, que es lo correcto para un visitante que nunca le compró.
+ */
+function AccionDejarLaPrimera({ cocinero }: { cocinero: CocineroPublico }) {
+  const publicacionIds = cocinero.publicaciones.map((plato) => plato.id);
+  const estado = useEstadoDeResenas(publicacionIds);
+
+  const resenable = estado.data?.find((fila) => fila.puedeResenar);
+  if (!resenable) return null;
+
+  return (
+    <Boton
+      onPress={() => {
+        router.push({
+          pathname: '/resenas/dejar',
+          params: { publicacionId: resenable.publicacionId },
+        });
+      }}
+    >
+      {MENSAJES_RESENA.dejarUnaResena}
+    </Boton>
   );
 }
 
