@@ -1,7 +1,13 @@
--- Modulo de Notificaciones y Alertas (US-NOT-01 a US-NOT-08), parte 1 de 2:
--- cambios de esquema. La siembra de la preferencia nueva va en 0015, aparte,
--- porque un valor de enum recien agregado no se puede USAR (castear a
--- ::tipo_notificacion) en la misma transaccion en que se agrega.
+-- Modulo de Notificaciones y Alertas (US-NOT-01 a US-NOT-08): cambios de
+-- esquema.
+--
+-- NO hay migracion de datos que siembre la preferencia nueva para los clientes
+-- existentes. drizzle-orm corre TODAS las migraciones pendientes en una unica
+-- transaccion, y PostgreSQL prohibe USAR (castear a ::tipo_notificacion) un
+-- valor de enum recien agregado en la misma transaccion (error 55P04). En vez
+-- de eso, `actualizarPreferencia` (apps/api) hace UPSERT: la fila del switch se
+-- crea la primera vez que el cliente lo cambia. Sin fila, el switch se ve en ON
+-- (el default de recibir), que es el estado inicial correcto.
 --
 -- 1. NUEVO VALOR DE ENUM: PUBLICACION_COCINERO_FAVORITO (US-NOT-06).
 --    El evento "un cocinero favorito publica un plato nuevo" no tenia tipo

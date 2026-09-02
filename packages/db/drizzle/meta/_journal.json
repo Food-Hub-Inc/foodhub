@@ -113,13 +113,6 @@
       "when": 1787351986843,
       "tag": "0014_notificaciones_favoritos_y_push_estado",
       "breakpoints": true
-    },
-    {
-      "idx": 16,
-      "version": "7",
-      "when": 1787352086843,
-      "tag": "0015_sembrar_preferencia_publicacion_favorito",
-      "breakpoints": true
     }
   ]
 }
