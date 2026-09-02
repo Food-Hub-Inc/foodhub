@@ -1,6 +1,7 @@
 import type {
   CategoriaResumen,
   MotivoCancelacionRapido,
+  TipoConsultaCatalogo,
 } from '@foodhub/shared';
 import { api } from '../lib/api';
 
@@ -33,4 +34,17 @@ export function listarMotivosDeCancelacion(): Promise<
   return api.obtener<MotivoCancelacionRapido[]>(
     '/catalogo/motivos-cancelacion',
   );
+}
+
+/**
+ * US-AYU-03 - Tipos de consulta activos para el desplegable de "Contactar al
+ * soporte" (PAN-AYU-03).
+ *
+ * La pantalla los cruza con `ETIQUETAS_TIPO_CONSULTA` para armar el orden y
+ * mostrar solo los CUATRO valores literales del criterio, pero la lista que
+ * devuelve la API puede traer mas si en algun momento el administrador
+ * agrega un quinto. Asi el sistema sigue funcionando sin redeploy.
+ */
+export function listarTiposDeConsulta(): Promise<TipoConsultaCatalogo[]> {
+  return api.obtener<TipoConsultaCatalogo[]>('/catalogo/tipos-consulta');
 }

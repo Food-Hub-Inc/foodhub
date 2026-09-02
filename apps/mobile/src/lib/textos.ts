@@ -204,14 +204,16 @@ export const TEXTOS_PERFIL = {
   reintentar: 'Reintentar',
 } as const;
 
-/** US-AYU-02 · Hub y pantalla de preguntas frecuentes. */
+/** US-AYU-02 a US-AYU-03 · Hub y pantalla de preguntas frecuentes / contacto. */
 export const TEXTOS_AYUDA = {
   titulo: 'Ayuda y soporte',
   preguntasFrecuentes: 'Preguntas frecuentes',
   manual: 'Manual de usuario',
   /**
-   * [PROPIO] Unica entrada de contacto del hub: abre los datos de contacto
-   * (correo y horarios) y desde ahi el boton lleva al formulario.
+   * [PROPIO] Entrada de contacto del hub: abre los datos de contacto
+   * (correo y horarios) y desde ahi el boton lleva al formulario. La pantalla
+   * concreta de "Contactar al soporte" no es entrada directa del hub
+   * porque primero hay que mostrar el canal institucional.
    */
   contacto: 'Datos de contacto',
   legal: 'Información legal',
@@ -222,8 +224,56 @@ export const TEXTOS_AYUDA = {
     'Estamos preparando contenido de ayuda para resolver tus dudas.',
   manualPendiente:
     'El manual reúne instrucciones paso a paso para usar FoodHub según tu rol.',
-  contactoPendiente:
-    'El formulario permite enviar una consulta, sugerencia o reporte al equipo.',
+
+  /**
+   * PAN-AYU-03 - Formulario de "Contactar al soporte" (US-AYU-03). Los
+   * mensajes literales del criterio (confirmaciones, errores, success)
+   * viven en `MENSAJES_AYUDA.consulta`. Acá va la copia no comprometida:
+   * etiquetas de campos, placeholders y los textos de los botones.
+   *
+   * [PROPIO] todos los textos de este bloque: la maquetación no fija
+   * ninguno y el criterio deja al equipo la decisión del wording exacto.
+   */
+  consulta: {
+    /** Reusado por la pantalla de carga del archivo y el selector. */
+    adjuntar: 'Adjuntar archivo',
+    /** Etiqueta del boton que abre el selector de archivos del sistema. */
+    botonAdjuntar: 'Adjuntar archivo',
+    /** Etiqueta del boton que quita un adjunto de la lista. */
+    botonQuitar: 'Quitar',
+    /** Etiqueta del boton principal al pie del formulario. */
+    botonEnviar: 'Enviar consulta',
+    /** Etiqueta del campo "Asunto". */
+    campoAsunto: 'Asunto',
+    /** Etiqueta del area de texto "Descripción". */
+    campoDescripcion: 'Descripción',
+    /** Etiqueta del campo de solo lectura con el correo del usuario. */
+    campoCorreo: 'Tu correo electrónico',
+    /** Etiqueta del desplegable de tipo de consulta. */
+    campoTipoConsulta: 'Tipo de consulta',
+    /** Encabezado del bloque de adjuntos. */
+    bloqueAdjuntos: 'Archivos adjuntos',
+    /** Placeholder del campo Asunto. */
+    placeholderAsunto: 'Contanos brevemente de qué se trata',
+    /** Placeholder del area de descripcion. */
+    placeholderDescripcion: 'Detallá tu consulta, sugerencia o reporte',
+    /** Placeholder del desplegable de tipo de consulta cuando no hay valor. */
+    placeholderTipoConsulta: 'Elegí un tipo de consulta',
+    /**
+     * Reusado en la pantalla de borradores para nominar el archivo. La
+     * extension la completa la pantalla con el nombre real (ej. "foto.jpg").
+     */
+    adjuntoGenerico: 'Adjunto',
+    /**
+     * Tamano legible de un archivo, pasado a la pantalla por el selector. Lo
+     * formatea `formatearTamano` con KB o MB segun corresponda.
+     */
+    tamanoDeAdjunto: (texto: string) => texto,
+    /** Etiqueta accesible del boton Quitar. */
+    quitarAccesible: (nombre: string) => `Quitar el adjunto ${nombre}`,
+    /** Accion secundaria que vacia todos los campos y los adjuntos. */
+    limpiar: 'Limpiar todos los campos',
+  },
 } as const;
 
 /**
@@ -683,12 +733,11 @@ export const PANTALLAS_PENDIENTES = {
     titulo: 'Manual de usuario',
     descripcion: TEXTOS_AYUDA.manualPendiente,
   },
-  contactoAyuda: {
-    codigo: 'PAN-AYU-03',
-    modulo: 'Ayuda y soporte',
-    titulo: 'Contactar al soporte',
-    descripcion: TEXTOS_AYUDA.contactoPendiente,
-  },
+  /**
+   * PAN-AYU-03 (US-AYU-03) ya esta implementada; el placeholder se reemplazo
+   * por la pantalla real en `src/screens/ayuda/Contacto.tsx`. La entrada
+   * queda eliminada para que `PANTALLAS_PENDIENTES` no la liste.
+   */
 } as const;
 
 /**

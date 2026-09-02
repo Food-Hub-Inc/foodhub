@@ -2,7 +2,9 @@ import {
   MENSAJES_MENSAJERIA,
   MENSAJES_PUBLICACION,
   MENSAJES_USUARIO,
+  type FormatoAdjuntoTicket,
   type FormatoImagenPerfil,
+  type SolicitarUrlCargaAdjuntoTicketInput,
   type SolicitarUrlDeCargaCategoriaInput,
   type SolicitarUrlDeCargaInput,
   type SolicitarUrlDeCargaImagenChatInput,
@@ -36,6 +38,19 @@ const EXTENSION: Record<FormatoImagenPerfil, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
+};
+
+/**
+ * Extension del archivo para los adjuntos de un ticket (US-AYU-03).
+ *
+ * Reutiliza el par de imagenes de `EXTENSION` y agrega el PDF. Son tres
+ * valores: JPG, PNG y PDF, exactamente los que admite el criterio de
+ * aceptacion.
+ */
+const EXTENSION_ADJUNTO_TICKET: Record<FormatoAdjuntoTicket, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'application/pdf': 'pdf',
 };
 
 /** Carpeta propia de cada usuario dentro del bucket de perfiles. */
@@ -310,6 +325,60 @@ export async function crearUrlDeCargaDeImagenChat(entrada: {
   const ruta = `${entrada.conversacionId}/${String(Date.now())}.${extension}`;
 
   const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_MENSAJES);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Adjunto de ticket (US-AYU-03)
+// ---------------------------------------------------------------------------
+
+/**
+ * Carpeta del bucket donde caen los adjuntos de los tickets de un usuario.
+ *
+ * Mismo criterio que la carpeta de fotos de plato: la ruta la arma el
+ * servidor a partir del `usuarioId` y la fecha, no del cliente. La inclusion
+ * del id del usuario en la ruta es la salvaguarda contra que un cliente
+ * pisara el archivo de otro: cambiar un UUID en la URL es indistinguible de
+ * un id cualquiera y la policy RLS que Storage aplica por prefijo de carpeta
+ * rechaza la escritura.
+ */
+function carpetaDeAdjuntosDe(usuarioId: string): string {
+  return `tickets/${usuarioId}/`;
+}
+
+/**
+ * US-AYU-03 - Permiso de carga para un archivo adjunto a un ticket (JPG,
+ * PNG o PDF de hasta 5 MB).
+ *
+ * Usa el bucket dedicado `STORAGE_BUCKET_TICKETS` (ver `env.ts`): el
+ * bucket `configuracion` (donde caen el logo y las imagenes de las
+ * categorias) tiene `allowedMimeTypes` restringido y rechaza el PDF
+ * del soporte con 415 "InvalidMimeType". Un bucket dedicado permite
+ * fijar la lista de MIME types del criterio sin tocar al resto. La
+ * ruta bajo el bucket es `tickets/{usuarioId}/{timestamp}.{ext}`.
+ *
+ * LA VALIDACION DE TAMANO Y FORMATO la hace el schema compartido
+ * (`SolicitarUrlCargaAdjuntoTicketInput`) con `zod`; replicarla aca seria
+ * duplicar la regla en dos lugares y exponerse a que un cambio no se
+ * propague. El middleware de errores convierte el `ZodError` en un 400 con
+ * el mensaje literal que definio el schema.
+ */
+export async function crearUrlDeCargaDeAdjuntoTicket(entrada: {
+  usuarioId: string;
+  datos: SolicitarUrlCargaAdjuntoTicketInput;
+}): Promise<UrlDeCarga> {
+  const extension = EXTENSION_ADJUNTO_TICKET[entrada.datos.mimeType];
+  const ruta = `${carpetaDeAdjuntosDe(entrada.usuarioId)}${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_TICKETS);
   const { data, error } = await bucket.createSignedUploadUrl(ruta);
   if (error) throw error;
 

@@ -3,6 +3,7 @@ import {
   categoria,
   configuracionSistema,
   motivoCancelacion,
+  tipoConsulta,
   tipoUsuarioCancelacion,
 } from '@foodhub/db';
 import {
@@ -14,6 +15,7 @@ import {
   type InformacionDeContacto,
   type MotivoCancelacionRapido,
   type TerminosVigentesParaAceptar,
+  type TipoConsultaCatalogo,
   type TipoUsuarioCancelacion,
   type TipoVersionTerminos,
   type VersionVigenteTerminos,
@@ -46,6 +48,34 @@ export async function listarCategoriasActivas(): Promise<CategoriaResumen[]> {
     .from(categoria)
     .where(eq(categoria.activo, true))
     .orderBy(asc(categoria.nombre));
+}
+
+/**
+ * US-AYU-03 - Tipos de consulta activos para el desplegable de "Contactar al
+ * soporte" (PAN-AYU-03).
+ *
+ * Devuelve TODOS los activos, no solo los cuatro que muestra la UI: la
+ * pantalla los filtra localmente contra `ETIQUETAS_TIPO_CONSULTA` y arma
+ * el desplegable. Asi, si en algun momento se agrega un quinto tipo a la
+ * base pero el documento no lo actualiza, el sistema sigue andando: la
+ * app lo mostraria con su nombre de la base, sin necesidad de un deploy.
+ *
+ * Filtramos `activo = true` para que la baja logica desde PAN-ADM-04 saque
+ * la opcion del formulario sin tocar el backend.
+ */
+export async function listarTiposConsultaActivos(): Promise<
+  TipoConsultaCatalogo[]
+> {
+  const filas = await db
+    .select({
+      id: tipoConsulta.id,
+      nombre: tipoConsulta.nombreTipoConsulta,
+    })
+    .from(tipoConsulta)
+    .where(eq(tipoConsulta.activo, true))
+    .orderBy(asc(tipoConsulta.nombreTipoConsulta));
+
+  return filas;
 }
 
 /**
