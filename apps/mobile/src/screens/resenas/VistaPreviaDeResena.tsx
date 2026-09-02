@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 import { MENSAJES_RESENA } from '@foodhub/shared';
 import { IconoEstrella, IconoEstrellaRellena } from '../../components/iconos';
+import { Aviso } from '../../components/ui/Aviso';
 import { Boton } from '../../components/ui/Boton';
 import { TEXTOS_RESENA } from '../../lib/textos';
 
@@ -24,6 +25,7 @@ export function VistaPreviaDeResena({
   comentario,
   tags,
   enviando,
+  error,
   onEditar,
   onPublicar,
 }: {
@@ -32,6 +34,7 @@ export function VistaPreviaDeResena({
   comentario: string;
   tags: readonly string[];
   enviando: boolean;
+  error: string | null;
   onEditar: () => void;
   onPublicar: () => void;
 }) {
@@ -59,6 +62,18 @@ export function VistaPreviaDeResena({
             </Text>
           )}
         </View>
+
+        {/*
+          EL ERROR SE MUESTRA ACA Y NO EN EL FORMULARIO. La vista previa tapa la
+          pantalla entera, asi que un aviso dibujado debajo es un aviso que el
+          usuario nunca lee: al rechazarse el comentario por el filtro de
+          moderacion parecia que el boton no hacia nada.
+        */}
+        {error === null ? null : (
+          <View className="mt-4">
+            <Aviso mensaje={error} tono="error" />
+          </View>
+        )}
 
         <View className="mt-5 flex-row gap-3">
           <View className="flex-1">

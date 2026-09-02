@@ -219,11 +219,6 @@ function Formulario({
           soloLectura={soloLectura}
         />
 
-        <AvisoEnRecuadro
-          mensaje={envio.isError ? mensajeDeError(envio.error) : null}
-          tono="error"
-        />
-
         {soloLectura ? null : (
           <PieDelFormulario
             deshabilitado={faltaCalificacion}
@@ -239,6 +234,7 @@ function Formulario({
         campos={campos}
         enVistaPrevia={enVistaPrevia}
         enviando={envio.isPending}
+        error={envio.isError ? mensajeDeError(envio.error) : null}
         onCerrarExito={() => {
           setPublicada(false);
           if (router.canGoBack()) router.back();
@@ -265,6 +261,7 @@ function SuperposicionesDeEnvio({
   enVistaPrevia,
   publicada,
   enviando,
+  error,
   onEditar,
   onPublicar,
   onCerrarExito,
@@ -273,6 +270,7 @@ function SuperposicionesDeEnvio({
   enVistaPrevia: boolean;
   publicada: boolean;
   enviando: boolean;
+  error: string | null;
   onEditar: () => void;
   onPublicar: () => void;
   onCerrarExito: () => void;
@@ -289,6 +287,7 @@ function SuperposicionesDeEnvio({
         calificacion={campos.calificacion ?? 0}
         comentario={campos.comentario.trim()}
         enviando={enviando}
+        error={error}
         onEditar={onEditar}
         onPublicar={onPublicar}
         tags={campos.tags}
