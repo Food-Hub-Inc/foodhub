@@ -3,6 +3,7 @@ import { FlatList, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import {
   MENSAJES_PEDIDO,
+  MENSAJES_RESENA,
   PESTANA_PEDIDOS_COCINERO,
   type ContadoresPedido,
   type PedidoResumen,
@@ -394,8 +395,11 @@ function AccionMarcarEntregado({ pedido }: { pedido: PedidoResumen }) {
  * sesión, así que con el cliente el par queda determinado.
  */
 function AccionCalificarCliente({ pedido }: { pedido: PedidoResumen }) {
-  if (!pedido.puedeCalificar) return null;
-
+  /*
+   * El boton aparece calificado o no: con el cliente ya calificado dice "Editar
+   * calificacion" (US-RES-02). Antes desaparecia, y el cocinero se quedaba sin
+   * ninguna via para corregir lo que habia puesto.
+   */
   return (
     <PieDeAccion>
       <Boton
@@ -414,7 +418,9 @@ function AccionCalificarCliente({ pedido }: { pedido: PedidoResumen }) {
         tamano="sm"
         variante="secundario"
       >
-        {MENSAJES_PEDIDO.calificarCliente}
+        {pedido.puedeCalificar
+          ? MENSAJES_PEDIDO.calificarCliente
+          : MENSAJES_RESENA.editarCalificacion}
       </Boton>
     </PieDeAccion>
   );

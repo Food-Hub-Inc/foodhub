@@ -7,7 +7,7 @@ import {
   type EventoPedido,
   type PedidoDetalle,
 } from '@foodhub/shared';
-import { IconoEstrella, IconoTildeCirculo } from '../../components/iconos';
+import { IconoEstrella } from '../../components/iconos';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { Aviso } from '../../components/ui/Aviso';
 import { Boton } from '../../components/ui/Boton';
@@ -383,17 +383,17 @@ function AccionDeCalificacion({
 
 /** US-PED-08 y US-RES-02 — una calificación por cliente, no por pedido. */
 function CalificarAlCliente({ pedido }: { pedido: PedidoDetalle }) {
-  if (!pedido.puedeCalificar) {
-    return (
-      <View className="flex-row items-center justify-center gap-2 py-2">
-        <IconoTildeCirculo className="text-success" size={18} />
-        <Text className="text-body text-text-secondary">
-          {MENSAJES_PEDIDO.yaCalificasteAlCliente}
-        </Text>
-      </View>
-    );
-  }
-
+  /*
+   * SIEMPRE HAY BOTON, calificado o no. US-RES-02 lo pide explicitamente: "no
+   * muestre el boton 'Calificar cliente'; en su lugar, muestre 'Editar
+   * calificacion' con el formulario precargado". Antes, con el cliente ya
+   * calificado, esta pantalla mostraba un texto fijo y no habia forma de llegar
+   * al modo edicion desde ningun lado.
+   *
+   * `puedeCalificar` viene resuelto por la API contra `calificacion_cocinero` y
+   * es una por par cocinero-cliente: si ya lo califico en OTRO pedido, este
+   * tambien ofrece editar.
+   */
   return (
     <Boton
       onPress={() => {
@@ -410,8 +410,11 @@ function CalificarAlCliente({ pedido }: { pedido: PedidoDetalle }) {
           },
         });
       }}
+      variante={pedido.puedeCalificar ? 'primario' : 'secundario'}
     >
-      {MENSAJES_PEDIDO.calificarCliente}
+      {pedido.puedeCalificar
+        ? MENSAJES_PEDIDO.calificarCliente
+        : MENSAJES_RESENA.editarCalificacion}
     </Boton>
   );
 }

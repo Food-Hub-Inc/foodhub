@@ -890,9 +890,6 @@ export const MENSAJES_PEDIDO = {
   /** LITERAL - US-PED-08, accion sobre un pedido completado del cocinero. */
   calificarCliente: 'Calificar cliente',
 
-  /** PROPIO - el cocinero ya califico a ese cliente (US-RES-02 es por par). */
-  yaCalificasteAlCliente: 'Ya calificaste a este cliente',
-
   // --- Rechazo por el cocinero (US-PED-04, PAN-PED-04.5) --------------------
   /** LITERAL - US-PED-04, titulo de la pantalla de rechazo. */
   rechazarPedidoTitulo: 'Rechazar pedido',
