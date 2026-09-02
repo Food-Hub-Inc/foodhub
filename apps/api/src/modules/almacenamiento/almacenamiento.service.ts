@@ -358,13 +358,12 @@ function carpetaDeAdjuntosDe(usuarioId: string): string {
  * US-AYU-03 - Permiso de carga para un archivo adjunto a un ticket (JPG,
  * PNG o PDF de hasta 5 MB).
  *
- * Reusa `STORAGE_BUCKET_CONFIGURACION`: la foto del logo, las imagenes de
- * las categorias y los adjuntos del soporte conviven en el mismo bucket por
- * una cuestion de costos y de operacion (un solo bucket para archivos
- * administrados por el backoffice y/o subidos desde formularios autenticados).
- * Si en el futuro US-AYU-05 requiere aislar los adjuntos del resto, sera
- * cuestion de cambiar `STORAGE_BUCKET_CONFIGURACION` por uno nuevo y
- * migrar las claves existentes.
+ * Usa el bucket dedicado `STORAGE_BUCKET_TICKETS` (ver `env.ts`): el
+ * bucket `configuracion` (donde caen el logo y las imagenes de las
+ * categorias) tiene `allowedMimeTypes` restringido y rechaza el PDF
+ * del soporte con 415 "InvalidMimeType". Un bucket dedicado permite
+ * fijar la lista de MIME types del criterio sin tocar al resto. La
+ * ruta bajo el bucket es `tickets/{usuarioId}/{timestamp}.{ext}`.
  *
  * LA VALIDACION DE TAMANO Y FORMATO la hace el schema compartido
  * (`SolicitarUrlCargaAdjuntoTicketInput`) con `zod`; replicarla aca seria
@@ -379,7 +378,7 @@ export async function crearUrlDeCargaDeAdjuntoTicket(entrada: {
   const extension = EXTENSION_ADJUNTO_TICKET[entrada.datos.mimeType];
   const ruta = `${carpetaDeAdjuntosDe(entrada.usuarioId)}${String(Date.now())}.${extension}`;
 
-  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_CONFIGURACION);
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_TICKETS);
   const { data, error } = await bucket.createSignedUploadUrl(ruta);
   if (error) throw error;
 

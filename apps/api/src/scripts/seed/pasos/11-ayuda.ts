@@ -23,12 +23,15 @@ import { usuarioPorSlug } from '../lib/contexto.js';
  *
  * SOBRE LOS ADJUNTOS DE LOS TICKETS
  *
- * `adjunto_ticket` guarda una URL de un archivo subido por el usuario, pero
- * hoy la API no tiene endpoint de carga para ese caso y no hay bucket asignado.
- * La seed los sube al bucket `configuracion`, bajo `tickets/{ticketId}/`.
- * ES UNA DECISION DE LA SEED, no una convencion del sistema: cuando se
- * implemente la subida de US-AYU-05 hay que alinear esta ruta con la que
- * defina `almacenamiento.service.ts` y volver a correr el script.
+ * `adjunto_ticket` guarda una URL de un archivo subido por el usuario. La
+ * seed los sube al bucket `tickets`, bajo `tickets/{ticketId}/`. Ese
+ * bucket es el mismo que usa el endpoint de carga de US-AYU-03
+ * (`STORAGE_BUCKET_TICKETS` en `env.ts`) y debe estar configurado en
+ * Supabase Storage con `allowedMimeTypes` = `image/jpeg, image/png,
+ * application/pdf` y `Public` = ON (porque la URL se construye con
+ * `getPublicUrl` y se sirve directo al cliente). Si el bucket no existe
+ * o la configuracion difiere, los adjuntos de los tickets de prueba
+ * no se serviran.
  */
 
 async function sembrarManual(contexto: ContextoSeed): Promise<void> {
@@ -129,7 +132,7 @@ async function sembrarTickets(contexto: ContextoSeed): Promise<void> {
       semilla.adjunto.archivoLocal,
     );
     const archivoUrl = await subirImagen({
-      bucket: 'configuracion',
+      bucket: 'tickets',
       carpeta: `tickets/${fila.id}`,
       archivoLocal: semilla.adjunto.archivoLocal,
     });
