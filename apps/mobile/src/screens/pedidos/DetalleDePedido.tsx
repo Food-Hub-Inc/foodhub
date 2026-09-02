@@ -400,6 +400,23 @@ function AccionDeCalificacion({
     ) : null;
   }
 
+  /*
+   * EL PEDIDO CANCELADO EXPLICA POR QUE NO SE PUEDE, en vez de no mostrar nada.
+   * US-RES-01 lo pide en su ultimo criterio: "no muestre el boton 'Dejar
+   * resena' ... y, en su lugar, indique el motivo aplicable". Callarse deja al
+   * cliente buscando un boton que no existe.
+   *
+   * Solo aplica a RECHAZADO, el unico estado terminal de fracaso del modelo
+   * (cubre el rechazo del cocinero y la cancelacion del cliente). Un pedido en
+   * curso -CREADO, ACEPTADO o LISTO- no muestra nada: todavia puede completarse
+   * y decirle "no se puede resenar un pedido cancelado" seria falso.
+   */
+  if (pedido.estado === 'RECHAZADO') {
+    return (
+      <Aviso mensaje={MENSAJES_RESENA.pedidoNoCompletado} tono="informativo" />
+    );
+  }
+
   if (pedido.estado !== 'COMPLETADO') return null;
   return <ResenarCadaPlato pedido={pedido} />;
 }
