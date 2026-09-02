@@ -7,7 +7,7 @@ El núcleo del módulo se implementó en la rama `feature/Reseña_calificaciones
 **US-RES-03** (ver reseñas y promedio), con la corrección de **RF031** sobre
 PAN-PED-06.
 
-Quedaron ocho cosas afuera. Este documento existe para que no se pierdan y para
+Quedaron once cosas afuera. Este documento existe para que no se pierdan y para
 que quede claro que **son decisiones, no olvidos** — mismo criterio que
 `PENDIENTE_DASHBOARD_COCINERO.md`.
 
@@ -221,6 +221,132 @@ select estado_pedido_actual, count(*)
 ```
 
 Si da 3 o más, el comportamiento es correcto y no hay nada que arreglar.
+
+---
+
+## 9. Cuatro criterios de aceptación sin cumplir
+
+**Estado:** detectados en la auditoría contra la especificación del 2026-09-01.
+Ninguno estaba documentado hasta ahora.
+
+### 9.1 · El listado no pagina — US-RES-03
+
+> "Cargue las 10 reseñas más recientes por defecto y **bloques adicionales de 10
+> al hacer scroll**."
+
+El endpoint pagina correctamente y el contrato lo soporta, pero
+`ListaDeResenas` no pide la página siguiente: le falta `onEndReached` sobre la
+`FlatList` y pasar la consulta a `useInfiniteQuery`. Con más de diez reseñas,
+de la once en adelante son inalcanzables.
+
+Es el más visible de los cuatro en cuanto haya volumen de datos.
+
+### 9.2 · No hay galería a pantalla completa — US-RES-03
+
+> "El cliente presiona sobre una imagen adjunta → Muestre una galería en
+> pantalla completa con la imagen ampliada y permita navegar entre las imágenes
+> de otras reseñas del mismo cocinero deslizando lateralmente."
+
+No está implementado: la foto se dibuja en la tarjeta y no se puede ampliar.
+
+**Encadenado al punto 1:** hoy no hay forma de subir una foto, así que el caso
+no se puede observar. Conviene hacerlo junto con el adjunto.
+
+### 9.3 · Falta el botón del estado vacío — US-RES-03
+
+> "Si el cliente tiene un pedido completado con ese cocinero, muestre el botón
+> **'Dejar una reseña'**."
+
+`ListaDeResenas` acepta la acción por la prop `accionVacio`, pero el perfil
+público nunca se la pasa. El literal `dejarUnaResena` existe en
+`MENSAJES_RESENA` y no se usa en ninguna parte.
+
+Para cerrarlo hace falta además saber si el cliente tiene un pedido completado
+con ese cocinero, dato que hoy no viaja en `CocineroPublico`.
+
+### 9.4 · No se explica por qué no se puede reseñar — US-RES-01
+
+> "El pedido está en estado distinto a Completado → No muestre el botón y, en su
+> lugar, **indique el motivo aplicable: 'No se puede reseñar un plato de un
+> pedido cancelado.'**"
+
+Hoy la pantalla simplemente no dibuja nada. El literal
+`MENSAJES_RESENA.pedidoNoCompletado` está escrito y sin usar.
+
+Es el más barato de los cuatro: es mostrar un mensaje que ya existe.
+
+---
+
+## 10. El filtro de moderación no bloquea
+
+**Estado:** BUG ABIERTO, sin diagnosticar.
+
+Cargando un término desde PAN-ADM-04 y escribiéndolo en el comentario de una
+reseña, la reseña **se publica igual**.
+
+Lo verificado hasta ahora, todo correcto:
+
+- la clave del parámetro coincide entre el schema, la migración y el servicio;
+- el panel envía el objeto completo y el router lo valida con
+  `parametrosResenasSchema`, que exige el campo;
+- `crearResena` llama a `verificarModeracion` antes de insertar;
+- las pruebas de `contieneTerminoModerado` pasan, incluidas mayúsculas y tildes.
+
+Queda por descartar si el valor llega a la base. La consulta que lo resuelve:
+
+```sql
+select clave, valor from configuracion_sistema where clave like 'resena_%';
+```
+
+| Si `valor` está… | El problema está en     |
+| ---------------- | ----------------------- |
+| vacío            | la escritura del panel  |
+| con el término   | la lectura del servicio |
+
+**Sospecha adicional:** si el guardado del panel estuviera roto, también
+fallaría el mínimo para el promedio. Probar ese parámetro es el mismo
+diagnóstico sin costo extra.
+
+---
+
+## 11. "Cliente nuevo" no se pudo confirmar
+
+**Estado:** sin verificar.
+
+En una prueba del 2026-08-23 se observó el promedio en lugar de la leyenda
+"Cliente nuevo" sobre un cliente que, según el equipo, tenía menos de tres
+pedidos completados. No se llegó a contrastar contra los datos.
+
+```sql
+select estado_pedido_actual, count(*)
+  from pedido
+ where cliente_pedido_id = '<id del cliente>'
+ group by estado_pedido_actual;
+```
+
+Si da tres o más, el comportamiento es correcto y no hay nada que arreglar.
+
+---
+
+## Hallazgo fuera del módulo: `ACEPTADO → RECHAZADO` es inalcanzable
+
+RF081 habilita al cocinero a calificar "aún cuando el pedido posteriormente sea
+cancelado", y explica que ese es justamente el caso del cliente que no aparece
+a retirar.
+
+**Ese escenario no se puede producir hoy.** `TRANSICIONES_PEDIDO` contempla
+`ACEPTADO → RECHAZADO`, pero ningún endpoint lo provoca: `rechazarPedido` y
+`cancelarPedido` exigen los dos que el pedido esté en `CREADO`. Una vez
+aceptado, el único camino es `LISTO → COMPLETADO`.
+
+Consecuencia práctica: si el cliente no retira, el cocinero no tiene forma de
+cerrar el pedido y queda colgado en "Preparando" o "Listo".
+
+**No es un defecto de Reseñas** —es un hueco del módulo de Pedidos, probablemente
+de US-PED-04 o US-PED-09— pero deja sin cubrir un caso que RF081 nombra
+explícitamente. El módulo de Reseñas ya está preparado: lee el hito del
+historial, así que el día que Pedidos permita esa transición el botón aparece
+solo.
 
 ---
 
