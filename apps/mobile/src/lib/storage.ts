@@ -57,12 +57,44 @@ export async function subirArchivoFirmado(entrada: {
    * archivo o si la request nunca llegó. El estado hay que mirarlo a mano o una
    * subida rechazada se guardaría como exitosa y la fila quedaría apuntando a
    * un objeto que no existe.
+   *
+   * Se incluye el cuerpo de la respuesta en el error porque Supabase Storage
+   * devuelve un JSON con el motivo real del rechazo ("Bucket not found",
+   * "mime type not allowed", etc.) y sin ese dato el 400 es opaco y no se
+   * puede distinguir un problema de configuracion del bucket de uno de
+   * permisos/Ruta.
    */
   if (respuesta.status < 200 || respuesta.status >= 300) {
+    const cuerpo = leerCuerpoDeError(respuesta);
     throw new Error(
-      `Supabase Storage rechazó la subida (${String(respuesta.status)}).`,
+      `Supabase Storage rechazó la subida (${String(respuesta.status)}): ${cuerpo}`,
     );
   }
 
   return entrada.carga.urlPublica;
+}
+
+/**
+ * Extrae el mensaje de error del cuerpo de la respuesta de Supabase Storage.
+ *
+ * Supabase suele responder con JSON `{"statusCode":"...", "message":"..."}`
+ * o `{"error":"..."}`. Si el cuerpo es un string, lo devolvemos tal cual;
+ * si es un objeto, intentamos `message` / `error`. Sin esto, un 400
+ * viene opaco y no se distingue un bucket mal configurado de un problema
+ * de permisos.
+ */
+function leerCuerpoDeError(respuesta: { body?: unknown }): string {
+  const { body } = respuesta;
+  if (typeof body === 'string') return body;
+  if (body && typeof body === 'object') {
+    const obj = body as { message?: unknown; error?: unknown };
+    if (typeof obj.message === 'string') return obj.message;
+    if (typeof obj.error === 'string') return obj.error;
+    try {
+      return JSON.stringify(body);
+    } catch {
+      return '(cuerpo no serializable)';
+    }
+  }
+  return '(sin cuerpo en la respuesta)';
 }
