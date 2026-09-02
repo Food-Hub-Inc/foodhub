@@ -17,14 +17,41 @@ import { usuario } from './usuarios.js';
  */
 
 /**
+ * Estado del envio push de una notificacion. Es infraestructura INTERNA de la
+ * API -no figura en el diagrama de clases, igual que `dispositivo_push`- y por
+ * eso vive como `varchar` con un tipo de TypeScript y no como un ENUM de
+ * PostgreSQL ni como literal de `@foodhub/shared`: ningun cliente lo ve.
+ *
+ *   PENDIENTE    fila escrita, push todavia no intentado (o el intento sincrono
+ *                del handler fallo de forma transitoria). El poller la toma.
+ *   ENVIADO      Expo acepto el mensaje para al menos un dispositivo.
+ *   SIN_DESTINO  fila escrita pero el usuario no tiene ningun `dispositivo_push`
+ *                activo al que enviar. Terminal, sin reintento.
+ *   FALLIDO      habia dispositivos y Expo los rechazo de forma permanente.
+ *                Terminal.
+ */
+export const PUSH_ESTADO_NOTIFICACION = [
+  'PENDIENTE',
+  'ENVIADO',
+  'SIN_DESTINO',
+  'FALLIDO',
+] as const;
+export type PushEstadoNotificacion = (typeof PUSH_ESTADO_NOTIFICACION)[number];
+
+/**
  * Diagrama: Notificacion. Historial in-app de lo que se le notifico a cada
- * usuario. El envio push por FCM es un efecto adicional: la fila se escribe
- * siempre, aunque el push falle o el usuario tenga las notificaciones
- * desactivadas en el sistema operativo.
+ * usuario. El envio push por Expo/FCM es un efecto adicional.
+ *
+ * REGLA DE ESCRITURA DE LA FILA (documento del modulo, revision 01/09/2026):
+ * para los tipos CONFIGURABLES, si el usuario tiene la preferencia apagada NO
+ * se escribe la fila NI se manda el push. Para los tipos ESENCIALES
+ * (`AVISO_SISTEMA`, `PUBLICACION_ELIMINADA_ADMIN`) la fila se escribe siempre.
+ * Esto corrige la regla anterior de "la fila se escribe siempre" que todavia
+ * describe la skill `foodhub`.
  *
  * `objetoAfectadoId` es un identificador polimorfico (puede apuntar a un
- * pedido, un mensaje o una publicacion) y por eso no lleva FK: se resuelve en
- * la aplicacion segun `tipoNotificacion` para armar el deep link.
+ * pedido, una conversacion o una publicacion) y por eso no lleva FK: se
+ * resuelve en la app segun `tipoNotificacion` para armar el deep link.
  */
 export const notificacion = pgTable(
   'notificacion',
@@ -38,6 +65,16 @@ export const notificacion = pgTable(
     cuerpo: varchar('cuerpo', { length: 500 }).notNull(),
     objetoAfectadoId: uuid('objeto_afectado_id'),
     leida: boolean('leida').notNull().default(false),
+    /**
+     * Estado del envio push. Arranca en 'PENDIENTE': el emisor intenta el push
+     * de forma sincrona y, si no puede, lo deja para el poller (que ademas
+     * cubre las notificaciones que escribe la funcion SQL de expiracion de
+     * pedidos, US-NOT-01, que no puede hablar con Expo).
+     */
+    pushEstado: varchar('push_estado', { length: 20 })
+      .notNull()
+      .default('PENDIENTE')
+      .$type<PushEstadoNotificacion>(),
     fechaCreacion: timestamp('fecha_creacion', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -52,6 +89,12 @@ export const notificacion = pgTable(
     index('notificacion_no_leidas_idx')
       .on(t.usuarioDestinoId)
       .where(sql`${t.leida} = false`),
+    // El poller de push barre esta tabla cada ~30s buscando lo pendiente. El
+    // indice parcial la mantiene diminuta: casi todas las filas pasan a
+    // ENVIADO/SIN_DESTINO/FALLIDO en la primera corrida.
+    index('notificacion_push_pendiente_idx')
+      .on(t.fechaCreacion)
+      .where(sql`${t.pushEstado} = 'PENDIENTE'`),
   ],
 ).enableRLS();
 
