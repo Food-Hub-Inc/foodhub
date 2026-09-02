@@ -25,6 +25,7 @@ import {
 import { db } from '../../lib/db.js';
 import { subconsultaValoracionPorCocinero } from '../../lib/valoraciones.js';
 import { AppError, noEncontrado } from '../../middleware/error.middleware.js';
+import { notificarNuevoPedido } from '../notificaciones/disparadores.service.js';
 import { depurarYLimpiar } from '../exploracion/carrito.service.js';
 import { obtenerMinutosDeCancelacion } from '../configuracion/parametrosSistema.service.js';
 import {
@@ -182,6 +183,9 @@ export async function confirmarPedido(entrada: {
       origenTransicion: 'CLIENTE',
       usuarioResponsableId: clienteId,
     });
+
+    // US-NOT-01 - Aviso al cocinero del pedido nuevo, atomico con el alta.
+    await notificarNuevoPedido(tx, creado.id);
 
     // "Vacie el carrito de forma automatica". Se borra el carrito y no solo sus
     // items: el estado vacio de PAN-PED-01.1 es la ausencia de carrito, mismo

@@ -2,7 +2,7 @@ import { cerrarConexion } from '@foodhub/db';
 import { crearApp } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
-import { iniciarDespachadorDePush } from './modules/notificaciones/despacho.service.js';
+import { iniciarPlanificadorDeNotificaciones } from './modules/notificaciones/planificador.js';
 
 /**
  * Punto de entrada del proceso: levanta el servidor HTTP y gestiona su ciclo
@@ -19,12 +19,13 @@ const servidor = app.listen(env.PORT, () => {
 });
 
 /**
- * Despachador de notificaciones push (US-NOT-01 a US-NOT-06). Vive aca y no en
- * `crearApp` a proposito: es un proceso periodico, no un middleware, y las
- * pruebas de integracion levantan `crearApp` con supertest sin que un timer se
- * quede corriendo entre casos.
+ * Planificador de notificaciones (US-NOT-01 a US-NOT-06): notifica las
+ * expiraciones de pedidos que resolvio PostgreSQL y despacha el push
+ * pendiente. Vive aca y no en `crearApp` a proposito: es un proceso periodico,
+ * no un middleware, y las pruebas de integracion levantan `crearApp` con
+ * supertest sin que un timer se quede corriendo entre casos.
  */
-const detenerDespachador = iniciarDespachadorDePush();
+const detenerNotificaciones = iniciarPlanificadorDeNotificaciones();
 
 /**
  * Apagado ordenado.
@@ -38,7 +39,7 @@ const detenerDespachador = iniciarDespachadorDePush();
 function apagar(senal: NodeJS.Signals): void {
   logger.info({ senal }, 'apagando el servidor');
 
-  detenerDespachador();
+  detenerNotificaciones();
 
   servidor.close(() => {
     void cerrarConexion().then(() => {

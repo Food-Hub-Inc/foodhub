@@ -220,32 +220,17 @@ export async function despacharPendientes(): Promise<void> {
 
 // --- Ciclo de vida ----------------------------------------------------
 
-/**
- * Arranca el barrido por intervalo. Lo llama `server.ts` (NO `crearApp`, para
- * que las pruebas con supertest no lo enciendan). Devuelve la funcion de
- * apagado ordenado.
- */
-export function iniciarDespachadorDePush(): () => void {
-  if (!DESPACHO_HABILITADO) return () => undefined;
+/** `true` en test: el planificador no debe encender el barrido por intervalo. */
+export { DESPACHO_HABILITADO };
 
-  // Recupera lo que quedo a medias en un crash anterior.
-  void db
+/**
+ * Devuelve a PENDIENTE las filas que quedaron en ENVIANDO por un crash del
+ * proceso anterior. Lo llama el planificador al arrancar, antes del primer
+ * barrido. Ver la limitacion multi-instancia en el comentario de cabecera.
+ */
+export async function recuperarEnviosInterrumpidos(): Promise<void> {
+  await db
     .update(notificacion)
     .set({ pushEstado: 'PENDIENTE' })
-    .where(eq(notificacion.pushEstado, 'ENVIANDO'))
-    .then(() => {
-      void despacharPendientes();
-    })
-    .catch((error: unknown) => {
-      logger.error({ err: error }, 'no se pudo recuperar el estado del push');
-    });
-
-  const intervalo = setInterval(() => {
-    void despacharPendientes();
-  }, env.NOTIFICACIONES_DESPACHO_INTERVALO_MS);
-  intervalo.unref();
-
-  return () => {
-    clearInterval(intervalo);
-  };
+    .where(eq(notificacion.pushEstado, 'ENVIANDO'));
 }

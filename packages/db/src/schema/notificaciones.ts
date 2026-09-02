@@ -25,8 +25,10 @@ import { usuario } from './usuarios.js';
  *   PENDIENTE    fila escrita, push todavia no intentado. El despachador la toma.
  *   ENVIANDO     un despachador la reclamo (UPDATE ... FOR UPDATE SKIP LOCKED)
  *                y esta hablando con Expo. Estado transitorio: si el proceso
- *                muere aca, el reaper la devuelve a PENDIENTE pasado un margen.
+ *                muere aca, el reset de arranque la devuelve a PENDIENTE.
  *   ENVIADO      Expo acepto el mensaje para al menos un dispositivo.
+ *   OMITIDO      la fila se escribio pero el push se salteo a proposito: el
+ *                destinatario tenia esa conversacion de chat abierta (US-NOT-02).
  *   SIN_DESTINO  fila escrita pero el usuario no tiene ningun `dispositivo_push`
  *                activo al que enviar. Terminal, sin reintento.
  *   FALLIDO      habia dispositivos y Expo los rechazo de forma permanente.
@@ -36,6 +38,7 @@ export const PUSH_ESTADO_NOTIFICACION = [
   'PENDIENTE',
   'ENVIANDO',
   'ENVIADO',
+  'OMITIDO',
   'SIN_DESTINO',
   'FALLIDO',
 ] as const;

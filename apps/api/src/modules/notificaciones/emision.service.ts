@@ -43,6 +43,14 @@ interface DatosNotificacion {
   objetoAfectadoId: string | null;
 }
 
+interface OpcionesEmision {
+  /**
+   * US-NOT-02: el destinatario tiene el chat abierto. Se escribe la fila igual
+   * (queda en el historial) pero NO se manda push. La fila nace 'OMITIDO'.
+   */
+  omitirPush?: boolean;
+}
+
 function esEsencial(tipo: TipoNotificacion): boolean {
   return TIPOS_NOTIFICACION_ESENCIALES.includes(tipo);
 }
@@ -80,6 +88,7 @@ async function conPreferenciaApagada(
 export async function emitirNotificacion(
   datos: DatosNotificacion,
   cx: Ejecutor = db,
+  opciones: OpcionesEmision = {},
 ): Promise<{ id: string } | null> {
   if (!esEsencial(datos.tipo)) {
     const apagada = await conPreferenciaApagada(cx, datos.tipo, [
@@ -96,10 +105,11 @@ export async function emitirNotificacion(
       titulo: datos.titulo,
       cuerpo: datos.cuerpo,
       objetoAfectadoId: datos.objetoAfectadoId,
+      ...(opciones.omitirPush ? { pushEstado: 'OMITIDO' as const } : {}),
     })
     .returning({ id: notificacion.id });
 
-  programarDespachoInmediato();
+  if (!opciones.omitirPush) programarDespachoInmediato();
   return fila ? { id: fila.id } : null;
 }
 
