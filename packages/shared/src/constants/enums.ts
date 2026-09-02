@@ -87,7 +87,19 @@ export type TipoMensaje = (typeof TIPO_MENSAJE)[number];
 export const ESTADO_MENSAJE = ['ENVIADO', 'ENTREGADO', 'LEIDO'] as const;
 export type EstadoMensaje = (typeof ESTADO_MENSAJE)[number];
 
-/** Eventos que disparan una notificacion push o in-app. */
+/**
+ * Eventos que disparan una notificacion push o in-app (US-NOT-01 a US-NOT-06).
+ *
+ * Los tres caminos que llevan un pedido a RECHAZADO -el cocinero rechaza, el
+ * cliente cancela y el sistema expira- comparten el UNICO tipo
+ * `PEDIDO_RECHAZADO`: derivan al mismo estado interno y se distinguen por
+ * `pedido.origen_rechazo` (COCINERO / CLIENTE / SISTEMA), que es lo que elige
+ * el texto en `MENSAJES_NOTIFICACION`.
+ *
+ * `PUBLICACION_COCINERO_FAVORITO` (US-NOT-06) se agrega al final: el `ALTER TYPE
+ * ... ADD VALUE` de PostgreSQL tambien lo agrega al final del enum, y el
+ * literal figura en `TipoNotificacion` del diagrama DG12082026_V5.
+ */
 export const TIPO_NOTIFICACION = [
   'PEDIDO_CREADO',
   'PEDIDO_ACEPTADO',
@@ -98,6 +110,7 @@ export const TIPO_NOTIFICACION = [
   'RESENA_RECIBIDA',
   'PUBLICACION_ELIMINADA_ADMIN',
   'AVISO_SISTEMA',
+  'PUBLICACION_COCINERO_FAVORITO',
 ] as const;
 export type TipoNotificacion = (typeof TIPO_NOTIFICACION)[number];
 

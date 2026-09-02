@@ -25,6 +25,8 @@
  * cuando difieren.
  */
 
+import { formatearPrecioArs, truncarTexto } from '../lib/formato.js';
+
 /** Modulo de Autenticacion y Control de Acceso (US-AUT-01 a US-AUT-05). */
 export const MENSAJES_AUTH = {
   /** LITERAL - US-AUT-01, correo ya existente en el registro de cliente. */
@@ -1380,6 +1382,132 @@ export const MENSAJES_MENSAJERIA = {
    * nombre original y oculte el boton 'Ver perfil'".
    */
   usuarioNoDisponible: 'Usuario no disponible',
+} as const;
+
+/**
+ * Modulo de Notificaciones y Alertas (US-NOT-01 a US-NOT-08, RF034 a RF041).
+ * Documento del modulo: `ModuloNotificaciones_DEFINITIVO.md` (revision 01/09/2026).
+ *
+ * DOS PARTES EN CADA NOTIFICACION, Y SOLO UNA ESTA COMPROMETIDA
+ *
+ *   cuerpo   LITERAL. Es el texto que fija el criterio de aceptacion, el que
+ *            muestra la tarjeta de PAN-NOT-01 y el que verifica la Etapa 6
+ *            palabra por palabra. Cambiar una tilde, un guion (`—` vs `-`) o un
+ *            punto final rompe la trazabilidad con el documento.
+ *   titulo   PROPIO. Rotulo corto por tipo de evento. Se ve en el encabezado
+ *            del push del sistema operativo y como titulo de la tarjeta; ningun
+ *            criterio lo fija. Existe porque `notificacion.titulo` es NOT NULL
+ *            y porque varios `cuerpo` (los de "Listo", "Completado", "Rechazado"
+ *            por el cocinero) no nombran a nadie ni al evento.
+ *
+ * Cada funcion devuelve `{ titulo, cuerpo }`: los dos se guardan juntos en la
+ * fila de `notificacion` y viajan juntos en el push.
+ *
+ * LOS TRES RECHAZOS SON EL MISMO `TIPO_NOTIFICACION` (`PEDIDO_RECHAZADO`). El
+ * cocinero que rechaza, el cliente que cancela y el sistema que expira derivan
+ * todos al estado interno RECHAZADO; se distinguen por `pedido.origen_rechazo`
+ * (COCINERO / CLIENTE / SISTEMA), que es lo que elige cual de estos textos va y
+ * a quien. Por eso hay cuatro funciones para un solo tipo de enum.
+ */
+export const MENSAJES_NOTIFICACION = {
+  /**
+   * LITERAL - RF040 / US-NOT-07, estado vacio del historial. Voseo
+   * ("tenés", no "tienes") por la correccion del changelog de la revision del
+   * 01/09/2026 (item 6): "voseo consistente con el resto del proyecto".
+   */
+  historialVacio: 'Todavía no tenés notificaciones.',
+
+  // --- US-NOT-01 · Ciclo de vida del pedido (RF034) -----------------------
+
+  /**
+   * LITERAL (cuerpo) - US-NOT-01, al COCINERO cuando el cliente confirma un
+   * pedido nuevo. El separador es un `—` (raya, U+2014), tal como el criterio.
+   */
+  pedidoCreado: (
+    nombrePlato: string,
+    nombreCliente: string,
+    numeroPedido: string,
+  ) => ({
+    titulo: 'Nuevo pedido',
+    cuerpo: `Nuevo pedido recibido — ${nombrePlato} de ${nombreCliente}. Pedido #${numeroPedido}.`,
+  }),
+
+  /** LITERAL (cuerpo) - US-NOT-01, al CLIENTE cuando el cocinero acepta (Aceptado). */
+  pedidoAceptado: (nombreCocinero: string, numeroPedido: string) => ({
+    titulo: 'Pedido aceptado',
+    cuerpo: `¡Tu pedido fue aceptado! ${nombreCocinero} ya está preparando tu pedido. Pedido #${numeroPedido}.`,
+  }),
+
+  /** LITERAL (cuerpo) - US-NOT-01, al CLIENTE cuando el cocinero marca "Listo". */
+  pedidoListo: (numeroPedido: string) => ({
+    titulo: 'Pedido listo',
+    cuerpo: `¡Tu pedido está listo! Pedido #${numeroPedido}.`,
+  }),
+
+  /** LITERAL (cuerpo) - US-NOT-01, al CLIENTE cuando el cocinero marca "Completado". */
+  pedidoCompletado: (numeroPedido: string) => ({
+    titulo: 'Pedido entregado',
+    cuerpo: `¡Tu pedido fue entregado! ¿Cómo estuvo? Podés dejar tu reseña. Pedido #${numeroPedido}.`,
+  }),
+
+  /** LITERAL (cuerpo) - US-NOT-01, al CLIENTE cuando el cocinero rechaza (origen_rechazo = COCINERO). */
+  pedidoRechazadoPorCocinero: (numeroPedido: string) => ({
+    titulo: 'Pedido rechazado',
+    cuerpo: `Tu pedido fue rechazado por el cocinero. Pedido #${numeroPedido}. Ingresá para ver el motivo.`,
+  }),
+
+  /** LITERAL (cuerpo) - US-NOT-01, al COCINERO cuando el cliente cancela (origen_rechazo = CLIENTE). */
+  pedidoCanceladoPorCliente: (nombrePlato: string, numeroPedido: string) => ({
+    titulo: 'Pedido cancelado',
+    cuerpo: `El cliente canceló su pedido. ${nombrePlato}. Pedido #${numeroPedido}.`,
+  }),
+
+  /** LITERAL (cuerpo) - US-NOT-01, al COCINERO cuando el sistema expira el pedido (origen_rechazo = SISTEMA). */
+  pedidoExpiradoParaCocinero: (nombrePlato: string, numeroPedido: string) => ({
+    titulo: 'Pedido cancelado',
+    cuerpo: `El pedido fue cancelado. ${nombrePlato}. Pedido #${numeroPedido}.`,
+  }),
+
+  /**
+   * LITERAL (cuerpo) - US-NOT-01, al CLIENTE cuando el sistema expira el pedido.
+   * El "-" es un guion medio con espacios, tal como lo escribe el criterio (NO
+   * un "—"): "Tu pedido expiró - el cocinero no respondió a tiempo.".
+   */
+  pedidoExpiradoParaCliente: (numeroPedido: string) => ({
+    titulo: 'Pedido expirado',
+    cuerpo: `Tu pedido expiró - el cocinero no respondió a tiempo. Pedido #${numeroPedido}.`,
+  }),
+
+  // --- US-NOT-02 · Mensaje nuevo en el chat (RF035) ----------------------
+
+  /**
+   * LITERAL (cuerpo) - US-NOT-02. El texto del mensaje se trunca a 80
+   * caracteres con `truncarTexto`, que nunca devuelve mas de 80. SIN punto
+   * final: el "." del documento es puntuacion del renglon de la tabla de
+   * criterios, no del literal, y agregarlo a un texto que ya puede terminar en
+   * "?" o "!" lo dejaria mal.
+   */
+  mensajeNuevo: (nombreRemitente: string, textoMensaje: string) => ({
+    titulo: 'Mensaje nuevo',
+    cuerpo: `${nombreRemitente}: ${truncarTexto(textoMensaje, 80)}`,
+  }),
+
+  // --- US-NOT-06 · Publicacion de un cocinero favorito (RF039) ----------
+
+  /**
+   * LITERAL (cuerpo) - US-NOT-06, al CLIENTE cuando un cocinero que tiene como
+   * favorito crea un plato nuevo. El nombre del plato va entre comillas simples
+   * rectas y el precio con `formatearPrecioArs` ("$1.500,00", sin espacio
+   * despues del "$"); el separador es un `—` (raya, U+2014).
+   */
+  publicacionDeCocineroFavorito: (
+    nombreCocinero: string,
+    nombrePlato: string,
+    precio: string,
+  ) => ({
+    titulo: 'Nueva publicación',
+    cuerpo: `${nombreCocinero} publicó un nuevo plato: '${nombrePlato}' — ${formatearPrecioArs(precio)}.`,
+  }),
 } as const;
 
 /**

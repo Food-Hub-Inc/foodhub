@@ -48,6 +48,11 @@ describe('obtenerPreferencias', () => {
         modificable: true,
       },
       { tipoNotificacion: 'MENSAJE_NUEVO', activa: true, modificable: true },
+      {
+        tipoNotificacion: 'PUBLICACION_COCINERO_FAVORITO',
+        activa: true,
+        modificable: true,
+      },
       { tipoNotificacion: 'AVISO_SISTEMA', activa: true, modificable: false },
     ]);
 
@@ -59,6 +64,11 @@ describe('obtenerPreferencias', () => {
     expect(preferencias).toEqual([
       { grupo: 'CAMBIO_ESTADO_PEDIDO', activa: false, modificable: true },
       { grupo: 'MENSAJE_NUEVO', activa: true, modificable: true },
+      {
+        grupo: 'PUBLICACION_COCINERO_FAVORITO',
+        activa: true,
+        modificable: true,
+      },
       { grupo: 'AVISO_SISTEMA', activa: true, modificable: false },
     ]);
   });
