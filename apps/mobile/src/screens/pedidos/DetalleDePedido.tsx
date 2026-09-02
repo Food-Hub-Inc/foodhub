@@ -376,9 +376,37 @@ function AccionDeCalificacion({
   pedido: PedidoDetalle;
   esCocinero: boolean;
 }) {
+  /*
+   * CADA DIRECCION SE HABILITA CON UN HITO DISTINTO, y confundirlos deja sin
+   * cubrir justo el caso que la historia quiere resolver.
+   *
+   *   cliente → plato    solo si el pedido esta COMPLETADO. "Solo se resena una
+   *                      publicacion que el cliente recibio en un pedido
+   *                      completado" (RF080).
+   *   cocinero → cliente si el pedido ALCANZO ACEPTADO alguna vez, "aun cuando
+   *                      posteriormente sea cancelado" (RF081). Es literal del
+   *                      requisito, y el motivo tambien: el incumplimiento
+   *                      tipico -que el cliente no aparezca a retirar- termina
+   *                      en un pedido cancelado, nunca en uno completado.
+   *
+   * El hito del cocinero se lee del HISTORIAL y no del estado actual: un pedido
+   * aceptado y despues cancelado figura hoy como RECHAZADO, y mirar la cabecera
+   * le sacaria el derecho justo cuando mas lo necesita. Es el mismo criterio que
+   * ya usa el servidor en `hubopedidoAceptado`.
+   */
+  if (esCocinero) {
+    return alcanzoAceptado(pedido) ? (
+      <CalificarAlCliente pedido={pedido} />
+    ) : null;
+  }
+
   if (pedido.estado !== 'COMPLETADO') return null;
-  if (esCocinero) return <CalificarAlCliente pedido={pedido} />;
   return <ResenarCadaPlato pedido={pedido} />;
+}
+
+/** `true` si el pedido pasó por ACEPTADO en algún momento de su historia. */
+function alcanzoAceptado(pedido: PedidoDetalle): boolean {
+  return pedido.historial.some((evento) => evento.estado === 'ACEPTADO');
 }
 
 /** US-PED-08 y US-RES-02 — una calificación por cliente, no por pedido. */
