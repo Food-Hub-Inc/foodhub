@@ -6,6 +6,7 @@ import { Auditoria } from './pages/auditoria/Auditoria.js';
 import { Configuracion } from './pages/configuracion/Configuracion.js';
 import { Login } from './pages/Login.js';
 import { NuevaPassword } from './pages/NuevaPassword.js';
+import { Moderacion } from './pages/moderacion/Moderacion.js';
 import { Proximamente } from './pages/Proximamente.js';
 import { Recuperar } from './pages/Recuperar.js';
 import { Usuarios } from './pages/usuarios/Usuarios.js';
@@ -77,17 +78,6 @@ function Inicio() {
       modulo="ADM · Panel de administración"
       pantalla={null}
       titulo="Inicio"
-    />
-  );
-}
-
-function Moderacion() {
-  return (
-    <Proximamente
-      historias="US-ADM-04"
-      modulo="ADM · Panel de administración"
-      pantalla="PAN-ADM-02"
-      titulo="Moderación de contenido"
     />
   );
 }

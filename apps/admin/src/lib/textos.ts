@@ -512,3 +512,54 @@ export const TEXTOS_PROXIMAMENTE = {
   modulo: 'Módulo',
   historias: 'Historias de usuario',
 } as const;
+
+/** PAN-ADM-02 · Bandeja de moderación de reseñas — US-RES-06, RF086. */
+export const TEXTOS_MODERACION = {
+  titulo: 'Moderación de contenido',
+
+  /** [PROPIO] Contador del encabezado. */
+  resumen: (cantidad: number) =>
+    cantidad === 1
+      ? '1 reseña reportada pendiente'
+      : `${String(cantidad)} reseñas reportadas pendientes`,
+
+  /** [PROPIO] Rótulos de la ficha de cada reporte. */
+  cantidadReportes: (cantidad: number) =>
+    cantidad === 1 ? '1 reporte' : `${String(cantidad)} reportes`,
+  sinPendientes: 'No hay reportes pendientes de revisión.',
+  motivos: 'Motivos',
+  detalles: 'Detalles aportados',
+  sinDetalles: 'Sin detalles adicionales.',
+  sinComentario: 'La reseña no tiene comentario.',
+  plato: 'Plato',
+  cocinero: 'Cocinero',
+  autor: 'Autor de la reseña',
+  primerReporte: 'Primer reporte',
+
+  /**
+   * [PROPIO] Las dos acciones de RF086. El requisito describe las ramas
+   * ("aprobación del reporte", "rechazo del reporte") pero no rotula los
+   * botones. Se nombran por lo que le pasa a la RESEÑA y no al reporte:
+   * "aprobar" es ambiguo cuando lo que se aprueba es una denuncia.
+   */
+  ocultar: 'Ocultar reseña',
+  mantener: 'Dejarla visible',
+
+  /** [PROPIO] Confirmación previa: las dos ramas son difíciles de deshacer. */
+  confirmarOcultarTitulo: '¿Ocultar esta reseña?',
+  confirmarOcultar:
+    'La reseña deja de verse en el perfil del cocinero y en el detalle del plato, y sale de los dos promedios.',
+  confirmarMantenerTitulo: '¿Dejar la reseña visible?',
+  confirmarMantener:
+    'La reseña se mantiene publicada y los reportes quedan resueltos. No va a volver a aparecer en esta bandeja.',
+  confirmar: 'Confirmar',
+  cancelar: 'Cancelar',
+
+  /**
+   * [PROPIO] Las notificaciones de las dos ramas que exige RF086 no se envían
+   * todavía: el módulo de Notificaciones no existe. Se avisa en pantalla para
+   * que el administrador no dé por hecho que el autor se enteró.
+   */
+  avisoSinNotificaciones:
+    'Las notificaciones al autor y a quienes reportaron todavía no se envían: el módulo de Notificaciones está pendiente.',
+} as const;
