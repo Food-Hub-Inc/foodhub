@@ -85,4 +85,33 @@ describe('acceso al módulo de almacenamiento', () => {
       'TOKEN_INVALIDO',
     );
   });
+
+  /**
+   * Lo mismo para la foto de una resena (US-RES-01). Es la unica subida del
+   * sistema que hace un CLIENTE sobre contenido publico, asi que importa
+   * verificar que tampoco esta abierta: el rol se comprueba en la Etapa 6 con
+   * un usuario real, pero la puerta de sesion se cubre aca.
+   */
+  it('responde 401 SIN_TOKEN sin sesión en /foto-resena', async () => {
+    const respuesta = await request(app)
+      .post('/api/v1/almacenamiento/foto-resena')
+      .send({ mimeType: 'image/jpeg', tamano: 1024 });
+
+    expect(respuesta.status).toBe(401);
+    const cuerpo = respuesta.body as RespuestaError;
+    expect(cuerpo.error.codigo).toBe('SIN_TOKEN');
+    expect(cuerpo.error.mensaje).toBe(MENSAJES_AUTH.sesionRequerida);
+  });
+
+  it('rechaza en /foto-resena un token que no verifica contra el JWKS', async () => {
+    const respuesta = await request(app)
+      .post('/api/v1/almacenamiento/foto-resena')
+      .set('Authorization', 'Bearer token-fabricado')
+      .send({ mimeType: 'image/jpeg', tamano: 1024 });
+
+    expect(respuesta.status).toBe(401);
+    expect((respuesta.body as RespuestaError).error.codigo).toBe(
+      'TOKEN_INVALIDO',
+    );
+  });
 });

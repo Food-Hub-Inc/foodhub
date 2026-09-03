@@ -1,11 +1,13 @@
 import {
   MENSAJES_MENSAJERIA,
   MENSAJES_PUBLICACION,
+  MENSAJES_RESENA,
   MENSAJES_USUARIO,
   type FormatoAdjuntoTicket,
   type FormatoImagenPerfil,
   type SolicitarUrlCargaAdjuntoTicketInput,
   type SolicitarUrlDeCargaCategoriaInput,
+  type SolicitarUrlDeCargaFotoResenaInput,
   type SolicitarUrlDeCargaInput,
   type SolicitarUrlDeCargaImagenChatInput,
   type SolicitarUrlDeCargaPlatoInput,
@@ -231,6 +233,50 @@ export async function crearUrlDeCargaDeFotoPlato(entrada: {
   const ruta = `${carpetaDePlatosDe(entrada.cocineroId)}${String(Date.now())}.${extension}`;
 
   const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_PUBLICACIONES);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
+}
+
+/** Carpeta del bucket de resenas donde caen las fotos de un cliente. */
+function carpetaDeResenasDe(clienteId: string): string {
+  return `${clienteId}/`;
+}
+
+/**
+ * US-RES-01 - Permiso para subir la foto que el cliente adjunta a una resena.
+ *
+ * LA CARPETA LLEVA EL ID DEL CLIENTE Y NO EL DE LA PUBLICACION NI EL DE LA
+ * RESENA. Es el mismo motivo que en `crearUrlDeCargaDeFotoPlato`: la foto se
+ * sube ANTES de crear la fila -el formulario encadena la subida y recien
+ * despues el `POST /resenas`-, asi que todavia no hay id de resena al que
+ * colgarla. Nombrarla por el cliente ademas impide que un usuario pise la foto
+ * de otro: la ruta la arma la API con `req.usuario.id` y no con nada que venga
+ * en el body.
+ *
+ * Se valida el tope de nuevo aca aunque el schema compartido ya lo haya hecho,
+ * por la misma razon que en las otras dos: ese schema corre tambien en el
+ * telefono y una validacion que el cliente puede saltear no es un control.
+ */
+export async function crearUrlDeCargaDeFotoResena(entrada: {
+  clienteId: string;
+  datos: SolicitarUrlDeCargaFotoResenaInput;
+}): Promise<UrlDeCarga> {
+  const topeBytes = env.STORAGE_MAX_FILE_SIZE_MB * 1024 * 1024;
+  if (entrada.datos.tamano > topeBytes) {
+    throw new AppError(400, MENSAJES_RESENA.fotoInvalida, 'IMAGEN_INVALIDA');
+  }
+
+  const extension = EXTENSION[entrada.datos.mimeType];
+  const ruta = `${carpetaDeResenasDe(entrada.clienteId)}${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_RESENAS);
   const { data, error } = await bucket.createSignedUploadUrl(ruta);
   if (error) throw error;
 
