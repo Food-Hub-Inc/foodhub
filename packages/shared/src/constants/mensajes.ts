@@ -1242,6 +1242,16 @@ export const MENSAJES_RESENA = {
    * `MENSAJES_USUARIO`, que ya resuelven lo mismo para el plato y el perfil.
    */
   fotoInvalida: 'La foto debe ser una imagen JPG, PNG o WEBP de hasta 5 MB.',
+
+  /**
+   * PROPIO - la subida a Storage fallo y por eso no se publico nada.
+   *
+   * Importa que diga que la resena NO se publico: el usuario ya toco
+   * "Publicar", y un error que no aclara el desenlace lo deja sin saber si
+   * tiene que reintentar o si va a terminar con dos resenas.
+   */
+  fotoNoSePudoSubir:
+    'No se pudo subir la foto, así que la reseña no se publicó. Probá de nuevo o quitá la foto.',
 } as const;
 
 /**

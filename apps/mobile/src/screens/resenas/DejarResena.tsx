@@ -3,6 +3,8 @@ import { ScrollView, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import {
+  FORMATOS_FOTO_RESENA,
+  MAXIMO_FOTO_RESENA_BYTES,
   MENSAJES_RESENA,
   TAGS_RESENA_PLATO,
   type EstadoResenaPublicacion,
@@ -13,13 +15,18 @@ import {
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { AreaTexto } from '../../components/ui/AreaTexto';
 import { Aviso } from '../../components/ui/Aviso';
-import { Boton } from '../../components/ui/Boton';
+import { Boton, BotonDeTexto } from '../../components/ui/Boton';
 import { DialogoExito } from '../../components/ui/DialogoExito';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
 import { MensajeDeCampo } from '../../components/ui/MensajeDeCampo';
+import {
+  SelectorDeFoto,
+  type FotoElegida,
+} from '../../components/ui/SelectorDeFoto';
 import { usePublicacionPublica } from '../../hooks/useExploracion';
+import type { ConfiguracionFoto } from '../../hooks/useSelectorDeFoto';
 import {
   useCrearResena,
   useEditarResena,
@@ -27,6 +34,7 @@ import {
   useResena,
 } from '../../hooks/useResenas';
 import { mensajeDeError } from '../../lib/api';
+import { subirFotoDeResena } from '../../lib/subirFotoDeResena';
 import { TEXTOS_RESENA } from '../../lib/textos';
 import { SelectorDeEstrellas } from './SelectorDeEstrellas';
 import { SelectorDeTags } from './SelectorDeTags';
@@ -145,6 +153,18 @@ function useCamposDeResena(previa: ResenaPublica | null) {
     ),
   );
 
+  /**
+   * LA FOTO TIENE DOS ESTADOS Y NO UNO. `fotoNueva` es la que el usuario acaba
+   * de elegir del carrete y todavía no se subió; `fotoUrl` es la que ya está en
+   * Storage, que en una edición viene de la reseña previa. Con una sola
+   * variable no se puede distinguir "dejala como está" de "subí esta otra", y
+   * cada publicación volvería a subir la misma imagen.
+   */
+  const [fotoNueva, setFotoNueva] = useState<FotoElegida | null>(null);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(
+    previa?.fotoUrl ?? null,
+  );
+
   return {
     calificacion,
     setCalificacion,
@@ -152,13 +172,89 @@ function useCamposDeResena(previa: ResenaPublica | null) {
     setComentario,
     tags,
     setTags,
-    /** Lo que viaja a la API. La foto queda en `null`: falta definir el bucket. */
-    aPayload: () => ({
+    fotoNueva,
+    fotoUrl,
+
+    /** Elegir una foto nueva reemplaza a la guardada; `null` la quita. */
+    elegirFoto: (foto: FotoElegida | null) => {
+      setFotoNueva(foto);
+      if (foto === null) setFotoUrl(null);
+    },
+
+    /** Lo que se muestra en el formulario y en la vista previa. */
+    fotoVisible: fotoNueva?.uri ?? fotoUrl,
+
+    /**
+     * Lo que viaja a la API. `urlFinal` la resuelve quien publica: si hay foto
+     * nueva la sube primero y pasa la URL resultante, y si no, la que ya había.
+     */
+    aPayload: (urlFinal: string | null) => ({
       calificacion: calificacion ?? 0,
       ...(comentario.trim() === '' ? {} : { comentario: comentario.trim() }),
       tags,
-      fotoUrl: null,
+      fotoUrl: urlFinal,
     }),
+  };
+}
+
+/**
+ * Publicación de la reseña: subida de la foto y alta o edición.
+ *
+ * LA FOTO SE SUBE ANTES DEL ALTA Y NO DESPUÉS. `resena.foto_url` guarda una
+ * URL, así que el archivo tiene que existir en Storage cuando llega el POST. Si
+ * la subida falla se corta acá y no se publica nada: una reseña apuntando a un
+ * objeto inexistente es peor que una reseña que no se creó.
+ *
+ * Vive en un hook y no adentro de `Formulario` por el límite de líneas por
+ * función que fija ESLint, el mismo motivo por el que ya existe
+ * `useCamposDeResena`.
+ */
+function useEnvioDeResena({
+  campos,
+  editando,
+  publicacionId,
+  resenaId,
+  onPublicada,
+}: {
+  campos: ReturnType<typeof useCamposDeResena>;
+  editando: boolean;
+  publicacionId: string;
+  resenaId: string | null;
+  onPublicada: () => void;
+}) {
+  const crear = useCrearResena();
+  const editar = useEditarResena(resenaId ?? '');
+  const mutacion = editando ? editar : crear;
+
+  const [subiendo, setSubiendo] = useState(false);
+  const [errorDeFoto, setErrorDeFoto] = useState<string | null>(null);
+
+  const publicar = async () => {
+    if (campos.calificacion === null) return;
+    setErrorDeFoto(null);
+
+    let urlFinal = campos.fotoUrl;
+    if (campos.fotoNueva !== null) {
+      setSubiendo(true);
+      try {
+        urlFinal = await subirFotoDeResena(campos.fotoNueva);
+      } catch {
+        setErrorDeFoto(MENSAJES_RESENA.fotoNoSePudoSubir);
+        return;
+      } finally {
+        setSubiendo(false);
+      }
+    }
+
+    const alExito = { onSuccess: onPublicada };
+    if (editando) editar.mutate(campos.aPayload(urlFinal), alExito);
+    else crear.mutate({ ...campos.aPayload(urlFinal), publicacionId }, alExito);
+  };
+
+  return {
+    publicar,
+    enviando: subiendo || mutacion.isPending,
+    error: mutacion.isError ? mensajeDeError(mutacion.error) : errorDeFoto,
   };
 }
 
@@ -179,23 +275,17 @@ function Formulario({
   const [enVistaPrevia, setEnVistaPrevia] = useState(false);
   const [publicada, setPublicada] = useState(false);
 
-  const crear = useCrearResena();
-  const editar = useEditarResena(estado.resenaId ?? '');
-  const envio = editando ? editar : crear;
   const faltaCalificacion = campos.calificacion === null;
 
-  const publicar = () => {
-    if (faltaCalificacion) return;
-    const alExito = {
-      onSuccess: () => {
-        setPublicada(true);
-      },
-    };
-
-    if (editando) editar.mutate(campos.aPayload(), alExito);
-    else
-      crear.mutate({ ...campos.aPayload(), publicacionId: plato.id }, alExito);
-  };
+  const envio = useEnvioDeResena({
+    campos,
+    editando,
+    publicacionId: plato.id,
+    resenaId: estado.resenaId,
+    onPublicada: () => {
+      setPublicada(true);
+    },
+  });
 
   return (
     <Marco titulo={tituloSegunModo({ soloLectura, editando })}>
@@ -233,8 +323,8 @@ function Formulario({
       <SuperposicionesDeEnvio
         campos={campos}
         enVistaPrevia={enVistaPrevia}
-        enviando={envio.isPending}
-        error={envio.isError ? mensajeDeError(envio.error) : null}
+        enviando={envio.enviando}
+        error={envio.error}
         onCerrarExito={() => {
           setPublicada(false);
           if (router.canGoBack()) router.back();
@@ -242,7 +332,9 @@ function Formulario({
         onEditar={() => {
           setEnVistaPrevia(false);
         }}
-        onPublicar={publicar}
+        onPublicar={() => {
+          void envio.publicar();
+        }}
         publicada={publicada}
       />
     </Marco>
@@ -288,6 +380,7 @@ function SuperposicionesDeEnvio({
         comentario={campos.comentario.trim()}
         enviando={enviando}
         error={error}
+        fotoUri={campos.fotoVisible}
         onEditar={onEditar}
         onPublicar={onPublicar}
         tags={campos.tags}
@@ -425,7 +518,96 @@ function CamposDeResena({
         opciones={TAGS_RESENA_PLATO}
         seleccionados={campos.tags}
       />
+
+      <CampoDeFotoDeResena campos={campos} soloLectura={soloLectura} />
     </>
+  );
+}
+
+/**
+ * Configuración del selector para la foto de una reseña — US-RES-01.
+ *
+ * Propia y no la del plato (`CONFIGURACION_FOTO_PLATO`, en el formulario de
+ * publicaciones): comparten los tres formatos y los 5 MB por coincidencia del
+ * documento, pero responden a criterios distintos y el mensaje de rechazo sale
+ * de `MENSAJES_RESENA`.
+ */
+const CONFIGURACION_FOTO_RESENA: ConfiguracionFoto = {
+  formatosPermitidos: FORMATOS_FOTO_RESENA,
+  maximoBytes: MAXIMO_FOTO_RESENA_BYTES,
+  mensajeInvalida: MENSAJES_RESENA.fotoInvalida,
+  etiqueta: TEXTOS_RESENA.etiquetaFoto,
+  textoAgregar: TEXTOS_RESENA.agregarFoto,
+  textoCambiar: TEXTOS_RESENA.cambiarFoto,
+  idCampo: 'foto-resena',
+};
+
+/**
+ * "Foto del plato (Archivo de imagen, máximo 5 MB) — opcional" de US-RES-01.
+ *
+ * EN SOLO LECTURA NO SE DIBUJA EL SELECTOR sino la imagen sola: fuera de la
+ * ventana de edición no hay nada que elegir, y una zona de "Agregar foto"
+ * inerte invita a tocarla para nada.
+ */
+function CampoDeFotoDeResena({
+  campos,
+  soloLectura,
+}: {
+  campos: ReturnType<typeof useCamposDeResena>;
+  soloLectura: boolean;
+}) {
+  if (soloLectura) {
+    if (campos.fotoVisible === null) return null;
+    return (
+      <Image
+        accessibilityLabel={TEXTOS_RESENA.fotoDeLaResena}
+        contentFit="cover"
+        source={{ uri: campos.fotoVisible }}
+        style={{ width: '100%', height: 180, borderRadius: 8, marginTop: 24 }}
+      />
+    );
+  }
+
+  return (
+    <View className="mt-6">
+      <SelectorDeFoto
+        configuracion={CONFIGURACION_FOTO_RESENA}
+        foto={campos.fotoNueva}
+        onElegir={campos.elegirFoto}
+      />
+
+      {/*
+        LA FOTO YA GUARDADA SE DIBUJA APARTE. `SelectorDeFoto` solo previsualiza
+        lo que se acaba de elegir del carrete, así que al editar una reseña que
+        ya tenía foto la zona de "Agregar foto" aparecería vacía y el usuario
+        creería que la perdió.
+      */}
+      {campos.fotoNueva === null && campos.fotoUrl !== null ? (
+        <Image
+          accessibilityLabel={TEXTOS_RESENA.fotoDeLaResena}
+          contentFit="cover"
+          source={{ uri: campos.fotoUrl }}
+          style={{ width: '100%', height: 140, borderRadius: 8, marginTop: 8 }}
+        />
+      ) : null}
+
+      <Text className="mt-1 text-caption text-text-secondary">
+        {TEXTOS_RESENA.ayudaFoto}
+      </Text>
+
+      {campos.fotoVisible === null ? null : (
+        <View className="mt-2 items-start">
+          <BotonDeTexto
+            className="text-text-secondary"
+            onPress={() => {
+              campos.elegirFoto(null);
+            }}
+          >
+            {TEXTOS_RESENA.quitarFoto}
+          </BotonDeTexto>
+        </View>
+      )}
+    </View>
   );
 }
 

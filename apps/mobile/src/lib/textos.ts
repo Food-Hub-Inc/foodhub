@@ -905,6 +905,8 @@ export const TEXTOS_RESENA = {
   etiquetaFoto: 'Foto del plato',
   ayudaFoto: 'Opcional. JPG, PNG o WEBP de hasta 5 MB.',
   quitarFoto: 'Quitar foto',
+  agregarFoto: 'Agregar foto',
+  cambiarFoto: 'Cambiar foto',
 
   /**
    * [PROPIO] Cuantos cocineros calificaron a un cliente (US-RES-02).
@@ -999,6 +1001,15 @@ export const TEXTOS_RESENA = {
 
   /** [PROPIO] Etiqueta accesible de la foto adjunta a una resena. */
   fotoDeLaResena: 'Foto de la reseña',
+
+  /**
+   * [PROPIO] Galeria a pantalla completa de US-RES-03. El criterio describe el
+   * comportamiento -"muestre una galeria en pantalla completa ... deslizando
+   * lateralmente"- pero no fija ningun rotulo, asi que los escribe el equipo.
+   */
+  cerrarGaleria: 'Cerrar',
+  posicionEnGaleria: (actual: number, total: number) =>
+    `${String(actual)} de ${String(total)}`,
 
   /** [PROPIO] Etiqueta accesible de cada barra de la distribucion. */
   nivelAccesible: (nivel: number, porcentaje: number) =>

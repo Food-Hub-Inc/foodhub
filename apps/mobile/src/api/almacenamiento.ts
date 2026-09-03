@@ -1,4 +1,5 @@
 import type {
+  SolicitarUrlDeCargaFotoResenaInput,
   SolicitarUrlDeCargaInput,
   SolicitarUrlDeCargaPlatoInput,
   UrlDeCarga,
@@ -30,4 +31,16 @@ export function solicitarUrlDeCargaDeFotoPlato(
   datos: SolicitarUrlDeCargaPlatoInput,
 ): Promise<UrlDeCarga> {
   return api.enviar<UrlDeCarga>('/almacenamiento/foto-plato', datos);
+}
+
+/**
+ * US-RES-01 - Permiso de escritura para la foto que se adjunta a una reseña.
+ *
+ * Endpoint aparte del de plato aunque las dos suban una foto de comida: quien
+ * escribe acá es el CLIENTE, y `/foto-plato` exige rol COCINERO.
+ */
+export function solicitarUrlDeCargaDeFotoResena(
+  datos: SolicitarUrlDeCargaFotoResenaInput,
+): Promise<UrlDeCarga> {
+  return api.enviar<UrlDeCarga>('/almacenamiento/foto-resena', datos);
 }
