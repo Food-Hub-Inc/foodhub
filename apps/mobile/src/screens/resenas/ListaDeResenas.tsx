@@ -181,6 +181,14 @@ function CuerpoDelListado({
         ListHeaderComponent={
           <View className="gap-3 pt-4">
             {encabezado}
+            {/*
+              US-RES-03 pide que el listado de platos sea "un bloque
+              diferenciado" del de reputación. Sin el título los dos se leen
+              como uno solo con dos números que se contradicen.
+            */}
+            <Text className="text-label font-bold text-text-primary">
+              {TEXTOS_RESENA.tituloResenasDePlatos}
+            </Text>
             <ResumenDeResenas resumen={resumen} />
             {resumen.total === 0 ? null : <Filtros filtros={filtros} />}
           </View>

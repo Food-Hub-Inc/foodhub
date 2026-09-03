@@ -23,6 +23,7 @@ import { formatearPrecio } from '../../lib/formato';
 import { TEXTOS_EXPLORACION, TEXTOS_RESENA } from '../../lib/textos';
 import { BotonDeMensajes } from '../mensajeria/BotonDeMensajes';
 import { Pestanas } from '../pedidos/Piezas';
+import { BloqueDeReputacion } from '../resenas/BloqueDeReputacion';
 import { ListaDeResenas } from '../resenas/ListaDeResenas';
 import { BotonFlotanteDelCarrito } from './BotonFlotanteDelCarrito';
 import {
@@ -123,12 +124,23 @@ function Contenido({
     </>
   );
 
+  /**
+   * US-RES-03 — dos bloques diferenciados, en este orden: arriba la reputación
+   * del cocinero (las calificaciones de servicio de US-RES-07) y debajo el
+   * listado de reseñas de sus platos. Son métricas independientes y pueden
+   * diferir; el listado no altera el promedio de arriba.
+   */
   if (solapa === 'RESENAS') {
     return (
       <ListaDeResenas
         accionVacio={<AccionDejarLaPrimera cocinero={cocinero} />}
         cocineroId={cocinero.id}
-        encabezado={cabecera}
+        encabezado={
+          <>
+            {cabecera}
+            <BloqueDeReputacion cocineroId={cocinero.id} />
+          </>
+        }
       />
     );
   }

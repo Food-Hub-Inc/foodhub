@@ -1,12 +1,16 @@
 import type {
+  CalificacionACocinero,
   CalificarClienteInput,
+  CalificarCocineroInput,
   CrearResenaInput,
   EditarResenaInput,
+  EstadoCalificacionCocinero,
   EstadoResenaPublicacion,
   FiltrosResenas,
   MiCalificacionCliente,
   PaginaResenas,
   ReputacionCliente,
+  ReputacionCocinero,
   ResenaPublica,
 } from '@foodhub/shared';
 import { api } from '../lib/api';
@@ -111,5 +115,58 @@ export function calificarCliente(
   return api.reemplazar<MiCalificacionCliente>(
     `/resenas/clientes/${clienteId}/calificacion`,
     datos,
+  );
+}
+
+// --- US-RES-07 · El cliente califica al cocinero ----------------------------
+
+/** RF031 — Qué acción corresponde para la calificación al cocinero del pedido. */
+export function obtenerEstadoDeCalificacion(
+  pedidoId: string,
+): Promise<EstadoCalificacionCocinero> {
+  return api.obtener<EstadoCalificacionCocinero>(
+    `/resenas/pedidos/${pedidoId}/calificacion`,
+  );
+}
+
+/**
+ * Alta y edición NO son la misma llamada, a diferencia de la calificación al
+ * cliente: acá la unicidad es por pedido y la edición tiene una ventana de 48
+ * horas que el alta no tiene, así que el servidor las distingue.
+ */
+export function calificarCocinero(
+  pedidoId: string,
+  datos: CalificarCocineroInput,
+): Promise<CalificacionACocinero> {
+  return api.enviar<CalificacionACocinero>(
+    `/resenas/pedidos/${pedidoId}/calificacion`,
+    datos,
+  );
+}
+
+export function obtenerCalificacionDeCocinero(
+  calificacionId: string,
+): Promise<CalificacionACocinero> {
+  return api.obtener<CalificacionACocinero>(
+    `/resenas/calificaciones/${calificacionId}`,
+  );
+}
+
+export function editarCalificacionDeCocinero(
+  calificacionId: string,
+  datos: CalificarCocineroInput,
+): Promise<CalificacionACocinero> {
+  return api.modificar<CalificacionACocinero>(
+    `/resenas/calificaciones/${calificacionId}`,
+    datos,
+  );
+}
+
+/** RF082 — Bloque de reputación del perfil público, construido con US-RES-07. */
+export function obtenerReputacionDeCocinero(
+  cocineroId: string,
+): Promise<ReputacionCocinero> {
+  return api.obtener<ReputacionCocinero>(
+    `/resenas/cocineros/${cocineroId}/reputacion`,
   );
 }

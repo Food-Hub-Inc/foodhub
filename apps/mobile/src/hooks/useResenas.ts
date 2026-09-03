@@ -10,25 +10,34 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 import type {
+  CalificacionACocinero,
   CalificarClienteInput,
+  CalificarCocineroInput,
   CrearResenaInput,
   EditarResenaInput,
+  EstadoCalificacionCocinero,
   EstadoResenaPublicacion,
   FiltrosResenas,
   MiCalificacionCliente,
   PaginaResenas,
   ReputacionCliente,
+  ReputacionCocinero,
   ResenaPublica,
 } from '@foodhub/shared';
 import {
   calificarCliente,
+  calificarCocinero,
   crearResena,
   editarResena,
   obtenerEstadoDeResenas,
   obtenerMiCalificacionDeCliente,
   obtenerReputacionDeCliente,
+  obtenerCalificacionDeCocinero,
+  obtenerEstadoDeCalificacion,
+  obtenerReputacionDeCocinero,
   obtenerResena,
   obtenerResenasDeCocinero,
+  editarCalificacionDeCocinero,
 } from '../api/resenas';
 import { useSesion } from './useSesion';
 
@@ -226,5 +235,97 @@ export function useCalificarCliente(
       });
       void cliente.invalidateQueries({ queryKey: ['pedidos'] });
     },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// US-RES-07 · Calificación del cliente al cocinero
+// ---------------------------------------------------------------------------
+
+export const CLAVE_CALIFICACION_COCINERO = ['resenas', 'cocinero'] as const;
+
+/**
+ * RF031 — Qué acción corresponde para la calificación al cocinero del pedido.
+ *
+ * De acá salen los tres estados del botón del detalle: "Calificar al cocinero",
+ * "Editar mi calificación" o "Ver mi calificación".
+ */
+export function useEstadoDeCalificacion(
+  pedidoId: string,
+): UseQueryResult<EstadoCalificacionCocinero, Error> {
+  const sesion = useSesion((estado) => estado.sesion);
+
+  return useQuery({
+    queryKey: [...CLAVE_CALIFICACION_COCINERO, 'estado', pedidoId],
+    queryFn: () => obtenerEstadoDeCalificacion(pedidoId),
+    enabled: sesion !== null && pedidoId.length > 0,
+    staleTime: 30_000,
+  });
+}
+
+/** Una calificación puntual, para precargar la edición o verla en solo lectura. */
+export function useCalificacionDeCocinero(
+  calificacionId: string | null,
+): UseQueryResult<CalificacionACocinero, Error> {
+  return useQuery({
+    queryKey: [...CLAVE_CALIFICACION_COCINERO, 'detalle', calificacionId],
+    queryFn: () => obtenerCalificacionDeCocinero(calificacionId ?? ''),
+    enabled: calificacionId !== null,
+  });
+}
+
+/** RF082 — Bloque de reputación del perfil público. */
+export function useReputacionDeCocinero(
+  cocineroId: string,
+): UseQueryResult<ReputacionCocinero, Error> {
+  const sesion = useSesion((estado) => estado.sesion);
+
+  return useQuery({
+    queryKey: [...CLAVE_CALIFICACION_COCINERO, 'reputacion', cocineroId],
+    queryFn: () => obtenerReputacionDeCocinero(cocineroId),
+    enabled: sesion !== null && cocineroId.length > 0,
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Lo que hay que invalidar al calificar a un cocinero.
+ *
+ * SON MÁS COSAS QUE AL RESEÑAR UN PLATO. La calificación mueve la reputación
+ * del cocinero, que aparece en su perfil público, y además cambia el botón del
+ * detalle del pedido. `exploracion` entra en la lista porque el perfil público
+ * se sirve desde ahí.
+ */
+function useInvalidarReputacion(): () => void {
+  const cliente = useQueryClient();
+
+  return () => {
+    void cliente.invalidateQueries({ queryKey: CLAVE_CALIFICACION_COCINERO });
+    void cliente.invalidateQueries({ queryKey: ['exploracion'] });
+    void cliente.invalidateQueries({ queryKey: ['pedidos'] });
+  };
+}
+
+export function useCalificarCocinero(
+  pedidoId: string,
+): UseMutationResult<CalificacionACocinero, Error, CalificarCocineroInput> {
+  const invalidar = useInvalidarReputacion();
+
+  return useMutation({
+    mutationFn: (datos: CalificarCocineroInput) =>
+      calificarCocinero(pedidoId, datos),
+    onSuccess: invalidar,
+  });
+}
+
+export function useEditarCalificacionDeCocinero(
+  calificacionId: string,
+): UseMutationResult<CalificacionACocinero, Error, CalificarCocineroInput> {
+  const invalidar = useInvalidarReputacion();
+
+  return useMutation({
+    mutationFn: (datos: CalificarCocineroInput) =>
+      editarCalificacionDeCocinero(calificacionId, datos),
+    onSuccess: invalidar,
   });
 }

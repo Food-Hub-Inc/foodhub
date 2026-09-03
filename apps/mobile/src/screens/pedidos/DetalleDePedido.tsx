@@ -17,6 +17,7 @@ import { EstadoDeError } from '../../components/ui/EstadoDeError';
 import { usePedido } from '../../hooks/usePedidos';
 import { usePerfil } from '../../hooks/usePerfil';
 import {
+  useEstadoDeCalificacion,
   useEstadoDeResenas,
   useReputacionDeCliente,
 } from '../../hooks/useResenas';
@@ -418,12 +419,76 @@ function AccionDeCalificacion({
   }
 
   if (pedido.estado !== 'COMPLETADO') return null;
-  return <ResenarCadaPlato pedido={pedido} />;
+
+  /*
+   * DOS GRUPOS DE ACCIONES, como pide la correccion de RF031: uno por ITEM para
+   * las resenas de los platos, y UNO SOLO a nivel pedido para la calificacion
+   * al cocinero. La separacion no es estetica: son dos cosas distintas -el
+   * producto y el servicio- y un pedido de seis platos deja seis resenas pero
+   * una sola calificacion de servicio.
+   */
+  return (
+    <View className="gap-3">
+      <ResenarCadaPlato pedido={pedido} />
+      <CalificarAlCocinero pedido={pedido} />
+    </View>
+  );
 }
 
 /** `true` si el pedido pasó por ACEPTADO en algún momento de su historia. */
 function alcanzoAceptado(pedido: PedidoDetalle): boolean {
   return pedido.historial.some((evento) => evento.estado === 'ACEPTADO');
+}
+
+/**
+ * RF031 y US-RES-07 — la acción a nivel pedido, con sus tres estados.
+ *
+ * UNA SOLA PARA TODO EL PEDIDO, a diferencia de los botones por plato: la
+ * calificación al cocinero valora el servicio de esa entrega y se registra una
+ * por pedido, sin importar cuántos platos lo integren.
+ *
+ * Mientras la consulta viaja no se dibuja nada, por el mismo motivo que en
+ * `ResenarCadaPlato`: mostrar "Calificar al cocinero" y cambiarlo a "Editar mi
+ * calificación" un segundo después invita a tocar el botón equivocado.
+ */
+function CalificarAlCocinero({ pedido }: { pedido: PedidoDetalle }) {
+  const estado = useEstadoDeCalificacion(pedido.id);
+
+  if (estado.isError) {
+    return <Aviso mensaje={mensajeDeError(estado.error)} tono="error" />;
+  }
+
+  if (!estado.data) return null;
+
+  const etiqueta =
+    estado.data.calificacionId === null
+      ? MENSAJES_RESENA.calificarAlCocinero
+      : estado.data.puedeEditar
+        ? MENSAJES_RESENA.editarMiCalificacion
+        : MENSAJES_RESENA.verMiCalificacion;
+
+  return (
+    <Boton
+      onPress={() => {
+        router.push({
+          pathname: '/resenas/calificar-cocinero',
+          params: {
+            pedidoId: pedido.id,
+            // Igual que al calificar al cliente: los datos de la cabecera
+            // viajan porque esta pantalla ya los tiene y evitan otra consulta.
+            nombre: `${pedido.participante.nombre} ${pedido.participante.apellido}`,
+            fechaPedido: pedido.fechaCreacion,
+            ...(pedido.participante.fotoPerfilUrl === null
+              ? {}
+              : { fotoPerfilUrl: pedido.participante.fotoPerfilUrl }),
+          },
+        });
+      }}
+      variante={estado.data.calificacionId === null ? 'primario' : 'secundario'}
+    >
+      {etiqueta}
+    </Boton>
+  );
 }
 
 /** US-PED-08 y US-RES-02 — una calificación por cliente, no por pedido. */

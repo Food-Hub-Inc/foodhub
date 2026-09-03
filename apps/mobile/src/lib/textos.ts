@@ -938,6 +938,59 @@ export const TEXTOS_RESENA = {
   avisoSoloLectura:
     'Ya pasó el plazo para editar esta reseña. Si volvés a pedir el plato vas a poder actualizarla.',
 
+  /**
+   * [PROPIO] Titulos de los dos bloques del perfil publico (US-RES-03).
+   *
+   * SIN TITULOS LOS DOS BLOQUES SE LEEN COMO UNO SOLO CON DOS NUMEROS
+   * CONTRADICTORIOS. El criterio pide que el listado de platos sea "un bloque
+   * diferenciado" del de reputacion justamente porque miden cosas distintas, y
+   * en pantalla eso se resuelve nombrandolas.
+   */
+  tituloReputacion: 'Reputación del cocinero',
+  subtituloReputacion: 'Cómo califican su atención los clientes',
+  tituloResenasDePlatos: 'Reseñas de los platos',
+
+  /** [PROPIO] Cuantas calificaciones de servicio recibio el cocinero. */
+  calificacionesRecibidas: (cantidad: number) =>
+    cantidad === 1
+      ? '1 calificación recibida'
+      : `${String(cantidad)} calificaciones recibidas`,
+
+  /** [PROPIO] Estado vacio del bloque de reputacion. */
+  sinCalificacionesDeServicio: 'Todavía no recibió calificaciones de servicio.',
+
+  // --- PAN-RES-03, calificar al cocinero (US-RES-07) ------------------------
+  /** [PROPIO] Titulos de la pantalla, uno por cada uno de los tres modos. */
+  tituloCalificarCocinero: 'Calificar al cocinero',
+  tituloEditarMiCalificacion: 'Editar mi calificación',
+  tituloVerMiCalificacion: 'Mi calificación',
+
+  /**
+   * [PROPIO] Encabezado del selector. La pregunta apunta al SERVICIO y no al
+   * plato: es lo que separa esta pantalla de PAN-RES-01, y si el texto no lo
+   * dice el cliente vuelve a calificar la comida.
+   */
+  etiquetaCalificacionCocinero: '¿Cómo fue la atención?',
+
+  /**
+   * [PROPIO] Aclaracion de la cabecera. US-RES-07 pide mostrar "el nombre y la
+   * foto del cocinero junto a la fecha del pedido calificado, de modo que quede
+   * claro que la calificacion refiere a la experiencia de ese pedido".
+   */
+  pedidoDelDia: (fecha: string) => `Pedido del ${fecha}`,
+
+  /** [PROPIO] Aviso al pie, para que no se confunda con la reseña del plato. */
+  avisoCalificacionDeServicio:
+    'Esto califica la atención del cocinero, no los platos. Cada plato se reseña por separado.',
+
+  /** [PROPIO] Estado de solo lectura, fuera de la ventana de 48 horas. */
+  avisoCalificacionCongelada:
+    'Ya pasó el plazo de 48 horas para editar esta calificación.',
+
+  /** [PROPIO] El pedido no viajó en la navegación. */
+  sinPedido:
+    'No pudimos saber qué pedido querés calificar. Volvé al pedido y entrá desde ahí.',
+
   // --- PAN-RES-02, calificar al cliente -------------------------------------
   tituloCalificar: 'Calificar cliente',
   tituloEditarCalificacion: 'Editar calificación',

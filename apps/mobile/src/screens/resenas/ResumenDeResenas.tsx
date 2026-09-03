@@ -89,7 +89,7 @@ function Cifra({ resumen }: { resumen: ResumenResenas }) {
  * visual no define un ícono de media estrella y aproximarlo con recortes daría
  * un resultado distinto en cada tamaño.
  */
-function EstrellasDelPromedio({ promedio }: { promedio: number }) {
+export function EstrellasDelPromedio({ promedio }: { promedio: number }) {
   const llenas = Math.round(promedio);
 
   return (
@@ -109,7 +109,7 @@ function EstrellasDelPromedio({ promedio }: { promedio: number }) {
 }
 
 /** Una fila de la distribución: "5 ★ ▓▓▓▓▓░░ 78%". */
-function BarraDeNivel({
+export function BarraDeNivel({
   nivel,
   cantidad,
   total,
