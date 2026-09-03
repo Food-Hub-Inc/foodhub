@@ -62,7 +62,13 @@ import { VistaPreviaDeResena } from './VistaPreviaDeResena';
  * o editar, porque eso depende de dos plazos y del historial de pedidos del
  * cliente con ese plato, y nada de eso está en la pantalla.
  */
-export function DejarResena({ publicacionId }: { publicacionId: string }) {
+export function DejarResena({
+  publicacionId,
+  pedidoId,
+}: {
+  publicacionId: string;
+  pedidoId: string | null;
+}) {
   const plato = usePublicacionPublica(publicacionId);
   const estado = useEstadoDeResenas([publicacionId]);
   const estadoDelPlato = estado.data?.[0];
@@ -104,6 +110,7 @@ export function DejarResena({ publicacionId }: { publicacionId: string }) {
   return (
     <Formulario
       estado={estadoDelPlato}
+      pedidoId={pedidoId}
       plato={plato.data}
       previa={previa.data ?? null}
     />
@@ -262,10 +269,12 @@ function Formulario({
   plato,
   estado,
   previa,
+  pedidoId,
 }: {
   plato: PublicacionPublica;
   estado: EstadoResenaPublicacion;
   previa: ResenaPublica | null;
+  pedidoId: string | null;
 }) {
   const soloLectura = estado.resenaId !== null && !estado.puedeEditar;
   const editando = estado.resenaId !== null && estado.puedeEditar;
@@ -327,7 +336,7 @@ function Formulario({
         error={envio.error}
         onCerrarExito={() => {
           setPublicada(false);
-          if (router.canGoBack()) router.back();
+          seguirDespuesDePublicar(pedidoId);
         }}
         onEditar={() => {
           setEnVistaPrevia(false);
@@ -394,6 +403,35 @@ function SuperposicionesDeEnvio({
       />
     </>
   );
+}
+
+/**
+ * A dónde va el cliente después de publicar la reseña — US-RES-01, criterio del
+ * encadenado.
+ *
+ * "Ofrezca a continuación la calificación al cocinero de ese pedido mediante el
+ * botón 'Calificar al cocinero', indicando que es opcional y que puede omitirse
+ * con 'Ahora no'." Se resuelve NAVEGANDO a PAN-RES-03, que ya trae ese botón y
+ * su "Ahora no": un diálogo intermedio preguntando lo mismo sería un paso de
+ * más para llegar al mismo lado.
+ *
+ * Sin `pedidoId` -la pantalla se abrió desde otro lado- vuelve atrás como antes.
+ */
+function seguirDespuesDePublicar(pedidoId: string | null): void {
+  if (pedidoId === null) {
+    if (router.canGoBack()) router.back();
+    return;
+  }
+
+  /*
+   * `replace` y no `push`: la reseña ya se publicó y el formulario quedó
+   * obsoleto. Con `push`, el "volver" de la calificación devolvería al
+   * formulario de una reseña que ya existe.
+   */
+  router.replace({
+    pathname: '/resenas/calificar-cocinero',
+    params: { pedidoId },
+  });
 }
 
 function tituloSegunModo({

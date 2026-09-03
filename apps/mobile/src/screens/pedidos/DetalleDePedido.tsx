@@ -587,7 +587,12 @@ function ResenarCadaPlato({ pedido }: { pedido: PedidoDetalle }) {
             onPress={() => {
               router.push({
                 pathname: '/resenas/dejar',
-                params: { publicacionId: item.publicacionId },
+                params: {
+                  publicacionId: item.publicacionId,
+                  // Viaja para encadenar con la calificación al cocinero al
+                  // publicar (US-RES-01); no interviene en la reseña en sí.
+                  pedidoId: pedido.id,
+                },
               });
             }}
             variante={suEstado.resenaId === null ? 'primario' : 'secundario'}
