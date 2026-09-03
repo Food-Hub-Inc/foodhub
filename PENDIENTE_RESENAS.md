@@ -11,24 +11,33 @@ Este documento existe para que lo que falta no se pierda y para que quede claro
 que **son decisiones, no olvidos** — mismo criterio que
 `PENDIENTE_DASHBOARD_COCINERO.md`.
 
-> ## Actualización del 2026-09-02
+> ## Actualización del 2026-09-02 — las siete historias quedaron codificadas
 >
-> La rama `feature/resenas-completar-modulo` **cerró cinco de los once puntos**
-> e incorporó **RF087 / US-RES-07**, que la versión corregida del módulo agregó
-> después del PR #19: el cliente califica al cocinero, una vez por pedido
-> completado, y **esa es la métrica que ahora construye la reputación del
-> cocinero**.
+> La rama `feature/resenas-completar-modulo` cerró **US-RES-04, US-RES-05 y
+> US-RES-06**, que eran el segundo PR, e incorporó **RF087 / US-RES-07**, que la
+> versión corregida agregó después del PR #19: el cliente califica al cocinero
+> una vez por pedido completado, y **esa es la métrica que ahora construye la
+> reputación del cocinero**.
 >
 > | Punto                                   | Estado                                                                                         |
 > | --------------------------------------- | ---------------------------------------------------------------------------------------------- |
 > | 1 · La foto de la reseña                | ✅ **resuelto** — bucket `resenas`, endpoint con rol CLIENTE, campo en el formulario y galería |
+> | 2 · US-RES-04, 05 y 06                  | ✅ **resuelto** — reacciones, respuestas, reportes y la bandeja de PAN-ADM-02                  |
+> | 3 · Los dos filtros bloqueados          | ✅ **resuelto** — "Más útiles" y "solo con respuesta" ya tienen de qué ordenar y filtrar       |
 > | 9.1 · El listado no pagina              | ✅ **resuelto** — `useInfiniteQuery` con bloques de diez                                       |
 > | 9.2 · Galería a pantalla completa       | ✅ **resuelto** — `GaleriaDeResenas.tsx`                                                       |
 > | 9.3 · Botón del estado vacío            | ✅ **resuelto** — `accionVacio` se pasa desde el perfil                                        |
 > | 9.4 · Motivo cuando no se puede reseñar | ✅ **resuelto** — el literal `pedidoNoCompletado` se usa con el pedido rechazado               |
+> | — · RF087 / US-RES-07                   | ✅ **nuevo, hecho** — tabla, API, PAN-RES-03 y el bloque de reputación del perfil              |
 >
-> Siguen abiertos los puntos **2 a 8**, **10** y **11**, más los **tres nuevos**
-> que agregan las secciones 12, 13 y 14.
+> **Codificado no es probado.** La verificación funcional quedó sin cerrar por
+> un motivo ajeno al módulo: ver la sección 15.
+>
+> De lo que sigue abierto, **solo dos puntos son del módulo de Reseñas** —el
+> defecto del filtro de moderación (10) y la verificación de "Cliente nuevo"
+> (11), los dos frenados por lo mismo: hace falta leer `foodhub-dev`—. El resto
+> son correcciones en Notificaciones, Exploración y Publicaciones (4, 5, 12
+> y 13) más la actualización del diagrama (14).
 
 > **La fuente de verdad del módulo es la _versión corregida_ que reemplaza las
 > secciones 2.2.1.2.11 y 2.2.1.3.11** (RF080–RF086). La maquetación de la
@@ -90,9 +99,16 @@ filtro "Solo reseñas con foto" funciona. Falta únicamente **poder subirla**.
 
 ---
 
-## 2. US-RES-04, US-RES-05 y US-RES-06 — el segundo PR
+## 2. US-RES-04, US-RES-05 y US-RES-06 — ✅ RESUELTAS el 2026-09-02
 
-**Estado:** no iniciadas, por acuerdo de alcance.
+**Estado: hechas, y la bandeja de moderación del administrador también.**
+
+Se implementaron las tres, y **RF086 con ellas**, contra el acuerdo previo de
+dejar la moderación para el módulo ADM: el usuario decidió cerrar el módulo
+entero de una vez. `PAN-ADM-02` deja de mostrar la pantalla de "Próximamente".
+
+Ninguna necesitó migración, como estaba previsto. Lo que sigue es el registro
+del alcance original.
 
 | Historia  | Qué                             |
 | --------- | ------------------------------- |
@@ -110,9 +126,15 @@ módulo ADM.
 
 ---
 
-## 3. Dos filtros de US-RES-03 que dependen de las anteriores
+## 3. Dos filtros de US-RES-03 — ✅ RESUELTOS el 2026-09-02
 
-**Estado:** omitidos a propósito.
+**Estado: hechos**, en cuanto existieron las reacciones y las respuestas de las
+que dependían. "Más útiles" ordena por cantidad de "Me gusta" con un subselect
+correlacionado, y "Solo reseñas con respuesta del cocinero" filtra con un
+`EXISTS`. El listado ya ofrece los **cuatro órdenes y los tres filtros** que
+enumera el criterio.
+
+Lo que sigue es el registro de por qué estuvieron omitidos.
 
 El tercer criterio de US-RES-03 enumera cuatro órdenes y tres filtros. Faltan
 dos:
@@ -191,7 +213,7 @@ alguien contraste las tres pantallas.
 
 ---
 
-## 7. Cinco mensajes redactados por el equipo
+## 7. Mensajes redactados por el equipo
 
 **Estado:** escritos y marcados; falta que alguien los apruebe.
 
@@ -427,6 +449,43 @@ Lo que hay que reflejar cuando se pueda:
 - Entra `CalificacionACocinero`, nueva, con FK a `Pedido` y unicidad por pedido.
 - Las matrices de trazabilidad suman la fila **US-RES-07 / RF087 / PAN-RES-03**,
   y el actor de US-RES-06 pasa a incluir **Administrador**.
+
+---
+
+## 15. La verificación funcional de lo nuevo quedó sin cerrar
+
+**Estado:** abierto. Es lo primero que hay que hacer, y **está frenado por algo
+ajeno al módulo**.
+
+Todo lo que entró el 2026-09-02 pasa lint, typecheck y las 365 pruebas, pero
+**no se pudo recorrer entero contra `foodhub-dev`**. El módulo queda en estado
+_Codificado_, no _Probado_.
+
+### Por qué no se pudo
+
+La app **no arranca** en las builds disponibles hoy:
+
+```
+Uncaught Error [@RNC/AsyncStorage]: NativeModule: AsyncStorage is null.
+  en apps/mobile/src/hooks/useBorradorDeConsulta.ts
+```
+
+`@react-native-async-storage/async-storage` es una **dependencia nativa** y
+entró el 2026-09-01 con el commit `9cc7e9e` (PR #21, contacto al soporte). La
+build de EAS más reciente es del **2026-08-29**, del commit `92fe0e8`: es
+**anterior**, así que el módulo nativo no está compilado adentro del APK.
+
+**No hay ninguna build que lo incluya.** Esto no afecta solo a quien probó el
+módulo de Reseñas: **cualquiera que haga `pull` de `develop` y levante Metro
+contra la build del 29/08 se come el mismo crash.**
+
+### Qué hace falta
+
+1. Una build nueva: `eas build --platform android --profile development`
+2. Correr **`pnpm db:migrate`** por la migración `0014`, avisando antes al
+   equipo: renombra `calificacion_cocinero` en una base compartida y rompe a
+   quien esté corriendo el código anterior
+3. Recorrer los 38 puntos de la lista de pruebas que acompaña al PR
 
 ---
 
