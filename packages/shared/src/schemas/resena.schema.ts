@@ -402,6 +402,124 @@ export const reputacionClienteSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
+// US-RES-07 / RF087 — el CLIENTE califica al COCINERO
+// ---------------------------------------------------------------------------
+
+/**
+ * Tags de la calificacion al cocinero (RF087).
+ *
+ * ACA VIVEN "Puntualidad" Y "Atencion del cocinero", los dos que la version
+ * corregida del modulo retiro del formulario de resena de plato: evaluan el
+ * SERVICIO del pedido y no el producto. Que "Buena comunicacion" aparezca
+ * tambien en `TAGS_CALIFICACION_CLIENTE` no es un error: las dos direcciones
+ * valoran la coordinacion y cada lista responde a su propio criterio.
+ */
+export const TAGS_CALIFICACION_COCINERO = [
+  'Puntualidad',
+  'Atención del cocinero',
+  'Buena comunicación',
+  'Pedido completo',
+] as const;
+export type TagCalificacionCocinero =
+  (typeof TAGS_CALIFICACION_COCINERO)[number];
+
+/**
+ * Ventana de edicion de la calificacion al cocinero, en horas (RF087).
+ *
+ * COINCIDE EN 48 CON LA DE LA RESENA PERO NO ES LA MISMA REGLA, y por eso es
+ * otra constante: la de la resena SE REABRE con cada pedido completado del
+ * mismo plato, y esta no se reabre nunca. "La ventana es independiente de la de
+ * las resenas de plato del mismo pedido y no se reabre por pedidos posteriores,
+ * dado que la calificacion refiere a la experiencia de un pedido determinado."
+ */
+export const HORAS_VENTANA_EDICION_CALIFICACION_COCINERO = 48;
+
+/**
+ * `true` si la calificacion al cocinero todavia admite edicion.
+ *
+ * Funcion PURA, con `ahora` inyectable para poder probarla. Mucho mas simple
+ * que `ventanaDeEdicionAbierta`: un solo hito, sin reapertura.
+ */
+export function ventanaDeCalificacionAbierta(
+  fechaPublicacion: Date,
+  ahora: Date = new Date(),
+): boolean {
+  const limite =
+    fechaPublicacion.getTime() +
+    HORAS_VENTANA_EDICION_CALIFICACION_COCINERO * 3_600_000;
+  return ahora.getTime() < limite;
+}
+
+/**
+ * RF087 - Alta o edicion de la calificacion al cocinero de un pedido.
+ *
+ * Un solo contrato para las dos operaciones, igual que `calificarClienteSchema`
+ * y por el mismo motivo: hay una sola calificacion por pedido y el servicio
+ * resuelve si inserta o actualiza.
+ *
+ * El comentario admite 500 y no 300: el criterio de US-RES-07 fija ese tope,
+ * distinto del de US-RES-02.
+ */
+export const calificarCocineroSchema = z.object({
+  calificacion: calificacionSchema,
+  comentario: z
+    .string()
+    .trim()
+    .max(500, 'El comentario no puede superar los 500 caracteres.')
+    .optional(),
+  tags: z
+    .array(z.enum(TAGS_CALIFICACION_COCINERO))
+    .max(TAGS_CALIFICACION_COCINERO.length),
+});
+
+/** RF087 - La calificacion que el cliente de la sesion le puso a un pedido. */
+export const calificacionACocineroSchema = z.object({
+  id: z.uuid(),
+  pedidoId: z.uuid(),
+  calificacion: z.number().int().min(1).max(5),
+  comentario: z.string().nullable(),
+  tags: z.array(z.string()),
+  editada: z.boolean(),
+  fechaPublicacion: z.iso.datetime(),
+});
+
+/**
+ * RF031 - Cual de las tres acciones dibuja el detalle del pedido para la
+ * calificacion al cocinero: "Calificar al cocinero", "Editar mi calificacion"
+ * o "Ver mi calificacion".
+ *
+ * Se resuelve en el servidor por el mismo motivo que
+ * `estadoResenaPublicacionSchema`: depende del estado del pedido y de un plazo,
+ * y la pantalla no conoce ninguno de los dos con certeza.
+ */
+export const estadoCalificacionCocineroSchema = z.object({
+  pedidoId: z.uuid(),
+  calificacionId: z.uuid().nullable(),
+  /** El pedido esta COMPLETADO y todavia no tiene calificacion. */
+  puedeCalificar: z.boolean(),
+  /** Ya hay calificacion y la ventana de 48 horas sigue abierta. */
+  puedeEditar: z.boolean(),
+});
+
+/**
+ * RF082 - Bloque de reputacion del perfil publico del cocinero.
+ *
+ * SALE DE LAS CALIFICACIONES AL COCINERO Y NO DE LAS RESENAS DE PLATOS. Son dos
+ * metricas independientes: esta valora el servicio y `resumenResenasSchema`
+ * valora los platos. Pueden diferir, y el perfil las muestra en dos bloques.
+ *
+ * NO APLICA UN MINIMO (decision del equipo, 2026-09-02): el promedio se muestra
+ * desde la primera calificacion. `resena_minimo_para_promedio` sigue rigiendo
+ * donde ya regia, sobre el promedio derivado de las resenas de platos.
+ */
+export const reputacionCocineroSchema = z.object({
+  promedio: z.number().nullable(),
+  total: z.number().int().min(0),
+  /** Cantidad de calificaciones por cada nivel, de 1 a 5 estrellas. */
+  distribucion: z.record(z.string(), z.number().int().min(0)),
+});
+
+// ---------------------------------------------------------------------------
 // Tipos
 // ---------------------------------------------------------------------------
 
@@ -419,3 +537,9 @@ export type EstadoResenaPublicacion = z.infer<
 export type EstadoResenas = z.infer<typeof estadoResenasSchema>;
 export type MiCalificacionCliente = z.infer<typeof miCalificacionClienteSchema>;
 export type ReputacionCliente = z.infer<typeof reputacionClienteSchema>;
+export type CalificarCocineroInput = z.infer<typeof calificarCocineroSchema>;
+export type CalificacionACocinero = z.infer<typeof calificacionACocineroSchema>;
+export type EstadoCalificacionCocinero = z.infer<
+  typeof estadoCalificacionCocineroSchema
+>;
+export type ReputacionCocinero = z.infer<typeof reputacionCocineroSchema>;

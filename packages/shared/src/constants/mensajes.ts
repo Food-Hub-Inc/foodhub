@@ -1153,6 +1153,53 @@ export const MENSAJES_RESENA = {
    */
   clienteNuevo: 'Cliente nuevo',
 
+  // --- Calificar al cocinero (US-RES-07, RF087) -----------------------------
+  /**
+   * LITERAL - US-RES-07, los tres estados de la accion segun exista
+   * calificacion y siga abierta la ventana de 48 horas.
+   *
+   * NO SE REUSAN LOS DE LA RESENA DEL PLATO. Son actos distintos -uno valora el
+   * plato y el otro el servicio del pedido- y el criterio escribe textos
+   * distintos: "Editar mi calificacion", no "Editar mi resena".
+   */
+  calificarAlCocinero: 'Calificar al cocinero',
+  editarMiCalificacion: 'Editar mi calificación',
+  verMiCalificacion: 'Ver mi calificación',
+
+  /** LITERAL - US-RES-07, boton que confirma el alta desde PAN-RES-03. */
+  publicarCalificacion: 'Publicar calificación',
+
+  /**
+   * LITERAL - US-RES-07: "El cliente omite la calificacion presionando
+   * 'Ahora no'". Es la salida del encadenado que ofrece US-RES-01 despues de
+   * resenar los platos de un pedido.
+   */
+  ahoraNo: 'Ahora no',
+
+  /** LITERAL - US-RES-07, confirmacion de la publicacion. */
+  calificacionPublicada: '¡Calificación publicada con éxito!',
+
+  /**
+   * LITERAL - US-RES-07 y RF087, rechazo del filtro de moderacion.
+   *
+   * Es OTRO texto que el de la resena del plato: dice "Tu calificacion" donde
+   * aquel dice "Tu resena". Los dos criterios los escriben por separado.
+   */
+  calificacionConTerminosModerados:
+    'Tu calificación contiene términos que no cumplen con nuestras normas de comunidad. Por favor, modificála antes de publicar.',
+
+  /**
+   * PROPIO - rechazos de la API para RF087, por el mismo motivo que los cinco
+   * de mas abajo: el criterio resuelve la interfaz y no dice que responde el
+   * servidor, pero la API tiene que explicar por que rechaza.
+   */
+  sinDerechoACalificarCocinero:
+    'Solo podés calificar al cocinero de un pedido que hayas recibido.',
+  calificacionYaExiste:
+    'Ya calificaste este pedido. Podés editar tu calificación.',
+  edicionDeCalificacionVencida:
+    'Ya pasó el plazo de 48 horas para editar esta calificación.',
+
   // --- Ver resenas en el perfil publico (US-RES-03) -------------------------
   /**
    * LITERAL - US-RES-03, estado vacio de la seccion de resenas.
