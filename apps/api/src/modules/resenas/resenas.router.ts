@@ -6,6 +6,10 @@ import {
   crearResenaSchema,
   editarResenaSchema,
   filtrosResenasSchema,
+  MENSAJES_RESENA,
+  reaccionarSchema,
+  reportarResenaSchema,
+  responderResenaSchema,
 } from '@foodhub/shared';
 import { sesionDe } from '../../lib/request.js';
 import { requiereAutenticacion } from '../../middleware/auth.middleware.js';
@@ -13,6 +17,7 @@ import { requiereRol } from '../../middleware/rbac.middleware.js';
 import * as calificacionCocinero from './calificacionCocinero.service.js';
 import * as calificaciones from './calificaciones.service.js';
 import * as resenasService from './resenas.service.js';
+import * as social from './social.service.js';
 
 /**
  * Rutas del modulo de Resenas y Calificaciones (US-RES-01 a US-RES-03).
@@ -32,8 +37,9 @@ import * as resenasService from './resenas.service.js';
  * sesion; la pertenencia se verifica en el WHERE de cada consulta. Cambiar el
  * id de una resena en la URL devuelve 404, no la resena de otro.
  *
- * US-RES-04, US-RES-05 y US-RES-06 -reacciones, respuestas y reportes- van en
- * el segundo PR y suman sus rutas aca.
+ * US-RES-04, US-RES-05 y US-RES-06 -reacciones, respuestas y reportes- cuelgan
+ * de `/:id/...` al final del archivo; la moderacion del administrador (RF086)
+ * vive en su propio router, bajo `/moderacion`.
  */
 export const resenasRouter: Router = Router();
 
@@ -79,6 +85,7 @@ resenasRouter.use(requiereAutenticacion);
 resenasRouter.get('/cocineros/:cocineroId', async (req, res) => {
   const pagina = await resenasService.listarResenasDeCocinero({
     cocineroId: idUsuarioSchema.parse(req.params.cocineroId),
+    usuarioId: sesionDe(req).id,
     filtros: filtrosResenasSchema.parse(req.query),
   });
   res.json(pagina);
@@ -276,6 +283,7 @@ resenasRouter.post('/', requiereRol('CLIENTE'), async (req, res) => {
 resenasRouter.get('/:id', async (req, res) => {
   const resena = await resenasService.leerResenaPublica(
     idResenaSchema.parse(req.params.id),
+    sesionDe(req).id,
   );
   res.json(resena);
 });
@@ -288,4 +296,83 @@ resenasRouter.patch('/:id', requiereRol('CLIENTE'), async (req, res) => {
     datos: editarResenaSchema.parse(req.body),
   });
   res.json(resena);
+});
+
+// ---------------------------------------------------------------------------
+// US-RES-04, US-RES-05 y US-RES-06 — sobre una resena puntual
+// ---------------------------------------------------------------------------
+
+/**
+ * ESTAS VAN AL FINAL Y NO ANTES DE `/:id`, al reves que `/cocineros` y
+ * `/pedidos`. No hay ambiguedad posible: `/:id/reaccion` tiene dos segmentos y
+ * `/:id` uno solo, asi que Express nunca confunde una con la otra.
+ */
+
+/** US-RES-04 - Marca, cambia o quita la reaccion. `tipo: null` desmarca. */
+resenasRouter.put('/:id/reaccion', async (req, res) => {
+  await social.reaccionar({
+    usuarioId: sesionDe(req).id,
+    resenaId: idResenaSchema.parse(req.params.id),
+    datos: reaccionarSchema.parse(req.body),
+  });
+  res.status(204).send();
+});
+
+/** US-RES-05 - El cocinero responde una resena de uno de sus platos. */
+resenasRouter.post(
+  '/:id/respuesta',
+  requiereRol('COCINERO'),
+  async (req, res) => {
+    const respuesta = await social.responderResena({
+      cocineroId: sesionDe(req).id,
+      resenaId: idResenaSchema.parse(req.params.id),
+      datos: responderResenaSchema.parse(req.body),
+    });
+    res.status(201).json(respuesta);
+  },
+);
+
+/**
+ * US-RES-05 - Edicion dentro de las 24 horas.
+ *
+ * Cuelga de `/respuestas/:id` y no de `/:resenaId/respuesta` porque lo que se
+ * modifica es la respuesta, que tiene identidad propia; la resena solo dice de
+ * donde salio.
+ */
+resenasRouter.patch(
+  '/respuestas/:id',
+  requiereRol('COCINERO'),
+  async (req, res) => {
+    const respuesta = await social.editarRespuesta({
+      cocineroId: sesionDe(req).id,
+      respuestaId: idResenaSchema.parse(req.params.id),
+      datos: responderResenaSchema.parse(req.body),
+    });
+    res.json(respuesta);
+  },
+);
+
+/** US-RES-06 - Reporta una resena ajena. Sin rol: cualquiera con sesion. */
+resenasRouter.post('/:id/reporte', async (req, res) => {
+  await social.reportarResena({
+    usuarioId: sesionDe(req).id,
+    resenaId: idResenaSchema.parse(req.params.id),
+    datos: reportarResenaSchema.parse(req.body),
+  });
+  res.status(201).json({ mensaje: MENSAJES_RESENA.reporteEnviado });
+});
+
+/**
+ * US-RES-06 - El autor retira su propia resena.
+ *
+ * DELETE, aunque por dentro sea un UPDATE de estado: para quien llama, la
+ * resena deja de existir. Exponerlo como PATCH obligaria al cliente a conocer
+ * el enum `ELIMINADA_AUTOR`, que es un detalle de como se implementa la baja.
+ */
+resenasRouter.delete('/:id', requiereRol('CLIENTE'), async (req, res) => {
+  await social.eliminarMiResena({
+    clienteId: sesionDe(req).id,
+    resenaId: idResenaSchema.parse(req.params.id),
+  });
+  res.status(204).send();
 });

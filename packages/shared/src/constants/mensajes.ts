@@ -1299,6 +1299,96 @@ export const MENSAJES_RESENA = {
    */
   fotoNoSePudoSubir:
     'No se pudo subir la foto, así que la reseña no se publicó. Probá de nuevo o quitá la foto.',
+
+  // --- Reaccionar a una resena (US-RES-04, RF083) ---------------------------
+  /** LITERAL - US-RES-04: "dos botones de reaccion: 'Me gusta' y 'No me gusta'". */
+  meGusta: 'Me gusta',
+  noMeGusta: 'No me gusta',
+
+  /**
+   * LITERAL - US-RES-04: el autor de una resena no reacciona a la suya; en su
+   * lugar ve "el contador total de reacciones recibidas en modo solo lectura".
+   */
+  reaccionesRecibidas: 'Reacciones recibidas',
+
+  // --- Responder una resena (US-RES-05, RF084) ------------------------------
+  /** LITERAL - US-RES-05, los dos estados del boton segun exista respuesta. */
+  responder: 'Responder',
+  editarRespuesta: 'Editar respuesta',
+
+  /** LITERAL - US-RES-05, botones del formulario de respuesta. */
+  publicarRespuesta: 'Publicar respuesta',
+  cancelarRespuesta: 'Cancelar',
+
+  /** LITERAL - US-RES-05 y RF084, rechazo del filtro de moderacion.
+   *
+   * NO TERMINA CON "Por favor, modificala antes de publicar" como el de la
+   * resena: el criterio de US-RES-05 corta la frase antes. Son textos distintos
+   * y las pruebas de la Etapa 6 comparan palabra por palabra.
+   */
+  respuestaConTerminosModerados:
+    'Tu respuesta contiene términos que no cumplen con nuestras normas de comunidad.',
+
+  /** LITERAL - US-RES-05 y RF084, confirmacion previa a publicar. */
+  confirmarRespuesta:
+    '¿Publicar respuesta? Tu respuesta será visible públicamente debajo de la reseña original y el cliente recibirá una notificación.',
+  confirmarRespuestaSi: 'Si, publicar',
+  confirmarRespuestaNo: 'No, volver',
+
+  /** LITERAL - US-RES-03 y US-RES-05, encabezado de la respuesta publicada. */
+  respuestaDelCocinero: 'Respuesta del cocinero',
+
+  /** LITERAL - US-RES-05, marca de una respuesta editada dentro del plazo. */
+  respuestaEditada: '(editada)',
+
+  /** PROPIO - rechazos de la API para US-RES-05. */
+  sinDerechoAResponder:
+    'Solo podés responder una reseña sobre uno de tus platos.',
+  respuestaYaExiste: 'Ya respondiste esta reseña. Podés editar tu respuesta.',
+  edicionDeRespuestaVencida:
+    'Ya pasó el plazo de 24 horas para editar esta respuesta.',
+
+  // --- Reportar y moderar (US-RES-06, RF085 y RF086) ------------------------
+  /** LITERAL - US-RES-06, opciones del menu contextual de cada resena. */
+  reportarResena: 'Reportar reseña',
+  eliminarMiResena: 'Eliminar mi reseña',
+
+  /** LITERAL - US-RES-06, boton que envia el reporte. */
+  enviarReporte: 'Enviar reporte',
+
+  /** LITERAL - US-RES-06, falta el motivo obligatorio.
+   *
+   * "Seleccióná" va con esa tilde: asi esta transcrito el criterio. Mismo
+   * criterio que con "Se el primero en compartir tu experiencia" — gana el
+   * documento por sobre la ortografia.
+   */
+  reporteSinMotivo: 'Seleccióná al menos un motivo para reportar esta reseña.',
+
+  /**
+   * LITERAL - US-RES-06, confirmacion del envio.
+   *
+   * RF085 escribe una version mas corta ("Reporte enviado. Nuestro equipo
+   * revisara..."). Se toma la del criterio de aceptacion, que es lo que la
+   * Etapa 6 verifica.
+   */
+  reporteEnviado:
+    '¡Reporte enviado! Nuestro equipo revisará la reseña y tomará las acciones correspondientes. Gracias por contribuir a la comunidad.',
+
+  /** LITERAL - US-RES-06, el usuario ya reporto esta resena. */
+  reporteDuplicado:
+    'Ya reportaste esta reseña. Nuestro equipo esta revisándola.',
+
+  /** LITERAL - US-RES-06 y RF086, aviso al que reporto cuando se rechaza. */
+  reporteRechazadoAviso:
+    'Revisamos tu reporte sobre una reseña y consideramos que cumple con nuestras normas de comunidad. La reseña se mantiene visible. Gracias por tu colaboracion.',
+
+  /** PROPIO - rechazos de la API para US-RES-04 y US-RES-06. */
+  sinDerechoAReaccionar: 'No podés reaccionar a tu propia reseña.',
+  sinDerechoAReportar: 'No podés reportar tu propia reseña.',
+  sinDerechoAEliminar: 'Solo podés eliminar una reseña que hayas escrito.',
+
+  /** PROPIO - la bandeja de moderacion no encontro reportes pendientes. */
+  sinReportesPendientes: 'No hay reportes pendientes de revisión.',
 } as const;
 
 /**

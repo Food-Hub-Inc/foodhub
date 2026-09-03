@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ESTADO_RESENA, TIPO_REACCION } from '../constants/enums.js';
 import { MENSAJES_RESENA } from '../constants/mensajes.js';
 
 /**
@@ -257,23 +258,19 @@ export const calificarClienteSchema = z.object({
 /**
  * Orden del listado de resenas (US-RES-03).
  *
- * Falta "Mas utiles", que el criterio tambien enumera: ordena por cantidad de
- * reacciones y las reacciones son US-RES-04, fuera de este PR. Se agrega el
- * valor cuando exista de que ordenar.
+ * "MAS_UTILES" ordena por cantidad de reacciones "Me gusta" (US-RES-04). Se
+ * incorporo cuando existieron las reacciones; antes ofrecerlo habria devuelto
+ * siempre lo mismo.
  */
 export const ORDEN_RESENAS = [
   'MAS_RECIENTES',
   'MEJOR_CALIFICACION',
   'PEOR_CALIFICACION',
+  'MAS_UTILES',
 ] as const;
 export type OrdenResenas = (typeof ORDEN_RESENAS)[number];
 
-/**
- * US-RES-03 - Filtros del listado.
- *
- * Falta el toggle "Solo resenas con respuesta del cocinero" por el mismo motivo
- * que "Mas utiles": depende de US-RES-05.
- */
+/** US-RES-03 - Filtros del listado. */
 export const filtrosResenasSchema = z.object({
   orden: z.enum(ORDEN_RESENAS).default('MAS_RECIENTES'),
   // Multi-seleccion de 1 a 5 estrellas. Vacio o ausente = sin filtrar.
@@ -291,6 +288,11 @@ export const filtrosResenasSchema = z.object({
    * "false" daria `true` y el toggle quedaria siempre encendido.
    */
   soloConFoto: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((valor) => valor === 'true'),
+  /** US-RES-05: "Solo resenas con respuesta del cocinero". Mismo criterio de parseo. */
+  soloConRespuesta: z
     .enum(['true', 'false'])
     .default('false')
     .transform((valor) => valor === 'true'),
@@ -316,6 +318,21 @@ export const autorResenaSchema = z.object({
   fotoPerfilUrl: z.url().nullable(),
 });
 
+/**
+ * Respuesta pública del cocinero a una reseña (US-RES-05, RF084).
+ *
+ * `puedeEditar` lo resuelve el servidor contra `fecha_edicion_limite`: la
+ * pantalla no puede decidirlo sola porque compararía contra el reloj del
+ * teléfono, que el usuario controla.
+ */
+export const respuestaCocineroSchema = z.object({
+  id: z.uuid(),
+  contenido: z.string(),
+  editada: z.boolean(),
+  fechaPublicacion: z.iso.datetime(),
+  puedeEditar: z.boolean(),
+});
+
 /** Una resena en el listado del perfil publico (US-RES-03). */
 export const resenaPublicaSchema = z.object({
   id: z.uuid(),
@@ -331,6 +348,30 @@ export const resenaPublicaSchema = z.object({
   fotoUrl: z.url().nullable(),
   editada: z.boolean(),
   fechaPublicacion: z.iso.datetime(),
+
+  /**
+   * US-RES-04. `mia` es la reaccion del usuario de la sesion, o `null`; los
+   * contadores son de todos. Viajan siempre, tambien sobre la resena propia:
+   * ahi la pantalla dibuja el total en solo lectura en lugar de los botones.
+   */
+  reacciones: z.object({
+    meGusta: z.number().int().min(0),
+    noMeGusta: z.number().int().min(0),
+    mia: z.enum(TIPO_REACCION).nullable(),
+  }),
+
+  /** US-RES-05. `null` mientras el cocinero no haya respondido. */
+  respuesta: respuestaCocineroSchema.nullable(),
+
+  /**
+   * `true` si la escribio el usuario de la sesion. Decide dos cosas del menu
+   * contextual de US-RES-06 -reportar ajena, eliminar propia- y si se dibujan
+   * los botones de reaccion.
+   */
+  esMia: z.boolean(),
+
+  /** `true` si el usuario de la sesion ya la reporto (US-RES-06). */
+  reportadaPorMi: z.boolean(),
 });
 
 /**
@@ -520,6 +561,148 @@ export const reputacionCocineroSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
+// US-RES-04 / RF083 — reacciones
+// ---------------------------------------------------------------------------
+
+/**
+ * Marcar o cambiar la reaccion sobre una resena.
+ *
+ * UN SOLO ENDPOINT PARA LAS TRES ACCIONES del criterio -marcar, cambiar y
+ * desmarcar-, porque las tres describen el mismo hecho: cual es la reaccion
+ * vigente de este usuario sobre esta resena. `tipo: null` es "ninguna", que es
+ * lo que deja tocar de nuevo el boton ya marcado. Tres endpoints separados
+ * obligarian a la pantalla a saber en cual de los tres casos esta antes de
+ * llamar, y ese estado ya lo tiene el servidor.
+ */
+export const reaccionarSchema = z.object({
+  tipo: z.enum(TIPO_REACCION).nullable(),
+});
+
+// ---------------------------------------------------------------------------
+// US-RES-05 / RF084 — respuesta del cocinero
+// ---------------------------------------------------------------------------
+
+/**
+ * Ventana de edicion de la respuesta, en horas (RF084).
+ *
+ * SON 24 Y NO 48: es el tercer plazo del modulo y el mas corto. El requisito lo
+ * justifica -"de modo que el contenido no pueda alterarse despues de que el
+ * cliente lo haya leido"- y se persiste ademas en la columna
+ * `respuesta_cocinero.fecha_edicion_limite`, porque el requisito la nombra
+ * explicitamente como atributo.
+ */
+export const HORAS_VENTANA_EDICION_RESPUESTA = 24;
+
+/** `true` si la respuesta todavia admite edicion. `ahora` se inyecta para probarla. */
+export function ventanaDeRespuestaAbierta(
+  fechaEdicionLimite: Date | null,
+  ahora: Date = new Date(),
+): boolean {
+  if (fechaEdicionLimite === null) return false;
+  return ahora.getTime() < fechaEdicionLimite.getTime();
+}
+
+/** RF084 - Alta o edicion de la respuesta. Una sola por resena. */
+export const responderResenaSchema = z.object({
+  contenido: z
+    .string()
+    .trim()
+    .min(1, 'La respuesta no puede estar vacía.')
+    .max(500, 'La respuesta no puede superar los 500 caracteres.'),
+});
+
+// ---------------------------------------------------------------------------
+// US-RES-06 / RF085 y RF086 — reportes y moderacion
+// ---------------------------------------------------------------------------
+
+/** Motivos del reporte (RF085). Lista cerrada, multi-seleccion. */
+export const MOTIVOS_REPORTE = [
+  'Contenido ofensivo o discriminatorio',
+  'Lenguaje inapropiado',
+  'Información falsa o engañosa',
+  'Spam o publicidad',
+  'Datos personales de terceros',
+  'Otro',
+] as const;
+export type MotivoReporte = (typeof MOTIVOS_REPORTE)[number];
+
+/**
+ * RF085 - Reporte de una resena.
+ *
+ * EL DETALLE ES OBLIGATORIO SI SE ELIGE "Otro" y opcional en los demas casos.
+ * El criterio lo dice asi, y tiene sentido: los otros cinco motivos ya nombran
+ * el problema, y "Otro" sin explicacion no le sirve a nadie en la bandeja de
+ * moderacion. Se valida con `superRefine` porque la regla cruza dos campos.
+ */
+export const reportarResenaSchema = z
+  .object({
+    motivos: z
+      .array(z.enum(MOTIVOS_REPORTE))
+      .min(1, MENSAJES_RESENA.reporteSinMotivo)
+      .max(MOTIVOS_REPORTE.length),
+    detalleAdicional: z
+      .string()
+      .trim()
+      .max(500, 'El detalle no puede superar los 500 caracteres.')
+      .optional(),
+  })
+  .superRefine((valor, ctx) => {
+    const pideDetalle = valor.motivos.includes('Otro');
+    const sinDetalle = (valor.detalleAdicional ?? '').length === 0;
+
+    if (pideDetalle && sinDetalle) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['detalleAdicional'],
+        message: 'Contanos qué pasó para poder revisarlo.',
+      });
+    }
+  });
+
+/** RF086 - Un reporte en la bandeja de moderacion del administrador. */
+export const reporteModeracionSchema = z.object({
+  resenaId: z.uuid(),
+  /** Cuantos usuarios distintos reportaron ESTA resena. */
+  cantidadReportes: z.number().int().min(1),
+  /** Union de los motivos de todos los reportes, sin repetir. */
+  motivos: z.array(z.string()),
+  detalles: z.array(z.string()),
+  fechaPrimerReporte: z.iso.datetime(),
+
+  /** La resena reportada, con su contexto para poder decidir. */
+  resena: z.object({
+    id: z.uuid(),
+    autorNombre: z.string(),
+    calificacion: z.number().int().min(1).max(5),
+    comentario: z.string().nullable(),
+    fotoUrl: z.url().nullable(),
+    fechaPublicacion: z.iso.datetime(),
+    estadoResena: z.enum(ESTADO_RESENA),
+    nombrePlato: z.string(),
+    cocineroNombre: z.string(),
+  }),
+});
+
+export const paginaReportesSchema = z.object({
+  datos: z.array(reporteModeracionSchema),
+  total: z.number().int().min(0),
+  pagina: z.number().int().min(1),
+  porPagina: z.number().int().min(1),
+});
+
+/**
+ * RF086 - Resolucion de los reportes de una resena.
+ *
+ * `aprobar` decide las dos ramas del requisito: aprobado oculta la resena y
+ * recalcula los promedios; rechazado la deja visible y avisa a quienes
+ * reportaron. Se resuelven TODOS los reportes pendientes de esa resena de una
+ * vez, porque la decision es sobre la resena y no sobre cada denuncia.
+ */
+export const resolverReporteSchema = z.object({
+  aprobar: z.boolean(),
+});
+
+// ---------------------------------------------------------------------------
 // Tipos
 // ---------------------------------------------------------------------------
 
@@ -543,3 +726,10 @@ export type EstadoCalificacionCocinero = z.infer<
   typeof estadoCalificacionCocineroSchema
 >;
 export type ReputacionCocinero = z.infer<typeof reputacionCocineroSchema>;
+export type ReaccionarInput = z.infer<typeof reaccionarSchema>;
+export type RespuestaCocinero = z.infer<typeof respuestaCocineroSchema>;
+export type ResponderResenaInput = z.infer<typeof responderResenaSchema>;
+export type ReportarResenaInput = z.infer<typeof reportarResenaSchema>;
+export type ReporteModeracion = z.infer<typeof reporteModeracionSchema>;
+export type PaginaReportes = z.infer<typeof paginaReportesSchema>;
+export type ResolverReporteInput = z.infer<typeof resolverReporteSchema>;

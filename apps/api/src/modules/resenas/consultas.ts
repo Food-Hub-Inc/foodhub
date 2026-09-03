@@ -7,7 +7,13 @@ import {
   resena,
   usuario,
 } from '@foodhub/db';
-import { MENSAJES_RESENA, type AutorResena } from '@foodhub/shared';
+import {
+  MENSAJES_RESENA,
+  type AutorResena,
+  type ResenaPublica,
+  type RespuestaCocinero,
+  type TipoReaccion,
+} from '@foodhub/shared';
 import { db } from '../../lib/db.js';
 
 /**
@@ -195,6 +201,33 @@ export interface FilaResena {
 }
 
 /**
+ * Lo que se le agrega a una fila para armar la resena publica completa.
+ *
+ * VIAJA APARTE DE `FilaResena` porque no sale de la misma consulta ni tiene el
+ * mismo alcance: `FilaResena` describe la resena, y esto describe la relacion
+ * del USUARIO DE LA SESION con ella. La misma resena da un `contexto` distinto
+ * para cada persona que la mira, y esa diferencia se pierde si se mezclan.
+ */
+export interface ContextoDeResena {
+  meGusta: number;
+  noMeGusta: number;
+  miReaccion: TipoReaccion | null;
+  respuesta: RespuestaCocinero | null;
+  esMia: boolean;
+  reportadaPorMi: boolean;
+}
+
+/** Contexto de una resena que nadie tocó todavía, para los casos sin agregados. */
+export const CONTEXTO_VACIO: ContextoDeResena = {
+  meGusta: 0,
+  noMeGusta: 0,
+  miReaccion: null,
+  respuesta: null,
+  esMia: false,
+  reportadaPorMi: false,
+};
+
+/**
  * Identidad del autor, o el anonimo de la cuenta dada de baja.
  *
  * US-RES-04 lo fija para las reacciones -"muestre el autor como 'Usuario
@@ -215,7 +248,10 @@ export function aAutor(fila: FilaResena): AutorResena {
 }
 
 /** Mapeador PURO de una fila al contrato publico de la resena. */
-export function aResenaPublica(fila: FilaResena) {
+export function aResenaPublica(
+  fila: FilaResena,
+  contexto: ContextoDeResena = CONTEXTO_VACIO,
+): ResenaPublica {
   return {
     id: fila.id,
     autor: aAutor(fila),
@@ -230,5 +266,13 @@ export function aResenaPublica(fila: FilaResena) {
     fotoUrl: fila.fotoUrl,
     editada: fila.editada,
     fechaPublicacion: fila.fechaPublicacion.toISOString(),
+    reacciones: {
+      meGusta: contexto.meGusta,
+      noMeGusta: contexto.noMeGusta,
+      mia: contexto.miReaccion,
+    },
+    respuesta: contexto.respuesta,
+    esMia: contexto.esMia,
+    reportadaPorMi: contexto.reportadaPorMi,
   };
 }

@@ -22,6 +22,7 @@ import {
   todas,
   ultimoCompletadoDelPlato,
 } from './consultas.js';
+import { contextosDeResenas } from './social.service.js';
 
 /**
  * Modulo de Resenas y Calificaciones — la resena del plato
@@ -127,7 +128,7 @@ export async function crearResena(entrada: {
     datos,
   });
 
-  return leerResenaPublica(filaNueva.id);
+  return leerResenaPublica(filaNueva.id, clienteId);
 }
 
 /** Inserta y traduce la violacion de unicidad al mensaje que corresponde. */
@@ -242,7 +243,7 @@ export async function editarResena(entrada: {
     })
     .where(eq(resena.id, resenaId));
 
-  return leerResenaPublica(resenaId);
+  return leerResenaPublica(resenaId, clienteId);
 }
 
 // ---------------------------------------------------------------------------
@@ -349,17 +350,47 @@ function consultaBase(cocineroId: string, filtros: FiltrosResenas) {
   if (filtros.soloConFoto) {
     condiciones.push(sql`${resena.fotoUrl} is not null`);
   }
+  /**
+   * US-RES-05: "Solo resenas con respuesta del cocinero". Se resuelve con un
+   * EXISTS y no con un join: el join duplicaria la fila si algun dia hubiera
+   * mas de una respuesta, y aca solo interesa si hay alguna.
+   */
+  if (filtros.soloConRespuesta) {
+    condiciones.push(sql`exists (
+      select 1 from respuesta_cocinero rc where rc.resena_id = ${resena.id}
+    )`);
+  }
 
   return todas(condiciones);
 }
 
-/** Orden del listado. "Mas utiles" no esta: depende de US-RES-04. */
+/**
+ * Orden del listado.
+ *
+ * "MAS_UTILES" ordena por cantidad de "Me gusta" (US-RES-04). Se cuenta con un
+ * subselect correlacionado en lugar de un join agrupado: el join obligaria a
+ * agrupar toda la consulta por las quince columnas de la resena para contar una
+ * cifra que solo se usa para ordenar.
+ *
+ * Todos los ordenes desempatan por fecha: sin eso, dos resenas con la misma
+ * cantidad de likes podrian salir en distinto orden en cada pagina y el scroll
+ * infinito repetiria o saltearia filas.
+ */
 function ordenDe(filtros: FiltrosResenas) {
   if (filtros.orden === 'MEJOR_CALIFICACION') {
     return [desc(resena.calificacion), desc(resena.fechaPublicacion)];
   }
   if (filtros.orden === 'PEOR_CALIFICACION') {
     return [asc(resena.calificacion), desc(resena.fechaPublicacion)];
+  }
+  if (filtros.orden === 'MAS_UTILES') {
+    return [
+      desc(sql`(
+        select count(*) from reaccion_resena rr
+         where rr.resena_id = ${resena.id} and rr.tipo = 'ME_GUSTA'
+      )`),
+      desc(resena.fechaPublicacion),
+    ];
   }
   return [desc(resena.fechaPublicacion)];
 }
@@ -421,12 +452,19 @@ async function calcularResumen(cocineroId: string): Promise<ResumenResenas> {
   };
 }
 
-/** US-RES-03 - Listado paginado de las resenas de un cocinero. PAN-EXP-04. */
+/**
+ * US-RES-03 - Listado paginado de las resenas de un cocinero. PAN-EXP-04.
+ *
+ * `usuarioId` es quien MIRA, no de quien son las resenas. De el dependen las
+ * tres marcas de US-RES-04 y US-RES-06 que viajan con cada fila: cual es su
+ * reaccion, si la resena es suya y si ya la reporto.
+ */
 export async function listarResenasDeCocinero(entrada: {
   cocineroId: string;
+  usuarioId: string;
   filtros: FiltrosResenas;
 }): Promise<PaginaResenas> {
-  const { cocineroId, filtros } = entrada;
+  const { cocineroId, usuarioId, filtros } = entrada;
   const filtro = consultaBase(cocineroId, filtros);
 
   const [filas, [totalizador], resumen] = await Promise.all([
@@ -443,8 +481,13 @@ export async function listarResenasDeCocinero(entrada: {
     calcularResumen(cocineroId),
   ]);
 
+  const contextos = await contextosDeResenas({
+    resenaIds: filas.map((fila) => fila.id),
+    usuarioId,
+  });
+
   return {
-    datos: filas.map((fila) => aResenaPublica(fila)),
+    datos: filas.map((fila) => aResenaPublica(fila, contextos.get(fila.id))),
     resumen,
     total: totalizador?.total ?? 0,
     pagina: filtros.pagina,
@@ -463,6 +506,7 @@ export async function listarResenasDeCocinero(entrada: {
  */
 export async function leerResenaPublica(
   resenaId: string,
+  usuarioId: string,
 ): Promise<ResenaPublica> {
   const [fila] = await db
     .select(columnasResena)
@@ -473,5 +517,10 @@ export async function leerResenaPublica(
     .limit(1);
 
   if (!fila) throw noEncontrado('la reseña');
-  return aResenaPublica(fila);
+
+  const contextos = await contextosDeResenas({
+    resenaIds: [fila.id],
+    usuarioId,
+  });
+  return aResenaPublica(fila, contextos.get(fila.id));
 }
