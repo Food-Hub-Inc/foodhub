@@ -17,6 +17,7 @@ import {
   tipoReaccionEnum,
 } from './enums.js';
 import { cocinero, usuario } from './usuarios.js';
+import { pedido } from './pedidos.js';
 import { publicacion } from './publicaciones.js';
 
 /**
@@ -108,18 +109,24 @@ export const resena = pgTable(
 ).enableRLS();
 
 /**
- * Diagrama: CalificacionCocinero. La otra direccion de la reputacion: el
- * cocinero califica al CLIENTE. Tabla separada de `resena` porque no admite
- * foto, ni respuesta, ni reacciones, y no es publica.
+ * Diagrama: CalificacionACliente. Una de las dos direcciones de la reputacion:
+ * el COCINERO califica al CLIENTE (RF081, US-RES-02). Tabla separada de
+ * `resena` porque no admite foto, ni respuesta, ni reacciones, y no es publica.
  *
- * Tampoco cuelga de `pedido` (decision del equipo, 2026-08-18): el cocinero
- * califica a la PERSONA y no a la transaccion, asi que hay una sola
- * calificacion por par cocinero-cliente y se edita si cambia de opinion. El
- * derecho a calificar lo valida el servicio: tiene que existir al menos un
- * `pedido` de ese cliente a ese cocinero que haya alcanzado el estado ACEPTADO.
+ * SE LLAMABA `calificacion_cocinero` HASTA LA MIGRACION 0014. El nombre viejo
+ * era ambiguo -no decia si el cocinero era el autor o el evaluado- y quedo
+ * directamente ocupado cuando la version corregida del modulo agrego la
+ * direccion contraria (RF087). Ahora las dos tablas se nombran por el evaluado:
+ * `calificacion_a_cliente` y `calificacion_a_cocinero`.
+ *
+ * No cuelga de `pedido` (decision del equipo, 2026-08-18): el cocinero califica
+ * a la PERSONA y no a la transaccion, asi que hay una sola calificacion por par
+ * cocinero-cliente y se edita si cambia de opinion. El derecho a calificar lo
+ * valida el servicio: tiene que existir al menos un `pedido` de ese cliente a
+ * ese cocinero que haya alcanzado el estado ACEPTADO.
  */
-export const calificacionCocinero = pgTable(
-  'calificacion_cocinero',
+export const calificacionACliente = pgTable(
+  'calificacion_a_cliente',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     cocineroEvaluadorId: uuid('cocinero_evaluador_id')
@@ -137,15 +144,92 @@ export const calificacionCocinero = pgTable(
   },
   (t) => [
     check(
-      'calificacion_cocinero_rango',
+      'calificacion_a_cliente_rango',
       sql`${t.calificacion} between 1 and 5`,
     ),
-    // Una calificacion por par cocinero-cliente. Reemplaza al `pedido_id` UNIQUE.
-    uniqueIndex('calificacion_cocinero_uq').on(
+    // Una calificacion vigente por par cocinero-cliente.
+    uniqueIndex('calificacion_a_cliente_uq').on(
       t.cocineroEvaluadorId,
       t.clienteEvaluadoId,
     ),
-    index('calificacion_cliente_idx').on(t.clienteEvaluadoId),
+    index('calificacion_a_cliente_idx').on(t.clienteEvaluadoId),
+  ],
+).enableRLS();
+
+/**
+ * Diagrama: CalificacionACocinero. La otra direccion: el CLIENTE califica al
+ * COCINERO (RF087, US-RES-07).
+ *
+ * ES OTRA COSA QUE LA RESENA DEL PLATO, y por eso es otra tabla. La resena
+ * valora el PRODUCTO y se ancla en la publicacion; esto valora el SERVICIO
+ * -puntualidad, comunicacion, atencion- y se ancla en el pedido. Son metricas
+ * independientes que pueden diferir: un cocinero puede cocinar excelente y
+ * atender pesimo.
+ *
+ * ESTA ES LA QUE CONSTRUYE LA REPUTACION DEL COCINERO (RF082). El promedio del
+ * perfil publico sale de aca y NO de las resenas de los platos.
+ *
+ * UNA POR PEDIDO, NO POR PAR CLIENTE-COCINERO. Es la diferencia con
+ * `calificacion_a_cliente` y con `resena`, y es deliberada: un pedido de seis
+ * platos deja una sola calificacion de servicio, igual que uno de un plato, asi
+ * que un pedido grande no pesa mas sobre la reputacion. Y cada pedido nuevo
+ * habilita una calificacion nueva, porque cada uno es una experiencia distinta.
+ */
+export const calificacionACocinero = pgTable(
+  'calificacion_a_cocinero',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+
+    /**
+     * A DIFERENCIA DE `resena`, ESTA SI REFERENCIA AL PEDIDO. La unicidad es
+     * por pedido, asi que la FK no es un dato de contexto: es la clave de
+     * negocio, y una restriccion UNIQUE necesita la columna en la tabla.
+     */
+    pedidoId: uuid('pedido_id')
+      .notNull()
+      .references(() => pedido.id, { onDelete: 'cascade' }),
+
+    clienteId: uuid('cliente_id')
+      .notNull()
+      .references(() => usuario.id, { onDelete: 'cascade' }),
+
+    /** Desnormalizado igual que `resena.cocinero_res_id`, y por lo mismo: el
+     * promedio del perfil publico se consulta por cocinero en cada carga. */
+    cocineroId: uuid('cocinero_id')
+      .notNull()
+      .references(() => cocinero.usuarioId, { onDelete: 'cascade' }),
+
+    calificacion: integer('calificacion').notNull(),
+    comentario: varchar('comentario', { length: 1000 }),
+    tags: text('tags').array(),
+
+    /**
+     * Misma maquinaria de moderacion que `resena`: RF082 excluye del promedio
+     * del cocinero las calificaciones OCULTA_MODERACION y ELIMINADA_AUTOR.
+     */
+    estadoResena: estadoResenaEnum('estado_resena')
+      .notNull()
+      .default('VISIBLE'),
+    editada: boolean('editada').notNull().default(false),
+    fechaPublicacion: timestamp('fecha_publicacion', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    fechaUltimaEdicion: timestamp('fecha_ultima_edicion', {
+      withTimezone: true,
+    }),
+  },
+  (t) => [
+    check(
+      'calificacion_a_cocinero_rango',
+      sql`${t.calificacion} between 1 and 5`,
+    ),
+    // Una calificacion por pedido, sin importar cuantos platos lo integren.
+    uniqueIndex('calificacion_a_cocinero_pedido_uq').on(t.pedidoId),
+    // Promedio del perfil publico: solo las visibles cuentan.
+    index('calificacion_a_cocinero_cocinero_idx')
+      .on(t.cocineroId, t.fechaPublicacion.desc())
+      .where(sql`${t.estadoResena} = 'VISIBLE'`),
+    index('calificacion_a_cocinero_cliente_idx').on(t.clienteId),
   ],
 ).enableRLS();
 

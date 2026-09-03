@@ -1,4 +1,4 @@
-import { calificacionCocinero, resena, respuestaCocinero } from '@foodhub/db';
+import { calificacionACliente, resena, respuestaCocinero } from '@foodhub/db';
 import type { EstadoResena } from '@foodhub/shared';
 import { db } from '../../../lib/db.js';
 import {
@@ -262,7 +262,7 @@ async function sembrarCalificacionesDeCliente(
     });
 
   if (filas.length === 0) return;
-  await db.insert(calificacionCocinero).values(filas);
+  await db.insert(calificacionACliente).values(filas);
 }
 
 export async function sembrarReputacion(contexto: ContextoSeed): Promise<void> {

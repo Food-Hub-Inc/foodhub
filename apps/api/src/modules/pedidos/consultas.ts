@@ -1,6 +1,6 @@
 import { and, asc, avg, count, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import {
-  calificacionCocinero,
+  calificacionACliente,
   itemPedido,
   pedido,
   resena,
@@ -67,14 +67,14 @@ export const siguienteNumeroPedido = sql<string>`'FH-' || lpad(nextval('pedido_n
 export function subconsultaValoracionPorCliente() {
   const tabla = db
     .select({
-      clienteId: calificacionCocinero.clienteEvaluadoId,
-      promedio: avg(calificacionCocinero.calificacion).as(
+      clienteId: calificacionACliente.clienteEvaluadoId,
+      promedio: avg(calificacionACliente.calificacion).as(
         'valoracion_promedio',
       ),
       cantidad: count().as('cantidad_calificaciones'),
     })
-    .from(calificacionCocinero)
-    .groupBy(calificacionCocinero.clienteEvaluadoId)
+    .from(calificacionACliente)
+    .groupBy(calificacionACliente.clienteEvaluadoId)
     .as('valoracion_por_cliente');
 
   return { tabla, promedio: tabla.promedio };
@@ -123,9 +123,9 @@ export function clienteTienePlatosSinResenar(clienteId: string): SQL<boolean> {
  */
 export const cocineroNoCalificoAlCliente = sql<boolean>`not exists (
   select 1
-    from ${calificacionCocinero}
-   where ${calificacionCocinero.cocineroEvaluadorId} = ${pedido.cocineroPedidoId}
-     and ${calificacionCocinero.clienteEvaluadoId} = ${pedido.clientePedidoId}
+    from ${calificacionACliente}
+   where ${calificacionACliente.cocineroEvaluadorId} = ${pedido.cocineroPedidoId}
+     and ${calificacionACliente.clienteEvaluadoId} = ${pedido.clientePedidoId}
 )`;
 
 /**

@@ -1,5 +1,5 @@
 import { avg, count, eq } from 'drizzle-orm';
-import { calificacionCocinero } from '@foodhub/db';
+import { calificacionACliente } from '@foodhub/db';
 import {
   MENSAJES_RESENA,
   MINIMO_PEDIDOS_PARA_REPUTACION_CLIENTE,
@@ -68,7 +68,7 @@ export async function calificarCliente(entrada: {
   }
 
   const [fila] = await db
-    .insert(calificacionCocinero)
+    .insert(calificacionACliente)
     .values({
       cocineroEvaluadorId: cocineroId,
       clienteEvaluadoId: clienteId,
@@ -78,8 +78,8 @@ export async function calificarCliente(entrada: {
     })
     .onConflictDoUpdate({
       target: [
-        calificacionCocinero.cocineroEvaluadorId,
-        calificacionCocinero.clienteEvaluadoId,
+        calificacionACliente.cocineroEvaluadorId,
+        calificacionACliente.clienteEvaluadoId,
       ],
       set: {
         calificacion: datos.calificacion,
@@ -88,10 +88,10 @@ export async function calificarCliente(entrada: {
       },
     })
     .returning({
-      calificacion: calificacionCocinero.calificacion,
-      comentario: calificacionCocinero.comentario,
-      tags: calificacionCocinero.tags,
-      fechaPublicacion: calificacionCocinero.fechaPublicacion,
+      calificacion: calificacionACliente.calificacion,
+      comentario: calificacionACliente.comentario,
+      tags: calificacionACliente.tags,
+      fechaPublicacion: calificacionACliente.fechaPublicacion,
     });
 
   if (!fila) throw new Error('la calificación no devolvió ninguna fila');
@@ -118,16 +118,16 @@ export async function miCalificacionDeCliente(entrada: {
 }): Promise<MiCalificacionCliente | null> {
   const [fila] = await db
     .select({
-      calificacion: calificacionCocinero.calificacion,
-      comentario: calificacionCocinero.comentario,
-      tags: calificacionCocinero.tags,
-      fechaPublicacion: calificacionCocinero.fechaPublicacion,
+      calificacion: calificacionACliente.calificacion,
+      comentario: calificacionACliente.comentario,
+      tags: calificacionACliente.tags,
+      fechaPublicacion: calificacionACliente.fechaPublicacion,
     })
-    .from(calificacionCocinero)
+    .from(calificacionACliente)
     .where(
       todas([
-        eq(calificacionCocinero.cocineroEvaluadorId, entrada.cocineroId),
-        eq(calificacionCocinero.clienteEvaluadoId, entrada.clienteId),
+        eq(calificacionACliente.cocineroEvaluadorId, entrada.cocineroId),
+        eq(calificacionACliente.clienteEvaluadoId, entrada.clienteId),
       ]),
     )
     .limit(1);
@@ -164,11 +164,11 @@ export async function reputacionDeCliente(
   const [[agregado], completados] = await Promise.all([
     db
       .select({
-        promedio: avg(calificacionCocinero.calificacion),
+        promedio: avg(calificacionACliente.calificacion),
         cantidad: count(),
       })
-      .from(calificacionCocinero)
-      .where(eq(calificacionCocinero.clienteEvaluadoId, clienteId)),
+      .from(calificacionACliente)
+      .where(eq(calificacionACliente.clienteEvaluadoId, clienteId)),
     pedidosCompletadosDelCliente(clienteId),
   ]);
 
