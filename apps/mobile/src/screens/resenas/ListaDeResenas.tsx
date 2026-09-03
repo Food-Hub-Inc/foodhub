@@ -17,6 +17,7 @@ import { EstadoVacio } from '../../components/ui/EstadoVacio';
 import { useResenasDeCocinero } from '../../hooks/useResenas';
 import { mensajeDeError } from '../../lib/api';
 import { TEXTOS_RESENA } from '../../lib/textos';
+import { GaleriaDeResenas } from './GaleriaDeResenas';
 import { ResumenDeResenas } from './ResumenDeResenas';
 import { TarjetaDeResena } from './TarjetaDeResena';
 
@@ -134,40 +135,67 @@ function CuerpoDelListado({
   const resumen = paginas[0]?.resumen;
   const hayFiltros = filtros.estrellas.length > 0 || filtros.soloConFoto;
 
+  /**
+   * US-RES-03 pide navegar "entre las imágenes de otras reseñas del mismo
+   * cocinero", así que la galería recibe TODAS las fotos cargadas y no solo la
+   * de la tarjeta tocada. Se arma de las páginas ya traídas: es lo que el
+   * usuario tiene delante, y pedir el resto solo para poder deslizar traería el
+   * historial entero por un gesto que quizá no haga.
+   */
+  const fotos = datos
+    .map((resena) => resena.fotoUrl)
+    .filter((url): url is string => url !== null);
+
+  const [fotoAbierta, setFotoAbierta] = useState<string | null>(null);
+
   if (!resumen) return null;
 
   return (
-    <FlatList
-      contentContainerClassName="px-4 pb-24 gap-3"
-      data={datos}
-      keyExtractor={(resena) => resena.id}
-      ListEmptyComponent={
-        <VacioDelListado
-          accion={accionVacio}
-          conFiltros={hayFiltros}
-          total={resumen.total}
+    <>
+      {fotoAbierta === null ? null : (
+        <GaleriaDeResenas
+          fotos={fotos}
+          indiceInicial={Math.max(fotos.indexOf(fotoAbierta), 0)}
+          onCerrar={() => {
+            setFotoAbierta(null);
+          }}
         />
-      }
-      ListFooterComponent={
-        consulta.isFetchingNextPage ? (
-          <Esqueleto className="h-28 rounded-md" />
-        ) : null
-      }
-      ListHeaderComponent={
-        <View className="gap-3 pt-4">
-          {encabezado}
-          <ResumenDeResenas resumen={resumen} />
-          {resumen.total === 0 ? null : <Filtros filtros={filtros} />}
-        </View>
-      }
-      onEndReached={() => {
-        if (consulta.hasNextPage && !consulta.isFetchingNextPage) {
-          void consulta.fetchNextPage();
+      )}
+
+      <FlatList
+        contentContainerClassName="px-4 pb-24 gap-3"
+        data={datos}
+        keyExtractor={(resena) => resena.id}
+        ListEmptyComponent={
+          <VacioDelListado
+            accion={accionVacio}
+            conFiltros={hayFiltros}
+            total={resumen.total}
+          />
         }
-      }}
-      onEndReachedThreshold={0.5}
-      renderItem={({ item }) => <TarjetaDeResena resena={item} />}
-    />
+        ListFooterComponent={
+          consulta.isFetchingNextPage ? (
+            <Esqueleto className="h-28 rounded-md" />
+          ) : null
+        }
+        ListHeaderComponent={
+          <View className="gap-3 pt-4">
+            {encabezado}
+            <ResumenDeResenas resumen={resumen} />
+            {resumen.total === 0 ? null : <Filtros filtros={filtros} />}
+          </View>
+        }
+        onEndReached={() => {
+          if (consulta.hasNextPage && !consulta.isFetchingNextPage) {
+            void consulta.fetchNextPage();
+          }
+        }}
+        onEndReachedThreshold={0.5}
+        renderItem={({ item }) => (
+          <TarjetaDeResena onAbrirFoto={setFotoAbierta} resena={item} />
+        )}
+      />
+    </>
   );
 }
 

@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import type { ResenaPublica } from '@foodhub/shared';
 import {
@@ -21,7 +21,17 @@ import { TEXTOS_RESENA } from '../../lib/textos';
  * reseña sobrevive a las dos bajas y sigue contando para el promedio; lo único
  * que cambia es lo que se muestra.
  */
-export function TarjetaDeResena({ resena }: { resena: ResenaPublica }) {
+export function TarjetaDeResena({
+  resena,
+  onAbrirFoto,
+}: {
+  resena: ResenaPublica;
+  /**
+   * US-RES-03: tocar la foto abre la galería del cocinero. Es opcional porque
+   * la tarjeta también se dibuja donde no hay galería que abrir.
+   */
+  onAbrirFoto?: (fotoUrl: string) => void;
+}) {
   return (
     <View className="rounded-md border border-border bg-surface p-3">
       <View className="flex-row items-center gap-2.5">
@@ -59,11 +69,15 @@ export function TarjetaDeResena({ resena }: { resena: ResenaPublica }) {
       )}
 
       {resena.fotoUrl === null ? null : (
-        <Image
-          accessibilityLabel={TEXTOS_RESENA.fotoDeLaResena}
-          contentFit="cover"
-          source={{ uri: resena.fotoUrl }}
-          style={{ width: '100%', height: 160, borderRadius: 8, marginTop: 10 }}
+        <FotoDeLaResena
+          fotoUrl={resena.fotoUrl}
+          onAbrir={
+            onAbrirFoto === undefined
+              ? undefined
+              : () => {
+                  onAbrirFoto(resena.fotoUrl ?? '');
+                }
+          }
         />
       )}
 
@@ -85,6 +99,39 @@ export function TarjetaDeResena({ resena }: { resena: ResenaPublica }) {
         </Text>
       </View>
     </View>
+  );
+}
+
+/**
+ * La foto adjunta. Se vuelve tocable solo si hay galería adonde llevar: un
+ * `Pressable` que no hace nada le promete al usuario algo que no va a pasar.
+ */
+function FotoDeLaResena({
+  fotoUrl,
+  onAbrir,
+}: {
+  fotoUrl: string;
+  onAbrir?: () => void;
+}) {
+  const imagen = (
+    <Image
+      accessibilityLabel={TEXTOS_RESENA.fotoDeLaResena}
+      contentFit="cover"
+      source={{ uri: fotoUrl }}
+      style={{ width: '100%', height: 160, borderRadius: 8, marginTop: 10 }}
+    />
+  );
+
+  if (onAbrir === undefined) return imagen;
+
+  return (
+    <Pressable
+      accessibilityLabel={TEXTOS_RESENA.fotoDeLaResena}
+      accessibilityRole="imagebutton"
+      onPress={onAbrir}
+    >
+      {imagen}
+    </Pressable>
   );
 }
 
