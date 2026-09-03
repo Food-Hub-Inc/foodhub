@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   contieneTerminoModerado,
   dentroDelPlazoParaResenar,
+  HORAS_VENTANA_EDICION_CALIFICACION_COCINERO,
   HORAS_VENTANA_EDICION_RESENA,
   limiteDeEdicionResena,
   MENSAJES_RESENA,
+  ventanaDeCalificacionAbierta,
   ventanaDeEdicionAbierta,
 } from '@foodhub/shared';
 import { aAutor, aResenaPublica, type FilaResena } from './consultas.js';
@@ -244,5 +246,59 @@ describe('aResenaPublica', () => {
 
   it('normaliza los tags ausentes a una lista vacía', () => {
     expect(aResenaPublica(filaDeEjemplo({ tags: null })).tags).toEqual([]);
+  });
+});
+
+/**
+ * US-RES-07 - La ventana de la calificacion al cocinero.
+ *
+ * SE PRUEBA APARTE DE `ventanaDeEdicionAbierta` aunque las dos duren 48 horas,
+ * porque la diferencia entre ellas es justo lo que un cambio distraido podria
+ * borrar: la de la resena SE REABRE con cada pedido completado del mismo plato
+ * y esta no se reabre nunca. Una prueba que solo mirara el numero 48 pasaria
+ * igual si alguien unificara las dos reglas por error.
+ */
+describe('ventanaDeCalificacionAbierta', () => {
+  const publicada = new Date('2026-09-01T10:00:00Z');
+
+  it('está abierta apenas se publica', () => {
+    expect(ventanaDeCalificacionAbierta(publicada, publicada)).toBe(true);
+  });
+
+  it('sigue abierta un minuto antes de las 48 horas', () => {
+    const casi = new Date(
+      publicada.getTime() +
+        HORAS_VENTANA_EDICION_CALIFICACION_COCINERO * HORA -
+        60_000,
+    );
+    expect(ventanaDeCalificacionAbierta(publicada, casi)).toBe(true);
+  });
+
+  it('se cierra exactamente a las 48 horas', () => {
+    const justo = new Date(
+      publicada.getTime() + HORAS_VENTANA_EDICION_CALIFICACION_COCINERO * HORA,
+    );
+    expect(ventanaDeCalificacionAbierta(publicada, justo)).toBe(false);
+  });
+
+  it('no la reabre el paso del tiempo, a diferencia de la reseña del plato', () => {
+    const unaSemanaDespues = new Date(publicada.getTime() + 7 * DIA);
+    expect(ventanaDeCalificacionAbierta(publicada, unaSemanaDespues)).toBe(
+      false,
+    );
+
+    /*
+     * El contraste explicito: con la MISMA fecha de publicacion, la resena del
+     * plato si vuelve a abrirse cuando hay un pedido completado reciente.
+     */
+    expect(
+      ventanaDeEdicionAbierta(
+        {
+          fechaPublicacion: publicada,
+          ultimoPedidoCompletado: new Date(unaSemanaDespues.getTime() - HORA),
+        },
+        unaSemanaDespues,
+      ),
+    ).toBe(true);
   });
 });

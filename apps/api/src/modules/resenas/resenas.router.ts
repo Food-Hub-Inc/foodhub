@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import {
   calificarClienteSchema,
+  calificarCocineroSchema,
   crearResenaSchema,
   editarResenaSchema,
   filtrosResenasSchema,
@@ -9,6 +10,7 @@ import {
 import { sesionDe } from '../../lib/request.js';
 import { requiereAutenticacion } from '../../middleware/auth.middleware.js';
 import { requiereRol } from '../../middleware/rbac.middleware.js';
+import * as calificacionCocinero from './calificacionCocinero.service.js';
 import * as calificaciones from './calificaciones.service.js';
 import * as resenasService from './resenas.service.js';
 
@@ -82,6 +84,24 @@ resenasRouter.get('/cocineros/:cocineroId', async (req, res) => {
   res.json(pagina);
 });
 
+/**
+ * RF082 - Bloque de reputacion del perfil publico.
+ *
+ * SEPARADO DEL LISTADO A PROPOSITO. Son dos metricas independientes: el resumen
+ * que viaja con el listado describe las RESENAS DE LOS PLATOS, y esto describe
+ * las CALIFICACIONES AL COCINERO. Meterlas en la misma respuesta invitaria a
+ * confundirlas, que es exactamente lo que la version corregida del modulo vino
+ * a separar.
+ *
+ * Abierta a los dos roles por el mismo motivo que el listado.
+ */
+resenasRouter.get('/cocineros/:cocineroId/reputacion', async (req, res) => {
+  const reputacion = await calificacionCocinero.reputacionDeCocinero(
+    idUsuarioSchema.parse(req.params.cocineroId),
+  );
+  res.json(reputacion);
+});
+
 // ---------------------------------------------------------------------------
 // Calificacion del cocinero al cliente (US-RES-02)
 // ---------------------------------------------------------------------------
@@ -135,6 +155,82 @@ resenasRouter.put(
       clienteId: idUsuarioSchema.parse(req.params.clienteId),
       datos: calificarClienteSchema.parse(req.body),
     });
+    res.json(calificacion);
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Calificacion al cocinero (US-RES-07, RF087)
+// ---------------------------------------------------------------------------
+
+/**
+ * LAS CUATRO RUTAS VAN ANTES QUE `/:id` por el mismo motivo que `/cocineros` y
+ * `/clientes`: Express interpretaria "calificaciones" o "pedidos" como el
+ * identificador de una resena.
+ *
+ * Cuelgan de `/pedidos/:pedidoId` y no de `/cocineros/:id` porque la unicidad
+ * es por PEDIDO: el recurso que se crea es "la calificacion de este pedido", no
+ * "mi calificacion de este cocinero".
+ */
+
+/** RF031 - Que accion corresponde para la calificacion al cocinero del pedido. */
+resenasRouter.get(
+  '/pedidos/:pedidoId/calificacion',
+  requiereRol('CLIENTE'),
+  async (req, res) => {
+    const estado = await calificacionCocinero.estadoDeCalificacionDeCocinero({
+      clienteId: sesionDe(req).id,
+      pedidoId: idResenaSchema.parse(req.params.pedidoId),
+    });
+    res.json(estado);
+  },
+);
+
+/** US-RES-07 - Alta de la calificacion al cocinero. PAN-RES-03. */
+resenasRouter.post(
+  '/pedidos/:pedidoId/calificacion',
+  requiereRol('CLIENTE'),
+  async (req, res) => {
+    const calificacion = await calificacionCocinero.calificarCocinero({
+      clienteId: sesionDe(req).id,
+      pedidoId: idResenaSchema.parse(req.params.pedidoId),
+      datos: calificarCocineroSchema.parse(req.body),
+    });
+    res.status(201).json(calificacion);
+  },
+);
+
+/**
+ * US-RES-07 - Una calificacion puntual, para precargar la edicion o verla en
+ * modo solo lectura.
+ *
+ * Con `requiereRol('CLIENTE')` a diferencia de `GET /resenas/:id`: la
+ * calificacion al cocinero no es contenido publico. En el perfil se muestra
+ * agregada en el bloque de reputacion, nunca fila por fila.
+ */
+resenasRouter.get(
+  '/calificaciones/:id',
+  requiereRol('CLIENTE'),
+  async (req, res) => {
+    const calificacion = await calificacionCocinero.leerCalificacionDeCocinero({
+      clienteId: sesionDe(req).id,
+      calificacionId: idResenaSchema.parse(req.params.id),
+    });
+    res.json(calificacion);
+  },
+);
+
+/** US-RES-07 - Edicion dentro de la ventana de 48 horas, que no se reabre. */
+resenasRouter.patch(
+  '/calificaciones/:id',
+  requiereRol('CLIENTE'),
+  async (req, res) => {
+    const calificacion =
+      await calificacionCocinero.editarCalificacionDeCocinero({
+        clienteId: sesionDe(req).id,
+        calificacionId: idResenaSchema.parse(req.params.id),
+        datos: calificarCocineroSchema.parse(req.body),
+      });
     res.json(calificacion);
   },
 );
