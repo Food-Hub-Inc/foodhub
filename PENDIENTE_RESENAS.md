@@ -7,9 +7,28 @@ El núcleo del módulo se implementó en la rama `feature/Reseña_calificaciones
 **US-RES-03** (ver reseñas y promedio), con la corrección de **RF031** sobre
 PAN-PED-06.
 
-Quedaron once cosas afuera. Este documento existe para que no se pierdan y para
-que quede claro que **son decisiones, no olvidos** — mismo criterio que
+Este documento existe para que lo que falta no se pierda y para que quede claro
+que **son decisiones, no olvidos** — mismo criterio que
 `PENDIENTE_DASHBOARD_COCINERO.md`.
+
+> ## Actualización del 2026-09-02
+>
+> La rama `feature/resenas-completar-modulo` **cerró cinco de los once puntos**
+> e incorporó **RF087 / US-RES-07**, que la versión corregida del módulo agregó
+> después del PR #19: el cliente califica al cocinero, una vez por pedido
+> completado, y **esa es la métrica que ahora construye la reputación del
+> cocinero**.
+>
+> | Punto                                   | Estado                                                                                         |
+> | --------------------------------------- | ---------------------------------------------------------------------------------------------- |
+> | 1 · La foto de la reseña                | ✅ **resuelto** — bucket `resenas`, endpoint con rol CLIENTE, campo en el formulario y galería |
+> | 9.1 · El listado no pagina              | ✅ **resuelto** — `useInfiniteQuery` con bloques de diez                                       |
+> | 9.2 · Galería a pantalla completa       | ✅ **resuelto** — `GaleriaDeResenas.tsx`                                                       |
+> | 9.3 · Botón del estado vacío            | ✅ **resuelto** — `accionVacio` se pasa desde el perfil                                        |
+> | 9.4 · Motivo cuando no se puede reseñar | ✅ **resuelto** — el literal `pedidoNoCompletado` se usa con el pedido rechazado               |
+>
+> Siguen abiertos los puntos **2 a 8**, **10** y **11**, más los **tres nuevos**
+> que agregan las secciones 12, 13 y 14.
 
 > **La fuente de verdad del módulo es la _versión corregida_ que reemplaza las
 > secciones 2.2.1.2.11 y 2.2.1.3.11** (RF080–RF086). La maquetación de la
@@ -21,7 +40,17 @@ que quede claro que **son decisiones, no olvidos** — mismo criterio que
 
 ## 1. La foto de la reseña — RF080
 
-**Estado:** sin resolver. Decisión pendiente del equipo.
+**Estado: ✅ RESUELTO el 2026-09-02.** El equipo decidió un bucket dedicado
+`resenas` en Supabase Storage —público, 5 MB, JPG/PNG/WEBP—, siguiendo el
+patrón que ya usaban `mensajes` (US-MSG-03) y `tickets` (US-AYU-03). Se agregó
+`POST /almacenamiento/foto-resena` con `requiereRol('CLIENTE')`, el campo en el
+formulario y la galería de US-RES-03.
+
+**Falta un paso manual antes de desplegar:** el bucket existe en `foodhub-dev`
+pero **no en `foodhub-prod`**. Sin él la subida falla en producción y la reseña
+no se publica.
+
+Lo que sigue es el registro de por qué estuvo bloqueado.
 
 RF080 lista cuatro campos en el formulario de reseña. Tres están:
 
@@ -224,7 +253,7 @@ Si da 3 o más, el comportamiento es correcto y no hay nada que arreglar.
 
 ---
 
-## 9. Cuatro criterios de aceptación sin cumplir
+## 9. Cuatro criterios de aceptación sin cumplir — ✅ TODOS RESUELTOS el 2026-09-02
 
 **Estado:** detectados en la auditoría contra la especificación del 2026-09-01.
 Ninguno estaba documentado hasta ahora.
@@ -325,6 +354,79 @@ select estado_pedido_actual, count(*)
 ```
 
 Si da tres o más, el comportamiento es correcto y no hay nada que arreglar.
+
+---
+
+## 12. Exploración sigue mostrando el promedio viejo — RF082
+
+**Estado:** abierto. Es la mitad de RF082 que no entró, por acuerdo de alcance.
+
+RF082 cambió de raíz de dónde sale la reputación del cocinero:
+
+> El promedio del cocinero se calcula con las **calificaciones al cocinero**, no
+> con las reseñas de plato.
+
+En el **perfil público** eso ya está: el bloque de reputación lo alimenta
+`GET /resenas/cocineros/:id/reputacion`, que promedia `calificacion_a_cocinero`.
+
+Pero `apps/api/src/lib/valoraciones.ts` **sigue derivando el promedio del
+cocinero de las reseñas de platos**, y esa función la consumen seis servicios:
+feed, mapa, perfil público, favoritos, carrito y pedidos. O sea que hoy:
+
+| Dónde                        | De dónde sale el número       |
+| ---------------------------- | ----------------------------- |
+| Perfil, bloque de reputación | calificaciones al cocinero ✅ |
+| Feed, mapa, tarjetas, etc.   | reseñas de los platos ❌      |
+
+**No es una inconsistencia introducida por descuido**: el usuario decidió
+(2026-09-02) implementar RF087 **solo dentro del módulo de Reseñas** y dejar las
+correcciones de los otros módulos para después. Se deja anotado acá porque un
+revisor que compare el feed con el perfil va a ver dos números distintos para el
+mismo cocinero, y la explicación es esta.
+
+**Para cerrarlo** hay que cambiar `subconsultaValoracionPorCocinero` para que
+agregue sobre `calificacion_a_cocinero`, y decidir qué pasa con
+`resena_minimo_para_promedio` en ese contexto: el bloque de reputación nuevo
+**no lo aplica** (decisión del equipo, 2026-09-02), y la subconsulta vieja sí.
+
+---
+
+## 13. Las correcciones de RF013, RF019 y RF038 en sus módulos
+
+**Estado:** abierto, fuera del alcance acordado.
+
+La versión corregida del módulo cierra con una tabla de "correcciones
+dependientes en otros módulos". Estas siguen sin hacer:
+
+| Requisito | Módulo         | Qué falta                                                                      |
+| --------- | -------------- | ------------------------------------------------------------------------------ |
+| RF013     | Publicaciones  | "Sin calificaciones aún" cuando la publicación no tiene reseñas VISIBLE        |
+| RF019     | Exploración    | el listado de reseñas en el detalle del plato (ya era el punto 5)              |
+| RF038     | Notificaciones | la regla de notificar solo si cambian las estrellas (ya era el punto 4)        |
+| —         | Publicaciones  | que la baja de una publicación sea **lógica**, para que las reseñas sobrevivan |
+
+La última importa más de lo que parece: RF082 pide que una reseña de un plato
+dado de baja **siga visible** con "[Plato no disponible]". La API ya lo resuelve
+del lado de la lectura, pero si la baja fuera física la fila de `resena`
+desaparecería por el `ON DELETE CASCADE` de `publicacion_id`.
+
+---
+
+## 14. El diagrama de clases quedó desactualizado
+
+**Estado:** abierto. Es una tarea de documentación, no de código.
+
+`CLAUDE.md` fija que al tocar el modelo de datos se actualiza **primero** el
+diagrama vigente (`FoodHub - DG12082026_V5.drawio`). La migración `0014` no lo
+hizo, por un motivo concreto: **la carpeta `../Docs/` no existe en este clon**.
+
+Lo que hay que reflejar cuando se pueda:
+
+- La entidad `CalificacionCocinero` del diagrama **cambia de significado**: pasa
+  a llamarse `CalificacionACliente` (el cocinero evalúa al cliente).
+- Entra `CalificacionACocinero`, nueva, con FK a `Pedido` y unicidad por pedido.
+- Las matrices de trazabilidad suman la fila **US-RES-07 / RF087 / PAN-RES-03**,
+  y el actor de US-RES-06 pasa a incluir **Administrador**.
 
 ---
 
