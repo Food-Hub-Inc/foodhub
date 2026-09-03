@@ -1229,22 +1229,18 @@ export const MENSAJES_RESENA = {
   /**
    * LITERAL - US-RES-03, opciones del selector de orden.
    *
-   * "Mas utiles" NO esta: ordena por cantidad de reacciones y las reacciones
-   * son US-RES-04, que no entra en este PR. Se agrega junto con esa historia,
-   * no antes: una opcion de orden que siempre devuelve lo mismo es peor que no
-   * ofrecerla.
+   * "Mas utiles" ordena por cantidad de "Me gusta" y por eso llego con
+   * US-RES-04: antes de que existieran las reacciones habria devuelto siempre
+   * lo mismo.
    */
   ordenMasRecientes: 'Más recientes',
   ordenMejorCalificacion: 'Mejor calificación',
   ordenPeorCalificacion: 'Peor calificación',
+  ordenMasUtiles: 'Más útiles',
 
-  /**
-   * LITERAL - US-RES-03, filtros del listado.
-   *
-   * Falta "Solo resenas con respuesta del cocinero" por el mismo motivo que
-   * "Mas utiles": depende de US-RES-05.
-   */
+  /** LITERAL - US-RES-03, los dos toggles del listado. */
   filtroSoloConFoto: 'Solo reseñas con foto',
+  filtroSoloConRespuesta: 'Solo reseñas con respuesta del cocinero',
 
   // --- Rechazos de la API ---------------------------------------------------
   /**

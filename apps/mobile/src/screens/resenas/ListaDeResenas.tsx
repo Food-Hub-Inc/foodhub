@@ -9,6 +9,7 @@ import {
   ORDEN_RESENAS,
   type OrdenResenas,
   type PaginaResenas,
+  type ResenaPublica,
 } from '@foodhub/shared';
 import { IconoEstrella } from '../../components/iconos';
 import { Esqueleto } from '../../components/ui/Esqueleto';
@@ -38,10 +39,17 @@ export function ListaDeResenas({
   cocineroId,
   accionVacio,
   encabezado,
+  pieDeTarjeta,
 }: {
   cocineroId: string;
   accionVacio?: React.ReactNode;
   encabezado?: React.ReactNode;
+  /**
+   * Lo que cada vista agrega al pie de CADA tarjeta. "Mis reseñas" pasa el
+   * botón de responder de US-RES-05; el perfil público no pasa nada, porque el
+   * criterio ubica esa acción en "Mi reputación" y no en el perfil.
+   */
+  pieDeTarjeta?: (resena: ResenaPublica) => React.ReactNode;
 }) {
   const filtros = useFiltrosDeResenas();
 
@@ -49,6 +57,7 @@ export function ListaDeResenas({
     orden: filtros.orden,
     estrellas: filtros.estrellas,
     soloConFoto: filtros.soloConFoto,
+    soloConRespuesta: filtros.soloConRespuesta,
   });
 
   if (consulta.isError) {
@@ -78,6 +87,7 @@ export function ListaDeResenas({
       consulta={consulta}
       encabezado={encabezado}
       filtros={filtros}
+      pieDeTarjeta={pieDeTarjeta}
     />
   );
 }
@@ -91,23 +101,28 @@ interface ControlesDeFiltro {
   orden: OrdenResenas;
   estrellas: number[];
   soloConFoto: boolean;
+  soloConRespuesta: boolean;
   cambiarOrden: (orden: OrdenResenas) => void;
   cambiarEstrellas: (estrellas: number[]) => void;
   cambiarSoloConFoto: (valor: boolean) => void;
+  cambiarSoloConRespuesta: (valor: boolean) => void;
 }
 
 function useFiltrosDeResenas(): ControlesDeFiltro {
   const [orden, cambiarOrden] = useState<OrdenResenas>('MAS_RECIENTES');
   const [estrellas, cambiarEstrellas] = useState<number[]>([]);
   const [soloConFoto, cambiarSoloConFoto] = useState(false);
+  const [soloConRespuesta, cambiarSoloConRespuesta] = useState(false);
 
   return {
     orden,
     estrellas,
     soloConFoto,
+    soloConRespuesta,
     cambiarOrden,
     cambiarEstrellas,
     cambiarSoloConFoto,
+    cambiarSoloConRespuesta,
   };
 }
 
@@ -124,16 +139,21 @@ function CuerpoDelListado({
   filtros,
   accionVacio,
   encabezado,
+  pieDeTarjeta,
 }: {
   consulta: UseInfiniteQueryResult<InfiniteData<PaginaResenas>, Error>;
   filtros: ControlesDeFiltro;
   accionVacio?: React.ReactNode;
   encabezado?: React.ReactNode;
+  pieDeTarjeta?: (resena: ResenaPublica) => React.ReactNode;
 }) {
   const paginas = consulta.data?.pages ?? [];
   const datos = paginas.flatMap((pagina) => pagina.datos);
   const resumen = paginas[0]?.resumen;
-  const hayFiltros = filtros.estrellas.length > 0 || filtros.soloConFoto;
+  const hayFiltros =
+    filtros.estrellas.length > 0 ||
+    filtros.soloConFoto ||
+    filtros.soloConRespuesta;
 
   /**
    * US-RES-03 pide navegar "entre las imágenes de otras reseñas del mismo
@@ -179,19 +199,11 @@ function CuerpoDelListado({
           ) : null
         }
         ListHeaderComponent={
-          <View className="gap-3 pt-4">
-            {encabezado}
-            {/*
-              US-RES-03 pide que el listado de platos sea "un bloque
-              diferenciado" del de reputación. Sin el título los dos se leen
-              como uno solo con dos números que se contradicen.
-            */}
-            <Text className="text-label font-bold text-text-primary">
-              {TEXTOS_RESENA.tituloResenasDePlatos}
-            </Text>
-            <ResumenDeResenas resumen={resumen} />
-            {resumen.total === 0 ? null : <Filtros filtros={filtros} />}
-          </View>
+          <EncabezadoDelListado
+            encabezado={encabezado}
+            filtros={filtros}
+            resumen={resumen}
+          />
         }
         onEndReached={() => {
           if (consulta.hasNextPage && !consulta.isFetchingNextPage) {
@@ -200,10 +212,44 @@ function CuerpoDelListado({
         }}
         onEndReachedThreshold={0.5}
         renderItem={({ item }) => (
-          <TarjetaDeResena onAbrirFoto={setFotoAbierta} resena={item} />
+          <TarjetaDeResena
+            onAbrirFoto={setFotoAbierta}
+            pieDeLaTarjeta={pieDeTarjeta?.(item)}
+            resena={item}
+          />
         )}
       />
     </>
+  );
+}
+
+/**
+ * Lo que va arriba del listado: lo que traiga la vista, el título del bloque de
+ * platos, el resumen y los filtros.
+ */
+function EncabezadoDelListado({
+  encabezado,
+  resumen,
+  filtros,
+}: {
+  encabezado?: React.ReactNode;
+  resumen: PaginaResenas['resumen'];
+  filtros: ControlesDeFiltro;
+}) {
+  return (
+    <View className="gap-3 pt-4">
+      {encabezado}
+      {/*
+        US-RES-03 pide que el listado de platos sea "un bloque diferenciado" del
+        de reputación. Sin el título los dos se leen como uno solo con dos
+        números que se contradicen.
+      */}
+      <Text className="text-label font-bold text-text-primary">
+        {TEXTOS_RESENA.tituloResenasDePlatos}
+      </Text>
+      <ResumenDeResenas resumen={resumen} />
+      {resumen.total === 0 ? null : <Filtros filtros={filtros} />}
+    </View>
   );
 }
 
@@ -242,12 +288,9 @@ function VacioDelListado({
 }
 
 /**
- * Orden y filtros del listado.
- *
- * FALTAN DOS DE LOS QUE ENUMERA US-RES-03: "Más útiles" ordena por cantidad de
- * reacciones (US-RES-04) y el toggle "con respuesta del cocinero" depende de
- * las respuestas (US-RES-05). Las dos historias van en el segundo PR del
- * módulo, y una opción que siempre devuelve lo mismo es peor que no ofrecerla.
+ * Orden y filtros del listado — los cuatro órdenes y los tres filtros que
+ * enumera US-RES-03, completos desde que existen las reacciones (US-RES-04) y
+ * las respuestas (US-RES-05).
  */
 function Filtros({ filtros }: { filtros: ControlesDeFiltro }) {
   const { orden, estrellas, soloConFoto } = filtros;
@@ -290,6 +333,14 @@ function Filtros({ filtros }: { filtros: ControlesDeFiltro }) {
           }}
           texto={MENSAJES_RESENA.filtroSoloConFoto}
         />
+
+        <Chip
+          activo={filtros.soloConRespuesta}
+          onPress={() => {
+            filtros.cambiarSoloConRespuesta(!filtros.soloConRespuesta);
+          }}
+          texto={MENSAJES_RESENA.filtroSoloConRespuesta}
+        />
       </View>
     </View>
   );
@@ -299,6 +350,7 @@ const ETIQUETA_DE_ORDEN: Record<OrdenResenas, string> = {
   MAS_RECIENTES: MENSAJES_RESENA.ordenMasRecientes,
   MEJOR_CALIFICACION: MENSAJES_RESENA.ordenMejorCalificacion,
   PEOR_CALIFICACION: MENSAJES_RESENA.ordenPeorCalificacion,
+  MAS_UTILES: MENSAJES_RESENA.ordenMasUtiles,
 };
 
 function Chip({

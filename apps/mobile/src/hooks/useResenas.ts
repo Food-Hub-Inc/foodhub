@@ -11,6 +11,10 @@ import {
 } from '@tanstack/react-query';
 import type {
   CalificacionACocinero,
+  ReaccionarInput,
+  ReportarResenaInput,
+  ResponderResenaInput,
+  RespuestaCocinero,
   CalificarClienteInput,
   CalificarCocineroInput,
   CrearResenaInput,
@@ -28,6 +32,11 @@ import {
   calificarCliente,
   calificarCocinero,
   crearResena,
+  editarRespuesta,
+  eliminarMiResena,
+  reaccionar,
+  reportarResena,
+  responderResena,
   editarResena,
   obtenerEstadoDeResenas,
   obtenerMiCalificacionDeCliente,
@@ -326,6 +335,91 @@ export function useEditarCalificacionDeCocinero(
   return useMutation({
     mutationFn: (datos: CalificarCocineroInput) =>
       editarCalificacionDeCocinero(calificacionId, datos),
+    onSuccess: invalidar,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// US-RES-04, US-RES-05 y US-RES-06 · lo social
+// ---------------------------------------------------------------------------
+
+/**
+ * Lo que queda viejo al reaccionar, responder o reportar.
+ *
+ * ES SOLO `resenas` Y NO LA LISTA LARGA de `CLAVES_AFECTADAS_POR_UNA_RESENA`:
+ * ninguna de las tres mueve un promedio, así que el feed, el mapa y los
+ * favoritos siguen siendo válidos. Invalidarlos igual haría que un "Me gusta"
+ * recargara media aplicación.
+ *
+ * La excepción es eliminar la propia reseña, que sí saca la fila del promedio;
+ * ese caso usa `useInvalidarPromedios`.
+ */
+function useInvalidarListados(): () => void {
+  const cliente = useQueryClient();
+
+  return () => {
+    void cliente.invalidateQueries({ queryKey: CLAVE_RESENAS });
+  };
+}
+
+export function useReaccionar(
+  resenaId: string,
+): UseMutationResult<void, Error, ReaccionarInput> {
+  const invalidar = useInvalidarListados();
+
+  return useMutation({
+    mutationFn: (datos: ReaccionarInput) => reaccionar(resenaId, datos),
+    onSuccess: invalidar,
+  });
+}
+
+export function useResponderResena(
+  resenaId: string,
+): UseMutationResult<RespuestaCocinero, Error, ResponderResenaInput> {
+  const invalidar = useInvalidarListados();
+
+  return useMutation({
+    mutationFn: (datos: ResponderResenaInput) =>
+      responderResena(resenaId, datos),
+    onSuccess: invalidar,
+  });
+}
+
+export function useEditarRespuesta(
+  respuestaId: string,
+): UseMutationResult<RespuestaCocinero, Error, ResponderResenaInput> {
+  const invalidar = useInvalidarListados();
+
+  return useMutation({
+    mutationFn: (datos: ResponderResenaInput) =>
+      editarRespuesta(respuestaId, datos),
+    onSuccess: invalidar,
+  });
+}
+
+export function useReportarResena(
+  resenaId: string,
+): UseMutationResult<{ mensaje: string }, Error, ReportarResenaInput> {
+  const invalidar = useInvalidarListados();
+
+  return useMutation({
+    mutationFn: (datos: ReportarResenaInput) => reportarResena(resenaId, datos),
+    onSuccess: invalidar,
+  });
+}
+
+/**
+ * Retirar la propia reseña SÍ mueve los promedios: la fila deja de estar
+ * VISIBLE y sale del promedio del plato y del cocinero. Por eso invalida la
+ * lista completa y no solo los listados de reseñas.
+ */
+export function useEliminarMiResena(
+  resenaId: string,
+): UseMutationResult<void, Error, void> {
+  const invalidar = useInvalidarPromedios();
+
+  return useMutation({
+    mutationFn: () => eliminarMiResena(resenaId),
     onSuccess: invalidar,
   });
 }

@@ -1055,6 +1055,40 @@ export const TEXTOS_RESENA = {
   /** [PROPIO] Etiqueta accesible de la foto adjunta a una resena. */
   fotoDeLaResena: 'Foto de la reseña',
 
+  // --- US-RES-05 y US-RES-06, lo social -------------------------------------
+  /** [PROPIO] Marca en el menu de una resena que este usuario ya reporto. */
+  yaReportada: 'Reportada',
+
+  /** [PROPIO] Textos del formulario de reporte. El criterio no los redacta. */
+  ayudaReporte:
+    'Contanos qué problema encontraste. Un moderador va a revisar la reseña.',
+  detalleOpcional: 'Detalle adicional (opcional)',
+  detalleObligatorio: 'Detalle adicional (obligatorio)',
+  placeholderDetalleReporte: 'Qué viste que no corresponde…',
+
+  /** [PROPIO] Textos del formulario de respuesta del cocinero. */
+  tituloResponder: 'Responder la reseña',
+  etiquetaRespuesta: 'Tu respuesta',
+  placeholderRespuesta: 'Gracias por tu comentario…',
+  avisoRespuestaCongelada:
+    'Ya pasó el plazo de 24 horas para editar esta respuesta.',
+  respuestaPublicada: '¡Respuesta publicada!',
+  /** [PROPIO] La resena que se esta respondiendo no traia comentario. */
+  sinComentario: 'Sin comentario.',
+
+  /**
+   * [PROPIO] Confirmacion antes de retirar la propia resena (US-RES-06).
+   *
+   * El criterio ofrece la accion pero no pide confirmarla. Se confirma igual
+   * porque es irreversible desde la app: la resena pasa a ELIMINADA_AUTOR y no
+   * hay pantalla que la vuelva a publicar.
+   */
+  tituloBajaDeResena: '¿Eliminar tu reseña?',
+  avisoBajaDeResena:
+    'Tu reseña deja de verse en el perfil del cocinero y sale del promedio. No vas a poder volver a publicarla.',
+  confirmarBaja: 'Eliminar',
+  cancelarBaja: 'Cancelar',
+
   /**
    * [PROPIO] Galeria a pantalla completa de US-RES-03. El criterio describe el
    * comportamiento -"muestre una galeria en pantalla completa ... deslizando

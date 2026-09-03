@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import type { ResenaPublica } from '@foodhub/shared';
+import { DialogoSevero } from '../../components/ui/DialogoSevero';
+import { useEliminarMiResena } from '../../hooks/useResenas';
 import {
   IconoEstrella,
   IconoEstrellaRellena,
@@ -8,6 +11,12 @@ import {
 } from '../../components/iconos';
 import { formatearFecha } from '../../lib/formato';
 import { TEXTOS_RESENA } from '../../lib/textos';
+import { FormularioDeReporte } from './FormularioDeReporte';
+import {
+  BotonesDeReaccion,
+  MenuDeResena,
+  RespuestaPublicada,
+} from './PiezasSociales';
 
 /**
  * Una reseña en el listado — US-RES-03, maquetación PAN-RES-02.
@@ -24,6 +33,7 @@ import { TEXTOS_RESENA } from '../../lib/textos';
 export function TarjetaDeResena({
   resena,
   onAbrirFoto,
+  pieDeLaTarjeta,
 }: {
   resena: ResenaPublica;
   /**
@@ -31,36 +41,19 @@ export function TarjetaDeResena({
    * la tarjeta también se dibuja donde no hay galería que abrir.
    */
   onAbrirFoto?: (fotoUrl: string) => void;
+  /**
+   * Lo que cada vista agrega al pie. "Mis reseñas" mete acá el botón de
+   * responder de US-RES-05; el perfil público no mete nada. Va como `slot` y no
+   * como una bandera `esMiPerfil` para que la tarjeta no tenga que conocer las
+   * vistas que la usan.
+   */
+  pieDeLaTarjeta?: React.ReactNode;
 }) {
+  const acciones = useAccionesDeResena(resena.id);
+
   return (
     <View className="rounded-md border border-border bg-surface p-3">
-      <View className="flex-row items-center gap-2.5">
-        <AvatarDelAutor
-          fotoPerfilUrl={resena.autor.fotoPerfilUrl}
-          nombre={resena.autor.nombre}
-        />
-
-        <View className="flex-1">
-          <Text
-            className="text-body font-bold text-text-primary"
-            numberOfLines={1}
-          >
-            {resena.autor.nombre}
-          </Text>
-
-          <View className="flex-row items-center gap-1.5">
-            <Estrellas valor={resena.calificacion} />
-            <Text className="text-caption text-text-secondary">
-              {`· ${formatearFecha(resena.fechaPublicacion)}`}
-            </Text>
-            {resena.editada ? (
-              <Text className="text-caption text-text-disabled">
-                {TEXTOS_RESENA.editada}
-              </Text>
-            ) : null}
-          </View>
-        </View>
-      </View>
+      <CabeceraDeLaResena acciones={acciones} resena={resena} />
 
       {resena.comentario === null ? null : (
         <Text className="mt-2.5 text-body text-text-primary">
@@ -98,8 +91,140 @@ export function TarjetaDeResena({
           {TEXTOS_RESENA.sobreElPlato(resena.nombrePlato)}
         </Text>
       </View>
+
+      <PieSocial
+        acciones={acciones}
+        pieDeLaTarjeta={pieDeLaTarjeta}
+        resena={resena}
+      />
     </View>
   );
+}
+
+/** Autor, estrellas, fecha y el menu contextual de US-RES-06. */
+function CabeceraDeLaResena({
+  resena,
+  acciones,
+}: {
+  resena: ResenaPublica;
+  acciones: ReturnType<typeof useAccionesDeResena>;
+}) {
+  return (
+    <View className="flex-row items-center gap-2.5">
+      <AvatarDelAutor
+        fotoPerfilUrl={resena.autor.fotoPerfilUrl}
+        nombre={resena.autor.nombre}
+      />
+
+      <View className="flex-1">
+        <Text
+          className="text-body font-bold text-text-primary"
+          numberOfLines={1}
+        >
+          {resena.autor.nombre}
+        </Text>
+
+        <View className="flex-row items-center gap-1.5">
+          <Estrellas valor={resena.calificacion} />
+          <Text className="text-caption text-text-secondary">
+            {`· ${formatearFecha(resena.fechaPublicacion)}`}
+          </Text>
+          {resena.editada ? (
+            <Text className="text-caption text-text-disabled">
+              {TEXTOS_RESENA.editada}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+
+      <MenuDeResena
+        onEliminar={acciones.pedirEliminar}
+        onReportar={acciones.abrirReporte}
+        resena={resena}
+      />
+    </View>
+  );
+}
+
+/**
+ * Lo que las tres historias sociales suman al pie de la tarjeta, mas las dos
+ * superposiciones que abre el menu contextual.
+ */
+function PieSocial({
+  resena,
+  acciones,
+  pieDeLaTarjeta,
+}: {
+  resena: ResenaPublica;
+  acciones: ReturnType<typeof useAccionesDeResena>;
+  pieDeLaTarjeta?: React.ReactNode;
+}) {
+  return (
+    <>
+      <BotonesDeReaccion resena={resena} />
+
+      {resena.respuesta === null ? null : (
+        <RespuestaPublicada respuesta={resena.respuesta} />
+      )}
+
+      {pieDeLaTarjeta}
+
+      <FormularioDeReporte
+        abierto={acciones.reporteAbierto}
+        onCerrar={acciones.cerrarReporte}
+        resenaId={resena.id}
+      />
+
+      <DialogoSevero
+        abierto={acciones.confirmandoBaja}
+        mensaje={TEXTOS_RESENA.avisoBajaDeResena}
+        onCancelar={acciones.cancelarEliminar}
+        onConfirmar={acciones.eliminar}
+        textoCancelar={TEXTOS_RESENA.cancelarBaja}
+        textoConfirmar={TEXTOS_RESENA.confirmarBaja}
+        titulo={TEXTOS_RESENA.tituloBajaDeResena}
+      />
+    </>
+  );
+}
+
+/**
+ * El menú contextual de US-RES-06 y sus dos consecuencias.
+ *
+ * Vive en un hook para que `TarjetaDeResena` no acumule cuatro `useState` más
+ * la mutación encima del marcado, que ya la dejaría sobre el límite de líneas
+ * por función que fija ESLint.
+ */
+function useAccionesDeResena(resenaId: string) {
+  const [reporteAbierto, setReporteAbierto] = useState(false);
+  const [confirmandoBaja, setConfirmandoBaja] = useState(false);
+  const baja = useEliminarMiResena(resenaId);
+
+  return {
+    reporteAbierto,
+    confirmandoBaja,
+    abrirReporte: () => {
+      setReporteAbierto(true);
+    },
+    cerrarReporte: () => {
+      setReporteAbierto(false);
+    },
+    pedirEliminar: () => {
+      setConfirmandoBaja(true);
+    },
+    cancelarEliminar: () => {
+      setConfirmandoBaja(false);
+    },
+    /**
+     * La baja se confirma antes de ejecutarse: es irreversible desde la app y
+     * el criterio no ofrece deshacerla. `DialogoSevero` es el mismo componente
+     * que ya usan las otras bajas del sistema.
+     */
+    eliminar: () => {
+      setConfirmandoBaja(false);
+      baja.mutate();
+    },
+  };
 }
 
 /**

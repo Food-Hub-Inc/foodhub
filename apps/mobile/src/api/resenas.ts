@@ -1,5 +1,9 @@
 import type {
   CalificacionACocinero,
+  ReaccionarInput,
+  ReportarResenaInput,
+  ResponderResenaInput,
+  RespuestaCocinero,
   CalificarClienteInput,
   CalificarCocineroInput,
   CrearResenaInput,
@@ -74,6 +78,7 @@ export function obtenerResenasDeCocinero(
   const parametros = new URLSearchParams();
   if (filtros.orden) parametros.set('orden', filtros.orden);
   if (filtros.soloConFoto) parametros.set('soloConFoto', 'true');
+  if (filtros.soloConRespuesta) parametros.set('soloConRespuesta', 'true');
   if (filtros.pagina) parametros.set('pagina', String(filtros.pagina));
   if (filtros.porPagina) parametros.set('porPagina', String(filtros.porPagina));
   for (const estrella of filtros.estrellas ?? []) {
@@ -169,4 +174,45 @@ export function obtenerReputacionDeCocinero(
   return api.obtener<ReputacionCocinero>(
     `/resenas/cocineros/${cocineroId}/reputacion`,
   );
+}
+
+// --- US-RES-04, US-RES-05 y US-RES-06 · lo social ---------------------------
+
+/** Marca, cambia o quita la reacción. `tipo: null` desmarca (US-RES-04). */
+export function reaccionar(
+  resenaId: string,
+  datos: ReaccionarInput,
+): Promise<void> {
+  return api.reemplazar<void>(`/resenas/${resenaId}/reaccion`, datos);
+}
+
+/** US-RES-05 — el cocinero responde una reseña de uno de sus platos. */
+export function responderResena(
+  resenaId: string,
+  datos: ResponderResenaInput,
+): Promise<RespuestaCocinero> {
+  return api.enviar<RespuestaCocinero>(`/resenas/${resenaId}/respuesta`, datos);
+}
+
+export function editarRespuesta(
+  respuestaId: string,
+  datos: ResponderResenaInput,
+): Promise<RespuestaCocinero> {
+  return api.modificar<RespuestaCocinero>(
+    `/resenas/respuestas/${respuestaId}`,
+    datos,
+  );
+}
+
+/** US-RES-06 — reporta una reseña ajena. */
+export function reportarResena(
+  resenaId: string,
+  datos: ReportarResenaInput,
+): Promise<{ mensaje: string }> {
+  return api.enviar<{ mensaje: string }>(`/resenas/${resenaId}/reporte`, datos);
+}
+
+/** US-RES-06 — el autor retira su propia reseña (pasa a ELIMINADA_AUTOR). */
+export function eliminarMiResena(resenaId: string): Promise<void> {
+  return api.eliminar<void>(`/resenas/${resenaId}`);
 }

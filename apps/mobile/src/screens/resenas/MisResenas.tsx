@@ -6,6 +6,7 @@ import { View } from 'react-native';
 import { MENSAJES_USUARIO } from '@foodhub/shared';
 import { usePerfil } from '../../hooks/usePerfil';
 import { TEXTOS_RESENA } from '../../lib/textos';
+import { AccionDeRespuesta } from './AccionDeRespuesta';
 import { ListaDeResenas } from './ListaDeResenas';
 
 /**
@@ -53,7 +54,15 @@ export function MisResenas() {
 
   return (
     <Marco>
-      <ListaDeResenas cocineroId={perfil.data.id} />
+      {/*
+        US-RES-05 ubica la respuesta en "Mi reputación" y no en el perfil
+        público: el cocinero responde desde su propia sección, no desde la
+        vista que ve el cliente.
+      */}
+      <ListaDeResenas
+        cocineroId={perfil.data.id}
+        pieDeTarjeta={(resena) => <AccionDeRespuesta resena={resena} />}
+      />
     </Marco>
   );
 }
