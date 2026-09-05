@@ -14,7 +14,7 @@ import { TEXTOS_RESENA } from '../../lib/textos';
 import { FormularioDeReporte } from './FormularioDeReporte';
 import {
   BotonesDeReaccion,
-  MenuDeResena,
+  AccionesDeResena,
   RespuestaPublicada,
 } from './PiezasSociales';
 
@@ -85,12 +85,17 @@ export function TarjetaDeResena({
       )}
 
       {/* "Sobre: [plato]" al pie, como la maquetación. Con el plato dado de
-          baja el servidor ya mandó "[Plato no disponible]". */}
-      <View className="mt-3 border-t border-border pt-2">
-        <Text className="text-caption text-text-secondary" numberOfLines={1}>
-          {TEXTOS_RESENA.sobreElPlato(resena.nombrePlato)}
-        </Text>
-      </View>
+          baja el servidor ya mandó "[Plato no disponible]".
+
+          Solo en las reseñas DE UN PLATO: `plato` viaja en `null` cuando lo
+          reseñado es un cocinero o un cliente, y ahí no hay nada que nombrar. */}
+      {resena.plato === null ? null : (
+        <View className="mt-3 border-t border-border pt-2">
+          <Text className="text-caption text-text-secondary" numberOfLines={1}>
+            {TEXTOS_RESENA.sobreElPlato(resena.plato.nombre)}
+          </Text>
+        </View>
+      )}
 
       <PieSocial
         acciones={acciones}
@@ -137,11 +142,14 @@ function CabeceraDeLaResena({
         </View>
       </View>
 
-      <MenuDeResena
-        onEliminar={acciones.pedirEliminar}
-        onReportar={acciones.abrirReporte}
-        resena={resena}
-      />
+      {resena.social === null ? null : (
+        <AccionesDeResena
+          onEliminar={acciones.pedirEliminar}
+          onReportar={acciones.abrirReporte}
+          resena={resena}
+          social={resena.social}
+        />
+      )}
     </View>
   );
 }
@@ -159,12 +167,21 @@ function PieSocial({
   acciones: ReturnType<typeof useAccionesDeResena>;
   pieDeLaTarjeta?: React.ReactNode;
 }) {
+  /**
+   * US-RES-02: las reseñas a un cliente no llevan conversación pública. El
+   * cliente no las ve, así que no hay reacciones, ni respuesta, ni reporte —y
+   * tampoco el diálogo de baja, porque el autor las edita desde el detalle del
+   * pedido y no desde acá—. `pieDeLaTarjeta` sí se conserva: es lo que cada
+   * pantalla inyecta por su cuenta.
+   */
+  if (resena.social === null) return <>{pieDeLaTarjeta}</>;
+
   return (
     <>
-      <BotonesDeReaccion resena={resena} />
+      <BotonesDeReaccion resena={resena} social={resena.social} />
 
-      {resena.respuesta === null ? null : (
-        <RespuestaPublicada respuesta={resena.respuesta} />
+      {resena.social.respuesta === null ? null : (
+        <RespuestaPublicada respuesta={resena.social.respuesta} />
       )}
 
       {pieDeLaTarjeta}

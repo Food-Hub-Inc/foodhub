@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import {
   MENSAJES_RESENA,
   TAGS_CALIFICACION_CLIENTE,
-  type MiCalificacionCliente,
+  type ResenaPublica,
   type TagCalificacionCliente,
 } from '@foodhub/shared';
 import { SafeAreaView } from '../../components/SafeAreaView';
@@ -20,7 +20,7 @@ import { EstadoDeError } from '../../components/ui/EstadoDeError';
 import { MensajeDeCampo } from '../../components/ui/MensajeDeCampo';
 import {
   useCalificarCliente,
-  useMiCalificacionDeCliente,
+  useMiResenaDeCliente,
 } from '../../hooks/useResenas';
 import { mensajeDeError } from '../../lib/api';
 import { TEXTOS_RESENA } from '../../lib/textos';
@@ -56,24 +56,22 @@ export function CalificarCliente({
   nombre: string | null;
   fotoPerfilUrl: string | null;
 }) {
-  const previa = useMiCalificacionDeCliente(clienteId);
+  const estado = useMiResenaDeCliente(clienteId);
 
-  if (previa.isError) {
+  if (estado.isError) {
     return (
       <Marco titulo={TEXTOS_RESENA.tituloCalificar}>
         <EstadoDeError
-          mensaje={mensajeDeError(previa.error)}
+          mensaje={mensajeDeError(estado.error)}
           onReintentar={() => {
-            void previa.refetch();
+            void estado.refetch();
           }}
         />
       </Marco>
     );
   }
 
-  // `null` es una respuesta valida -todavia no lo califico-, asi que la espera
-  // se resuelve con `isPending` y no con la ausencia de datos.
-  if (previa.isPending) {
+  if (estado.isPending) {
     return (
       <Marco titulo={TEXTOS_RESENA.tituloCalificar}>
         <CargandoFormulario />
@@ -86,7 +84,7 @@ export function CalificarCliente({
       clienteId={clienteId}
       fotoPerfilUrl={fotoPerfilUrl}
       nombre={nombre}
-      previa={previa.data}
+      previa={estado.data.mia}
     />
   );
 }
@@ -116,7 +114,7 @@ function CargandoFormulario() {
 /** RF081 acota el comentario del cocinero a 300, no a los 500 de la reseña. */
 const MAXIMO_COMENTARIO = 300;
 
-function useCamposDeCalificacion(previa: MiCalificacionCliente | null) {
+function useCamposDeCalificacion(previa: ResenaPublica | null) {
   const [calificacion, setCalificacion] = useState<number | null>(
     previa?.calificacion ?? null,
   );
@@ -151,7 +149,7 @@ function Formulario({
   clienteId: string;
   nombre: string | null;
   fotoPerfilUrl: string | null;
-  previa: MiCalificacionCliente | null;
+  previa: ResenaPublica | null;
 }) {
   const editando = previa !== null;
   const campos = useCamposDeCalificacion(previa);

@@ -657,6 +657,44 @@ export const TEXTOS_PENDIENTE = {
  * alcance de cada módulo; la maquetación no fija un texto para el estado
  * "pendiente" porque en la Etapa 5 todas las pantallas se dibujan terminadas.
  */
+/**
+ * PAN-? · Perfil público del cliente — cuarto criterio de US-DASH-03.
+ *
+ * [PROPIO] TODOS. La pantalla no está en el inventario de la Etapa 5 ni tiene
+ * criterios propios: el equipo la definió en la corrección del módulo de
+ * Reseñas. Cuando le asignen un código PAN y la maqueten, estos textos son los
+ * primeros que hay que contrastar.
+ */
+export const TEXTOS_PERFIL_CLIENTE = {
+  titulo: 'Perfil del cliente',
+  miembroDesde: (mesYAnio: string) => `Miembro desde ${mesYAnio}`,
+  cuentaEliminada: 'Esta cuenta ya no está activa.',
+
+  solapaResenas: 'Reseñas',
+  solapaPedidos: 'Sus pedidos',
+
+  /** Cuántos cocineros lo reseñaron, debajo del promedio. */
+  cocinerosQueLoResenaron: (cantidad: number) =>
+    cantidad === 1
+      ? '1 cocinero lo reseñó'
+      : `${String(cantidad)} cocineros lo reseñaron`,
+
+  /** Cuántos platos más lleva el pedido, además del que se muestra. */
+  masPlatos: (cantidad: number) =>
+    cantidad === 1 ? 'y 1 plato más' : `y ${String(cantidad)} platos más`,
+
+  sinPedidosConEsteCliente: 'Todavía no te hizo ningún pedido.',
+  sinPedidosConEsteClienteSubtitulo:
+    'Acá vas a ver el historial de lo que te pida.',
+
+  /**
+   * Un CLIENTE llegó por enlace directo. La ruta vive fuera del grupo
+   * `(cocinero)`, así que es alcanzable; el endpoint responde 403 igual, pero
+   * un error crudo de la API no explica nada.
+   */
+  soloParaCocineros: 'El perfil de un cliente solo pueden verlo los cocineros.',
+} as const;
+
 export const PANTALLAS_PENDIENTES = {
   pedidosCliente: {
     codigo: 'PAN-PED-05',
@@ -946,9 +984,35 @@ export const TEXTOS_RESENA = {
    * diferenciado" del de reputacion justamente porque miden cosas distintas, y
    * en pantalla eso se resuelve nombrandolas.
    */
-  tituloReputacion: 'Reputación del cocinero',
-  subtituloReputacion: 'Cómo califican su atención los clientes',
   tituloResenasDePlatos: 'Reseñas de los platos',
+  tituloResenasDelPlato: 'Reseñas de este plato',
+  tituloOpinionesDelCocinero: 'Lo que dicen sus clientes',
+  tituloResenasDelCliente: 'Lo que dicen otros cocineros',
+
+  /** [PROPIO] Solapas de "Mis reseñas" del cocinero (PAN-RES-02). */
+  solapaMisPlatos: 'Mis platos',
+  solapaSobreMi: 'Sobre mí',
+
+  /**
+   * [PROPIO] Estados vacíos de las dos solapas.
+   *
+   * No se reusan los de US-RES-03 —"Este cocinero aún no recibió reseñas." y
+   * "Se el primero en compartir tu experiencia."— porque son LITERALES escritos
+   * para el CLIENTE que mira el perfil: acá el cocinero se está mirando a sí
+   * mismo, y no puede ser el primero en opinar sobre su propio trabajo.
+   */
+  sinResenasEnMisPlatos: 'Todavía nadie reseñó tus platos.',
+  sinResenasSobreMi: 'Todavía nadie te reseñó como cocinero.',
+
+  /**
+   * [PROPIO] Estado vacío del resumen, cuando el listado no tiene ni una.
+   *
+   * Es genérico a propósito: el mismo resumen encabeza los cuatro listados y
+   * `MENSAJES_RESENA.cocineroSinResenasTitulo` -que decía "Este cocinero aún no
+   * recibió reseñas."- es un LITERAL de US-RES-03 que habla del cocinero.
+   * Debajo de un plato o de un cliente decía otra cosa.
+   */
+  sinResenasTodavia: 'Todavía no hay reseñas.',
 
   /** [PROPIO] Cuantas calificaciones de servicio recibio el cocinero. */
   calificacionesRecibidas: (cantidad: number) =>
@@ -960,10 +1024,9 @@ export const TEXTOS_RESENA = {
   sinCalificacionesDeServicio: 'Todavía no recibió calificaciones de servicio.',
 
   // --- PAN-RES-03, calificar al cocinero (US-RES-07) ------------------------
-  /** [PROPIO] Titulos de la pantalla, uno por cada uno de los tres modos. */
+  /** [PROPIO] Titulos de la pantalla, uno por cada uno de sus dos modos. */
   tituloCalificarCocinero: 'Calificar al cocinero',
   tituloEditarMiCalificacion: 'Editar mi calificación',
-  tituloVerMiCalificacion: 'Mi calificación',
 
   /**
    * [PROPIO] Encabezado del selector. La pregunta apunta al SERVICIO y no al
@@ -972,24 +1035,29 @@ export const TEXTOS_RESENA = {
    */
   etiquetaCalificacionCocinero: '¿Cómo fue la atención?',
 
-  /**
-   * [PROPIO] Aclaracion de la cabecera. US-RES-07 pide mostrar "el nombre y la
-   * foto del cocinero junto a la fecha del pedido calificado, de modo que quede
-   * claro que la calificacion refiere a la experiencia de ese pedido".
-   */
-  pedidoDelDia: (fecha: string) => `Pedido del ${fecha}`,
-
   /** [PROPIO] Aviso al pie, para que no se confunda con la reseña del plato. */
   avisoCalificacionDeServicio:
     'Esto califica la atención del cocinero, no los platos. Cada plato se reseña por separado.',
 
-  /** [PROPIO] Estado de solo lectura, fuera de la ventana de 48 horas. */
-  avisoCalificacionCongelada:
-    'Ya pasó el plazo de 48 horas para editar esta calificación.',
+  /**
+   * [PROPIO] El cocinero no viajó en la navegación.
+   *
+   * Antes decía "no pudimos saber qué PEDIDO querés calificar": la reseña al
+   * cocinero se anclaba a un pedido y se entraba desde su detalle. Ahora es una
+   * sola por cocinero y se entra también desde su perfil.
+   */
+  sinCocinero:
+    'No pudimos saber a qué cocinero querés reseñar. Entrá desde su perfil o desde el pedido.',
 
-  /** [PROPIO] El pedido no viajó en la navegación. */
-  sinPedido:
-    'No pudimos saber qué pedido querés calificar. Volvé al pedido y entrá desde ahí.',
+  /**
+   * [PROPIO] Botón de reseñar al cocinero desde su perfil público.
+   *
+   * `sinDerecho` acompaña al botón deshabilitado. El criterio de US-RES-03 solo
+   * dice cuándo mostrarlo, no qué decir cuando no corresponde; dejarlo apagado
+   * sin explicación es de las cosas que más se leen como que la app está rota.
+   */
+  botonSinDerechoAResenar:
+    'Vas a poder reseñarlo cuando te complete un pedido.',
 
   // --- PAN-RES-02, calificar al cliente -------------------------------------
   tituloCalificar: 'Calificar cliente',

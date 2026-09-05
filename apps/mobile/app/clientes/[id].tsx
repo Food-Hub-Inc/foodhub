@@ -1,29 +1,18 @@
-import { IconoUsuario } from '../../src/components/iconos';
-import { PantallaPendiente } from '../../src/components/ui/PantallaPendiente';
-import { PANTALLAS_PENDIENTES } from '../../src/lib/textos';
+import { useLocalSearchParams } from 'expo-router';
+import { PerfilDeCliente } from '../../src/screens/perfiles/PerfilDeCliente';
 
 /**
  * Perfil público del cliente — cuarto criterio de US-DASH-03.
  *
- * Pendiente de codificación: la maquetación de la Etapa 5 no dibuja esta
- * pantalla —tiene el perfil público del COCINERO, PAN-EXP-04, y no el del
- * cliente— y ninguna historia la define. El destino existe para que el criterio
- * ("el cocinero presiona sobre un cliente del listado") tenga algo que
- * verificar, en vez de dejar la fila muerta.
+ * Se entra desde el listado de clientes recurrentes del dashboard
+ * (PAN-DASH-01) y desde la ficha del cliente en el detalle del pedido.
  *
  * Fuera del grupo `(cocinero)`: se apila sobre la barra de tabs, igual que
- * `cocineros/[id]`.
+ * `cocineros/[id]`. Por eso mismo es alcanzable por enlace directo, y la
+ * pantalla verifica el rol además del `requiereRol('COCINERO')` de la API.
  */
 export default function PerfilDeClienteRuta() {
-  const ficha = PANTALLAS_PENDIENTES.perfilCliente;
+  const { id } = useLocalSearchParams<{ id?: string }>();
 
-  return (
-    <PantallaPendiente
-      codigo={ficha.codigo}
-      descripcion={ficha.descripcion}
-      icono={<IconoUsuario size={34} className="text-primary" />}
-      modulo={ficha.modulo}
-      titulo={ficha.titulo}
-    />
-  );
+  return <PerfilDeCliente id={id} />;
 }

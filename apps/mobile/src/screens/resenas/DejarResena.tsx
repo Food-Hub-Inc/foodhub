@@ -64,10 +64,10 @@ import { VistaPreviaDeResena } from './VistaPreviaDeResena';
  */
 export function DejarResena({
   publicacionId,
-  pedidoId,
+  cocineroId,
 }: {
   publicacionId: string;
-  pedidoId: string | null;
+  cocineroId: string | null;
 }) {
   const plato = usePublicacionPublica(publicacionId);
   const estado = useEstadoDeResenas([publicacionId]);
@@ -110,7 +110,7 @@ export function DejarResena({
   return (
     <Formulario
       estado={estadoDelPlato}
-      pedidoId={pedidoId}
+      cocineroId={cocineroId}
       plato={plato.data}
       previa={previa.data ?? null}
     />
@@ -254,8 +254,16 @@ function useEnvioDeResena({
     }
 
     const alExito = { onSuccess: onPublicada };
-    if (editando) editar.mutate(campos.aPayload(urlFinal), alExito);
-    else crear.mutate({ ...campos.aPayload(urlFinal), publicacionId }, alExito);
+    // `tipo: 'PLATO'` es lo que le dice al servidor qué se está reseñando: el
+    // alta es una sola para los tres objetos y se discrimina por este campo.
+    if (editando) {
+      editar.mutate({ ...campos.aPayload(urlFinal), tipo: 'PLATO' }, alExito);
+    } else {
+      crear.mutate(
+        { ...campos.aPayload(urlFinal), tipo: 'PLATO', publicacionId },
+        alExito,
+      );
+    }
   };
 
   return {
@@ -269,12 +277,12 @@ function Formulario({
   plato,
   estado,
   previa,
-  pedidoId,
+  cocineroId,
 }: {
   plato: PublicacionPublica;
   estado: EstadoResenaPublicacion;
   previa: ResenaPublica | null;
-  pedidoId: string | null;
+  cocineroId: string | null;
 }) {
   const soloLectura = estado.resenaId !== null && !estado.puedeEditar;
   const editando = estado.resenaId !== null && estado.puedeEditar;
@@ -336,7 +344,7 @@ function Formulario({
         error={envio.error}
         onCerrarExito={() => {
           setPublicada(false);
-          seguirDespuesDePublicar(pedidoId);
+          seguirDespuesDePublicar(cocineroId);
         }}
         onEditar={() => {
           setEnVistaPrevia(false);
@@ -415,10 +423,16 @@ function SuperposicionesDeEnvio({
  * su "Ahora no": un diálogo intermedio preguntando lo mismo sería un paso de
  * más para llegar al mismo lado.
  *
- * Sin `pedidoId` -la pantalla se abrió desde otro lado- vuelve atrás como antes.
+ * ENCADENA CON EL COCINERO Y NO CON EL PEDIDO. Antes viajaba el pedido, porque
+ * la reseña al cocinero se anclaba a él; ahora es una sola por cocinero, así
+ * que lo que hace falta es a quién se reseña. Si el cliente ya lo reseñó, la
+ * pantalla de destino abre en modo edición en lugar de pedirle lo mismo dos
+ * veces.
+ *
+ * Sin cocinero -la pantalla se abrió desde otro lado- vuelve atrás como antes.
  */
-function seguirDespuesDePublicar(pedidoId: string | null): void {
-  if (pedidoId === null) {
+function seguirDespuesDePublicar(cocineroId: string | null): void {
+  if (cocineroId === null) {
     if (router.canGoBack()) router.back();
     return;
   }
@@ -430,7 +444,7 @@ function seguirDespuesDePublicar(pedidoId: string | null): void {
    */
   router.replace({
     pathname: '/resenas/calificar-cocinero',
-    params: { pedidoId },
+    params: { cocineroId },
   });
 }
 

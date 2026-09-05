@@ -262,6 +262,32 @@ export function IconoTacho(props: PropsIcono) {
   );
 }
 
+/**
+ * Bandera de "reportar" (US-RES-06).
+ *
+ * REEMPLAZA A LOS TRES PUNTOS VERTICALES que el criterio describe. El texto de
+ * la historia pide un menu contextual detras de un `⋮`, pero ese control no
+ * decia que hacia: sobre una resena ajena la unica opcion era reportar y sobre
+ * la propia, eliminar, asi que el menu era un paso de mas delante de una accion
+ * unica. Con la bandera y el tacho se ve de entrada cual de las dos es.
+ *
+ * El literal del criterio sobrevive como `accessibilityLabel` del boton, asi
+ * que "Reportar reseña" sigue siendo verificable palabra por palabra.
+ *
+ * Mastil y panio en dos `Path`, como el resto del set: stroke 1.75, sin fill.
+ */
+export function IconoBandera(props: PropsIcono) {
+  return (
+    <Lienzo {...props}>
+      <Path d="M5.75 21V3.5" {...TRAZO} />
+      <Path
+        d="M5.75 4.25h11.4a.6.6 0 0 1 .47.97L15.25 8.5l2.37 3.28a.6.6 0 0 1-.47.97H5.75"
+        {...TRAZO}
+      />
+    </Lienzo>
+  );
+}
+
 export function IconoEngranaje(props: PropsIcono) {
   return (
     <Lienzo {...props}>

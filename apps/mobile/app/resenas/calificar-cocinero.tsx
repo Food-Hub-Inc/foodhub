@@ -6,28 +6,28 @@ import { CalificarCocinero } from '../../src/screens/resenas/CalificarCocinero';
 import { TEXTOS_RESENA } from '../../src/lib/textos';
 
 /**
- * PAN-RES-03 · Calificar al cocinero — US-RES-07.
+ * PAN-RES-03 · Reseñar al cocinero — US-RES-07.
  *
- * RECIBE EL PEDIDO, NO EL COCINERO. Es la diferencia con
- * `calificar-cliente.tsx`: allá la calificación es una por par cocinero-cliente
- * y alcanza con el cliente, y acá es una por PEDIDO. Con el cocinero solo no se
- * sabría cuál de sus pedidos se está calificando, y el cliente que le compró
- * tres veces tiene tres calificaciones independientes.
+ * RECIBE EL COCINERO, NO EL PEDIDO. Antes era al revés, porque la reseña se
+ * anclaba al pedido y un cliente que le compró tres veces tenía tres reseñas
+ * independientes. Con una sola por cocinero, el pedido dejó de identificar
+ * nada: solo habilita el derecho, y eso lo verifica el servidor.
  *
- * El nombre, la foto y la fecha viajan como parámetros para dibujar la cabecera
- * sin una consulta extra: el detalle del pedido, que es de donde se entra, ya
- * los tiene. Son opcionales; sin ellos la pantalla funciona igual.
+ * Se entra desde dos lugares —el perfil público del cocinero y el detalle de
+ * cualquiera de sus pedidos completados— y los dos llevan a la misma reseña.
+ *
+ * El nombre y la foto viajan como parámetros para dibujar la cabecera sin una
+ * consulta extra: las dos pantallas de origen ya los tienen. Son opcionales;
+ * sin ellos la pantalla funciona igual.
  */
 export default function CalificarCocineroRuta() {
-  const { pedidoId, nombre, fotoPerfilUrl, fechaPedido } =
-    useLocalSearchParams<{
-      pedidoId?: string;
-      nombre?: string;
-      fotoPerfilUrl?: string;
-      fechaPedido?: string;
-    }>();
+  const { cocineroId, nombre, fotoPerfilUrl } = useLocalSearchParams<{
+    cocineroId?: string;
+    nombre?: string;
+    fotoPerfilUrl?: string;
+  }>();
 
-  if (!pedidoId) {
+  if (!cocineroId) {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <EncabezadoPantalla
@@ -35,9 +35,9 @@ export default function CalificarCocineroRuta() {
           titulo={TEXTOS_RESENA.tituloCalificarCocinero}
         />
         {/* Falta un dato de la navegación, no falló una consulta: la acción
-            útil es volver al pedido, que es de donde se entra bien. */}
+            útil es volver, que es de donde se entra bien. */}
         <EstadoDeError
-          mensaje={TEXTOS_RESENA.sinPedido}
+          mensaje={TEXTOS_RESENA.sinCocinero}
           onReintentar={() => {
             if (router.canGoBack()) router.back();
             else router.replace('/(cliente)/pedidos');
@@ -49,10 +49,9 @@ export default function CalificarCocineroRuta() {
 
   return (
     <CalificarCocinero
-      fechaPedido={fechaPedido ?? null}
+      cocineroId={cocineroId}
       fotoPerfilUrl={fotoPerfilUrl ?? null}
       nombre={nombre ?? null}
-      pedidoId={pedidoId}
     />
   );
 }

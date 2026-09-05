@@ -17,7 +17,7 @@ import { EstadoDeError } from '../../components/ui/EstadoDeError';
 import { usePedido } from '../../hooks/usePedidos';
 import { usePerfil } from '../../hooks/usePerfil';
 import {
-  useEstadoDeCalificacion,
+  useMiResenaDeCocinero,
   useEstadoDeResenas,
   useReputacionDeCliente,
 } from '../../hooks/useResenas';
@@ -139,10 +139,10 @@ function Contenido({
       {/*
         DOS REGLAS SOBRE LA MISMA FICHA, y las dos dependen de quién mira.
 
-        US-EXP-04: la ficha del cocinero lleva a su perfil público, que es donde
-        están sus publicaciones. Del otro lado NO es tocable: `/clientes/[id]`
-        todavía es una pantalla pendiente, y un toque que no hace nada se lee
-        como que la app está rota.
+        US-EXP-04 y US-DASH-03: la ficha lleva al perfil público del otro, sea
+        quien sea. Del lado del cliente NO era tocable porque `/clientes/[id]`
+        era una pantalla pendiente y un toque que no hace nada se lee como que
+        la app está rota; ahora la pantalla existe.
 
         US-RES-02: la tarjeta pinta el promedio crudo, sin la regla de "Cliente
         nuevo". Para el cocinero se apaga y la reputación va debajo con esa
@@ -151,18 +151,21 @@ function Contenido({
       */}
       <FichaDeParticipante
         conValoracion={!esCocinero}
-        participante={pedido.participante}
-        rotulo={esCocinero ? TEXTOS_PEDIDOS.cliente : TEXTOS_PEDIDOS.cocinero}
-        {...(esCocinero
-          ? {}
-          : {
-              onPress: () => {
-                router.push({
+        onPress={() => {
+          router.push(
+            esCocinero
+              ? {
+                  pathname: '/clientes/[id]',
+                  params: { id: pedido.participante.id },
+                }
+              : {
                   pathname: '/cocineros/[id]',
                   params: { id: pedido.participante.id },
-                });
-              },
-            })}
+                },
+          );
+        }}
+        participante={pedido.participante}
+        rotulo={esCocinero ? TEXTOS_PEDIDOS.cliente : TEXTOS_PEDIDOS.cocinero}
       />
 
       {esCocinero ? (
@@ -441,18 +444,27 @@ function alcanzoAceptado(pedido: PedidoDetalle): boolean {
 }
 
 /**
- * RF031 y US-RES-07 — la acción a nivel pedido, con sus tres estados.
+ * RF031 y US-RES-07 — la reseña al cocinero, con sus dos estados.
  *
- * UNA SOLA PARA TODO EL PEDIDO, a diferencia de los botones por plato: la
- * calificación al cocinero valora el servicio de esa entrega y se registra una
- * por pedido, sin importar cuántos platos lo integren.
+ * UNA SOLA PARA TODO EL PEDIDO, a diferencia de los botones por plato: valora
+ * el SERVICIO y no los platos.
+ *
+ * Y UNA SOLA PARA EL COCINERO, no para el pedido, que es la corrección de
+ * fondo. Antes cada pedido completado habilitaba una reseña nueva; ahora, en el
+ * segundo pedido con el mismo cocinero, este botón ya dice "Editar mi
+ * calificación" y lleva a la que dejó la vez anterior. Es el mismo botón que
+ * ofrece su perfil público, y llevan al mismo lado.
+ *
+ * DESAPARECIÓ EL TERCER ESTADO —"Ver mi calificación"—: existía para cuando la
+ * ventana de 48 horas se había cerrado, y esa ventana se cayó con el anclaje al
+ * pedido. La reseña sobre una persona es la opinión vigente y se edita siempre.
  *
  * Mientras la consulta viaja no se dibuja nada, por el mismo motivo que en
  * `ResenarCadaPlato`: mostrar "Calificar al cocinero" y cambiarlo a "Editar mi
  * calificación" un segundo después invita a tocar el botón equivocado.
  */
 function CalificarAlCocinero({ pedido }: { pedido: PedidoDetalle }) {
-  const estado = useEstadoDeCalificacion(pedido.id);
+  const estado = useMiResenaDeCocinero(pedido.participante.id);
 
   if (estado.isError) {
     return <Aviso mensaje={mensajeDeError(estado.error)} tono="error" />;
@@ -460,12 +472,7 @@ function CalificarAlCocinero({ pedido }: { pedido: PedidoDetalle }) {
 
   if (!estado.data) return null;
 
-  const etiqueta =
-    estado.data.calificacionId === null
-      ? MENSAJES_RESENA.calificarAlCocinero
-      : estado.data.puedeEditar
-        ? MENSAJES_RESENA.editarMiCalificacion
-        : MENSAJES_RESENA.verMiCalificacion;
+  const yaResenado = estado.data.mia !== null;
 
   return (
     <Boton
@@ -473,20 +480,21 @@ function CalificarAlCocinero({ pedido }: { pedido: PedidoDetalle }) {
         router.push({
           pathname: '/resenas/calificar-cocinero',
           params: {
-            pedidoId: pedido.id,
+            cocineroId: pedido.participante.id,
             // Igual que al calificar al cliente: los datos de la cabecera
             // viajan porque esta pantalla ya los tiene y evitan otra consulta.
             nombre: `${pedido.participante.nombre} ${pedido.participante.apellido}`,
-            fechaPedido: pedido.fechaCreacion,
             ...(pedido.participante.fotoPerfilUrl === null
               ? {}
               : { fotoPerfilUrl: pedido.participante.fotoPerfilUrl }),
           },
         });
       }}
-      variante={estado.data.calificacionId === null ? 'primario' : 'secundario'}
+      variante={yaResenado ? 'secundario' : 'primario'}
     >
-      {etiqueta}
+      {yaResenado
+        ? MENSAJES_RESENA.editarMiCalificacion
+        : MENSAJES_RESENA.calificarAlCocinero}
     </Boton>
   );
 }
@@ -589,9 +597,11 @@ function ResenarCadaPlato({ pedido }: { pedido: PedidoDetalle }) {
                 pathname: '/resenas/dejar',
                 params: {
                   publicacionId: item.publicacionId,
-                  // Viaja para encadenar con la calificación al cocinero al
-                  // publicar (US-RES-01); no interviene en la reseña en sí.
-                  pedidoId: pedido.id,
+                  // Viaja para encadenar con la reseña al cocinero al publicar
+                  // (US-RES-01); no interviene en la reseña del plato. Es el
+                  // cocinero y no el pedido porque la reseña sobre él es una
+                  // sola, sin importar por cuál de sus pedidos se llegue.
+                  cocineroId: pedido.participante.id,
                 },
               });
             }}

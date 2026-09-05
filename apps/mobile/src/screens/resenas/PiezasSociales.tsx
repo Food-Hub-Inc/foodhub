@@ -2,8 +2,10 @@ import { Pressable, Text, View } from 'react-native';
 import {
   MENSAJES_RESENA,
   type ResenaPublica,
+  type SocialDeResena,
   type TipoReaccion,
 } from '@foodhub/shared';
+import { IconoBandera, IconoTacho } from '../../components/iconos';
 import { useReaccionar } from '../../hooks/useResenas';
 import { formatearFecha } from '../../lib/formato';
 import { TEXTOS_RESENA } from '../../lib/textos';
@@ -28,11 +30,17 @@ import { TEXTOS_RESENA } from '../../lib/textos';
  * que es justamente el gesto que desmarca. Si la llamada falla, la invalidación
  * de la consulta devuelve el valor real.
  */
-export function BotonesDeReaccion({ resena }: { resena: ResenaPublica }) {
+export function BotonesDeReaccion({
+  resena,
+  social,
+}: {
+  resena: ResenaPublica;
+  social: SocialDeResena;
+}) {
   const reaccionar = useReaccionar(resena.id);
 
   if (resena.esMia) {
-    const total = resena.reacciones.meGusta + resena.reacciones.noMeGusta;
+    const total = social.reacciones.meGusta + social.reacciones.noMeGusta;
     if (total === 0) return null;
 
     return (
@@ -44,22 +52,22 @@ export function BotonesDeReaccion({ resena }: { resena: ResenaPublica }) {
 
   const alternar = (tipo: TipoReaccion) => {
     // Tocar la que ya estaba marcada la desmarca: `null` es "ninguna".
-    reaccionar.mutate({ tipo: resena.reacciones.mia === tipo ? null : tipo });
+    reaccionar.mutate({ tipo: social.reacciones.mia === tipo ? null : tipo });
   };
 
   return (
     <View className="mt-3 flex-row gap-2">
       <BotonDeReaccion
-        activo={resena.reacciones.mia === 'ME_GUSTA'}
-        cantidad={resena.reacciones.meGusta}
+        activo={social.reacciones.mia === 'ME_GUSTA'}
+        cantidad={social.reacciones.meGusta}
         etiqueta={MENSAJES_RESENA.meGusta}
         onPress={() => {
           alternar('ME_GUSTA');
         }}
       />
       <BotonDeReaccion
-        activo={resena.reacciones.mia === 'NO_ME_GUSTA'}
-        cantidad={resena.reacciones.noMeGusta}
+        activo={social.reacciones.mia === 'NO_ME_GUSTA'}
+        cantidad={social.reacciones.noMeGusta}
         etiqueta={MENSAJES_RESENA.noMeGusta}
         onPress={() => {
           alternar('NO_ME_GUSTA');
@@ -121,7 +129,7 @@ function BotonDeReaccion({
 export function RespuestaPublicada({
   respuesta,
 }: {
-  respuesta: NonNullable<ResenaPublica['respuesta']>;
+  respuesta: NonNullable<SocialDeResena['respuesta']>;
 }) {
   return (
     <View className="ml-6 mt-3 rounded-md bg-background p-3">
@@ -147,28 +155,38 @@ export function RespuestaPublicada({
 }
 
 /**
- * Los tres puntos verticales de US-RES-06.
+ * El control de US-RES-06, al pie de cada reseña.
  *
  * QUÉ OFRECE DEPENDE DE QUIÉN MIRA, y son excluyentes: sobre una reseña ajena
  * "Reportar reseña", sobre la propia "Eliminar mi reseña". El criterio lo dice
  * así, y tiene sentido: nadie se denuncia a sí mismo, y nadie borra lo que
  * escribió otro.
  *
- * Sobre una reseña ya reportada por este usuario el menú no se dibuja: el
+ * UN ÍCONO QUE DICE QUÉ HACE, EN LUGAR DE LOS TRES PUNTOS. El criterio describe
+ * un `⋮` que despliega un menú contextual, pero ese menú tenía una sola opción
+ * —la que corresponda a quién mira— así que era un paso de más delante de una
+ * acción única, detrás de un control que no anticipa nada. La bandera y el
+ * tacho se leen de entrada. Los dos literales del criterio sobreviven como
+ * `accessibilityLabel`, de modo que "Reportar reseña" y "Eliminar mi reseña"
+ * siguen siendo verificables palabra por palabra en la Etapa 6.
+ *
+ * Sobre una reseña ya reportada por este usuario no se dibuja nada tocable: el
  * criterio pide avisar "Ya reportaste esta reseña" y esta es la forma más
  * directa de no invitarlo a intentarlo de nuevo. El aviso lo da igual la API si
  * llega por otro camino.
  */
-export function MenuDeResena({
+export function AccionesDeResena({
   resena,
+  social,
   onReportar,
   onEliminar,
 }: {
   resena: ResenaPublica;
+  social: SocialDeResena;
   onReportar: () => void;
   onEliminar: () => void;
 }) {
-  if (resena.reportadaPorMi) {
+  if (social.reportadaPorMi) {
     return (
       <Text className="text-caption text-text-disabled">
         {TEXTOS_RESENA.yaReportada}
@@ -176,10 +194,11 @@ export function MenuDeResena({
     );
   }
 
-  const accion = resena.esMia ? onEliminar : onReportar;
-  const etiqueta = resena.esMia
+  const propia = resena.esMia;
+  const etiqueta = propia
     ? MENSAJES_RESENA.eliminarMiResena
     : MENSAJES_RESENA.reportarResena;
+  const Icono = propia ? IconoTacho : IconoBandera;
 
   return (
     <Pressable
@@ -187,14 +206,9 @@ export function MenuDeResena({
       accessibilityRole="button"
       className="px-2 py-1"
       hitSlop={8}
-      onPress={accion}
+      onPress={propia ? onEliminar : onReportar}
     >
-      {/*
-        Los tres puntos son texto y no un ícono: el juego de íconos del
-        proyecto no tiene uno de "más opciones", y agregarlo por una sola
-        pantalla obligaría a dibujarlo sin la guía visual delante.
-      */}
-      <Text className="text-body font-bold text-text-secondary">⋮</Text>
+      <Icono className="text-text-secondary" size={18} />
     </Pressable>
   );
 }

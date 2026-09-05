@@ -13,7 +13,7 @@ import { TEXTOS_RESENA } from '../../src/lib/textos';
  * del pedido que el cliente quiera calificar, y el derecho a opinar lo verifica
  * el servidor por su cuenta contra el historial.
  *
- * `pedidoId` viaja igual, pero NO para reseñar: es lo que permite encadenar con
+ * `cocineroId` viaja igual, pero NO para reseñar: es lo que permite encadenar con
  * la calificación al cocinero cuando la reseña se publica, que es el criterio
  * de US-RES-01 "ofrezca a continuación la calificación al cocinero de ese
  * pedido". Es opcional: sin él la pantalla funciona y solo no encadena.
@@ -24,9 +24,9 @@ import { TEXTOS_RESENA } from '../../src/lib/textos';
  * pantallas, que declara esta ruta sin parámetros.
  */
 export default function DejarResenaRuta() {
-  const { publicacionId, pedidoId } = useLocalSearchParams<{
+  const { publicacionId, cocineroId } = useLocalSearchParams<{
     publicacionId?: string;
-    pedidoId?: string;
+    cocineroId?: string;
   }>();
 
   /**
@@ -58,6 +58,9 @@ export default function DejarResenaRuta() {
   }
 
   return (
-    <DejarResena pedidoId={pedidoId ?? null} publicacionId={publicacionId} />
+    <DejarResena
+      cocineroId={cocineroId ?? null}
+      publicacionId={publicacionId}
+    />
   );
 }

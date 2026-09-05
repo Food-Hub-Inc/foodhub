@@ -10,43 +10,38 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 import type {
-  CalificacionACocinero,
-  ReaccionarInput,
-  ReportarResenaInput,
-  ResponderResenaInput,
-  RespuestaCocinero,
-  CalificarClienteInput,
-  CalificarCocineroInput,
   CrearResenaInput,
   EditarResenaInput,
-  EstadoCalificacionCocinero,
+  EstadoResenaPersona,
   EstadoResenaPublicacion,
   FiltrosResenas,
-  MiCalificacionCliente,
+  PaginaPedidos,
   PaginaResenas,
+  PerfilPublicoCliente,
+  ReaccionarInput,
+  ReportarResenaInput,
   ReputacionCliente,
-  ReputacionCocinero,
   ResenaPublica,
+  ResponderResenaInput,
+  RespuestaCocinero,
 } from '@foodhub/shared';
 import {
-  calificarCliente,
-  calificarCocinero,
   crearResena,
+  editarResena,
   editarRespuesta,
   eliminarMiResena,
+  obtenerEstadoDeResenas,
+  obtenerMiResenaDeCliente,
+  obtenerMiResenaDeCocinero,
+  obtenerPedidosConCliente,
+  obtenerPerfilDeCliente,
+  obtenerReputacionDeCliente,
+  obtenerResena,
+  obtenerResenas,
   reaccionar,
   reportarResena,
   responderResena,
-  editarResena,
-  obtenerEstadoDeResenas,
-  obtenerMiCalificacionDeCliente,
-  obtenerReputacionDeCliente,
-  obtenerCalificacionDeCocinero,
-  obtenerEstadoDeCalificacion,
-  obtenerReputacionDeCocinero,
-  obtenerResena,
-  obtenerResenasDeCocinero,
-  editarCalificacionDeCocinero,
+  type OrigenDeResenas,
 } from '../api/resenas';
 import { useSesion } from './useSesion';
 
@@ -164,29 +159,42 @@ export function useEditarResena(
  * fila entre dos consultas; comparar cuántas se acumularon contra el total que
  * informa el servidor no depende de ese detalle.
  */
-export function useResenasDeCocinero(
-  cocineroId: string,
+export function useResenasDe(
+  origen: OrigenDeResenas,
   filtros: Partial<FiltrosResenas>,
 ): UseInfiniteQueryResult<InfiniteData<PaginaResenas>, Error> {
   const sesion = useSesion((estado) => estado.sesion);
 
   return useInfiniteQuery({
+    /**
+     * LA CLAVE LLEVA EL ORIGEN ENTERO Y LOS CUATRO FILTROS.
+     *
+     * `soloConRespuesta` faltaba, y esa omisión era un defecto real: el chip se
+     * marcaba, la petición salía con el filtro puesto, pero React Query
+     * devolvía la respuesta cacheada de la clave anterior. Para el usuario, el
+     * filtro no hacía nada.
+     *
+     * El origen se serializa entero por el mismo motivo: dos listados sobre el
+     * mismo cocinero —sus opiniones y las de sus platos— comparten `cocineroId`
+     * y se pisarían entre sí.
+     */
     queryKey: [
       ...CLAVE_RESENAS,
-      'cocinero',
-      cocineroId,
+      'listado',
+      JSON.stringify(origen),
       filtros.orden ?? 'MAS_RECIENTES',
       (filtros.estrellas ?? []).join(','),
       filtros.soloConFoto ?? false,
+      filtros.soloConRespuesta ?? false,
     ],
     queryFn: ({ pageParam }) =>
-      obtenerResenasDeCocinero(cocineroId, { ...filtros, pagina: pageParam }),
+      obtenerResenas(origen, { ...filtros, pagina: pageParam }),
     initialPageParam: 1,
     getNextPageParam: (ultima) =>
       ultima.pagina * ultima.porPagina < ultima.total
         ? ultima.pagina + 1
         : undefined,
-    enabled: sesion !== null && cocineroId.length > 0,
+    enabled: sesion !== null,
     placeholderData: keepPreviousData,
     staleTime: 60_000,
   });
@@ -195,24 +203,6 @@ export function useResenasDeCocinero(
 // ---------------------------------------------------------------------------
 // US-RES-02 · Calificación del cocinero al cliente
 // ---------------------------------------------------------------------------
-
-/**
- * Lo que este cocinero ya opinó del cliente, o `null` si todavía no lo calificó.
- *
- * De esto sale la etiqueta del botón: "Calificar cliente" con `null`, "Editar
- * calificación" con un valor.
- */
-export function useMiCalificacionDeCliente(
-  clienteId: string,
-): UseQueryResult<MiCalificacionCliente | null, Error> {
-  const sesion = useSesion((estado) => estado.sesion);
-
-  return useQuery({
-    queryKey: [...CLAVE_CALIFICACION_CLIENTE, clienteId, 'mia'],
-    queryFn: () => obtenerMiCalificacionDeCliente(clienteId),
-    enabled: sesion !== null && clienteId.length > 0,
-  });
-}
 
 /** Reputación agregada del cliente, para el detalle del pedido del cocinero. */
 export function useReputacionDeCliente(
@@ -228,14 +218,27 @@ export function useReputacionDeCliente(
   });
 }
 
+/**
+ * US-RES-02 — el cocinero reseña a un cliente.
+ *
+ * Envuelve el alta genérica en vez de tener endpoint propio: desde la
+ * corrección del modelo es una reseña como cualquier otra, solo que su objeto
+ * es una persona. El hook existe igual porque lo que invalida NO es lo mismo
+ * que al reseñar un plato —acá no se mueve ningún promedio público— y porque
+ * la pantalla no tiene por qué armar el discriminador a mano.
+ */
 export function useCalificarCliente(
   clienteId: string,
-): UseMutationResult<MiCalificacionCliente, Error, CalificarClienteInput> {
+): UseMutationResult<
+  ResenaPublica,
+  Error,
+  Omit<Extract<CrearResenaInput, { tipo: 'CLIENTE' }>, 'tipo' | 'clienteId'>
+> {
   const cliente = useQueryClient();
 
   return useMutation({
-    mutationFn: (datos: CalificarClienteInput) =>
-      calificarCliente(clienteId, datos),
+    mutationFn: (datos) =>
+      crearResena({ ...datos, tipo: 'CLIENTE', clienteId }),
     onSuccess: () => {
       // La reputación del cliente y el botón del detalle del pedido dependen
       // de esta calificación: los dos quedan viejos apenas se guarda.
@@ -247,95 +250,85 @@ export function useCalificarCliente(
   });
 }
 
+/** US-DASH-03 — Ficha del perfil público del cliente, para el cocinero. */
+export function usePerfilDeCliente(
+  clienteId: string,
+): UseQueryResult<PerfilPublicoCliente, Error> {
+  const sesion = useSesion((estado) => estado.sesion);
+
+  return useQuery({
+    queryKey: [...CLAVE_CALIFICACION_CLIENTE, clienteId, 'perfil'],
+    queryFn: () => obtenerPerfilDeCliente(clienteId),
+    enabled: sesion !== null && clienteId.length > 0,
+    staleTime: 60_000,
+  });
+}
+
+/** US-DASH-03 — Los pedidos que ese cliente le hizo al cocinero de la sesión. */
+export function usePedidosConCliente(
+  clienteId: string,
+): UseInfiniteQueryResult<InfiniteData<PaginaPedidos>, Error> {
+  const sesion = useSesion((estado) => estado.sesion);
+
+  return useInfiniteQuery({
+    queryKey: [...CLAVE_CALIFICACION_CLIENTE, clienteId, 'pedidos'],
+    queryFn: ({ pageParam }) => obtenerPedidosConCliente(clienteId, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (ultima, todas) =>
+      ultima.hayMas ? todas.length + 1 : undefined,
+    enabled: sesion !== null && clienteId.length > 0,
+    staleTime: 60_000,
+  });
+}
+
 // ---------------------------------------------------------------------------
-// US-RES-07 · Calificación del cliente al cocinero
+// US-RES-07 · El cliente reseña al cocinero
 // ---------------------------------------------------------------------------
 
 export const CLAVE_CALIFICACION_COCINERO = ['resenas', 'cocinero'] as const;
 
 /**
- * RF031 — Qué acción corresponde para la calificación al cocinero del pedido.
+ * Qué puede hacer el cliente de la sesión con este cocinero.
  *
- * De acá salen los tres estados del botón del detalle: "Calificar al cocinero",
- * "Editar mi calificación" o "Ver mi calificación".
+ * ES POR COCINERO Y NO POR PEDIDO. De acá salen los estados del botón del
+ * perfil público y los del detalle del pedido, que ahora son los mismos: con
+ * `mia` en `null` y `puedeResenar`, "Calificar al cocinero"; con `mia`,
+ * "Editar mi calificación"; sin ninguno de los dos, el botón deshabilitado con
+ * el motivo escrito debajo.
+ *
+ * Trae también la reseña vigente, así el formulario se precarga sin encadenar
+ * una segunda consulta.
  */
-export function useEstadoDeCalificacion(
-  pedidoId: string,
-): UseQueryResult<EstadoCalificacionCocinero, Error> {
+export function useMiResenaDeCocinero(
+  cocineroId: string,
+): UseQueryResult<EstadoResenaPersona, Error> {
   const sesion = useSesion((estado) => estado.sesion);
 
   return useQuery({
-    queryKey: [...CLAVE_CALIFICACION_COCINERO, 'estado', pedidoId],
-    queryFn: () => obtenerEstadoDeCalificacion(pedidoId),
-    enabled: sesion !== null && pedidoId.length > 0,
+    queryKey: [...CLAVE_CALIFICACION_COCINERO, 'mi-resena', cocineroId],
+    queryFn: () => obtenerMiResenaDeCocinero(cocineroId),
+    enabled: sesion !== null && cocineroId.length > 0,
     staleTime: 30_000,
   });
 }
 
-/** Una calificación puntual, para precargar la edición o verla en solo lectura. */
-export function useCalificacionDeCocinero(
-  calificacionId: string | null,
-): UseQueryResult<CalificacionACocinero, Error> {
-  return useQuery({
-    queryKey: [...CLAVE_CALIFICACION_COCINERO, 'detalle', calificacionId],
-    queryFn: () => obtenerCalificacionDeCocinero(calificacionId ?? ''),
-    enabled: calificacionId !== null,
-  });
-}
-
-/** RF082 — Bloque de reputación del perfil público. */
-export function useReputacionDeCocinero(
-  cocineroId: string,
-): UseQueryResult<ReputacionCocinero, Error> {
+/**
+ * US-RES-02 — Qué puede hacer el cocinero de la sesión con este cliente.
+ *
+ * De acá salen los dos estados del botón del detalle del pedido y los del
+ * perfil del cliente. Es el espejo de `useMiResenaDeCocinero`, con el mismo
+ * contrato: la reseña sobre una persona es una sola.
+ */
+export function useMiResenaDeCliente(
+  clienteId: string,
+): UseQueryResult<EstadoResenaPersona, Error> {
   const sesion = useSesion((estado) => estado.sesion);
 
   return useQuery({
-    queryKey: [...CLAVE_CALIFICACION_COCINERO, 'reputacion', cocineroId],
-    queryFn: () => obtenerReputacionDeCocinero(cocineroId),
-    enabled: sesion !== null && cocineroId.length > 0,
-    staleTime: 60_000,
-  });
-}
-
-/**
- * Lo que hay que invalidar al calificar a un cocinero.
- *
- * SON MÁS COSAS QUE AL RESEÑAR UN PLATO. La calificación mueve la reputación
- * del cocinero, que aparece en su perfil público, y además cambia el botón del
- * detalle del pedido. `exploracion` entra en la lista porque el perfil público
- * se sirve desde ahí.
- */
-function useInvalidarReputacion(): () => void {
-  const cliente = useQueryClient();
-
-  return () => {
-    void cliente.invalidateQueries({ queryKey: CLAVE_CALIFICACION_COCINERO });
-    void cliente.invalidateQueries({ queryKey: ['exploracion'] });
-    void cliente.invalidateQueries({ queryKey: ['pedidos'] });
-  };
-}
-
-export function useCalificarCocinero(
-  pedidoId: string,
-): UseMutationResult<CalificacionACocinero, Error, CalificarCocineroInput> {
-  const invalidar = useInvalidarReputacion();
-
-  return useMutation({
-    mutationFn: (datos: CalificarCocineroInput) =>
-      calificarCocinero(pedidoId, datos),
-    onSuccess: invalidar,
-  });
-}
-
-export function useEditarCalificacionDeCocinero(
-  calificacionId: string,
-): UseMutationResult<CalificacionACocinero, Error, CalificarCocineroInput> {
-  const invalidar = useInvalidarReputacion();
-
-  return useMutation({
-    mutationFn: (datos: CalificarCocineroInput) =>
-      editarCalificacionDeCocinero(calificacionId, datos),
-    onSuccess: invalidar,
+    queryKey: [...CLAVE_CALIFICACION_CLIENTE, clienteId, 'mi-resena'],
+    queryFn: () => obtenerMiResenaDeCliente(clienteId),
+    enabled: sesion !== null && clienteId.length > 0,
+    staleTime: 30_000,
   });
 }
 

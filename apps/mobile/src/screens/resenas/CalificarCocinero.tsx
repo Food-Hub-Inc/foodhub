@@ -5,8 +5,8 @@ import { router } from 'expo-router';
 import {
   MENSAJES_RESENA,
   TAGS_CALIFICACION_COCINERO,
-  type CalificacionACocinero,
-  type EstadoCalificacionCocinero,
+  type EstadoResenaPersona,
+  type ResenaPublica,
   type TagCalificacionCocinero,
 } from '@foodhub/shared';
 import { SafeAreaView } from '../../components/SafeAreaView';
@@ -20,55 +20,52 @@ import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
 import { MensajeDeCampo } from '../../components/ui/MensajeDeCampo';
 import {
-  useCalificacionDeCocinero,
-  useCalificarCocinero,
-  useEditarCalificacionDeCocinero,
-  useEstadoDeCalificacion,
+  useCrearResena,
+  useEditarResena,
+  useMiResenaDeCocinero,
 } from '../../hooks/useResenas';
 import { mensajeDeError } from '../../lib/api';
-import { formatearFecha } from '../../lib/formato';
 import { TEXTOS_RESENA } from '../../lib/textos';
 import { SelectorDeEstrellas } from './SelectorDeEstrellas';
 import { SelectorDeTags } from './SelectorDeTags';
 
 /**
- * PAN-RES-03 · Calificar al cocinero — US-RES-07 (RF087).
+ * PAN-RES-03 · Reseñar al cocinero — US-RES-07 (RF087).
  *
- * NO ES LA RESEÑA DEL PLATO Y NO HAY QUE CONFUNDIRLAS. La reseña valora el
- * PRODUCTO y se deja una por plato; esto valora el SERVICIO —puntualidad,
- * comunicación, atención— y se deja una por pedido, sin importar cuántos platos
- * lo integren. Por eso el encabezado del selector pregunta por la atención y el
- * pie lo aclara: si la pantalla no lo dijera, el cliente volvería a calificar
- * la comida.
+ * NO ES LA RESEÑA DEL PLATO Y NO HAY QUE CONFUNDIRLAS. La reseña de plato
+ * valora el PRODUCTO y se deja una por plato; esto valora el SERVICIO
+ * —puntualidad, comunicación, atención— y se deja UNA POR COCINERO. Por eso el
+ * encabezado del selector pregunta por la atención y el pie lo aclara: si la
+ * pantalla no lo dijera, el cliente volvería a calificar la comida.
  *
- * TRES MODOS EN UNA SOLA PANTALLA, igual que PAN-RES-01:
+ * UNA POR COCINERO Y NO POR PEDIDO, que es la corrección de fondo del módulo.
+ * Antes cada pedido habilitaba una reseña nueva, así que un cliente frecuente
+ * pesaba varias veces sobre la misma reputación; ahora hay una sola y se edita.
+ * De ahí se siguen las tres cosas que esta pantalla perdió:
  *
- *   crear        el pedido está completado y no tiene calificación
- *   editar       hay calificación y la ventana de 48 h sigue abierta
- *   solo lectura hay calificación y la ventana se cerró
+ *   el parámetro `pedidoId`   ahora entra por `cocineroId`
+ *   la fecha del pedido       ya no refiere a una experiencia puntual
+ *   el modo de solo lectura   no hay ventana que se cierre, se edita siempre
  *
- * LA VENTANA NO SE REABRE, a diferencia de la de la reseña del plato: esta
- * calificación refiere a la experiencia de un pedido determinado, y un pedido
- * posterior al mismo cocinero habilita una calificación nueva en lugar de
- * reabrir la vieja.
+ * DOS MODOS, entonces: crear cuando todavía no reseñó al cocinero, y editar
+ * cuando sí. Se entra desde el perfil público del cocinero y desde el detalle
+ * de cualquiera de sus pedidos completados: los dos caminos llevan a la misma
+ * reseña.
  *
  * LA MAQUETACIÓN DE PAN-RES-03 NO EXISTE TODAVÍA: la versión corregida del
  * módulo la lista como pendiente de definir. El layout replica el de PAN-RES-01
  * y queda por contrastar cuando la maquetación la incorpore.
  */
 export function CalificarCocinero({
-  pedidoId,
+  cocineroId,
   nombre,
   fotoPerfilUrl,
-  fechaPedido,
 }: {
-  pedidoId: string;
+  cocineroId: string;
   nombre: string | null;
   fotoPerfilUrl: string | null;
-  fechaPedido: string | null;
 }) {
-  const estado = useEstadoDeCalificacion(pedidoId);
-  const previa = useCalificacionDeCocinero(estado.data?.calificacionId ?? null);
+  const estado = useMiResenaDeCocinero(cocineroId);
 
   if (estado.isError) {
     return (
@@ -84,15 +81,12 @@ export function CalificarCocinero({
   }
 
   /**
-   * Se espera también a la calificación previa cuando la hay: sin ella el
-   * formulario se dibujaría vacío y se llenaría un instante después, y el
-   * cliente alcanzaría a ver sus propias estrellas aparecer solas.
+   * `mi-resena` trae el derecho y la reseña vigente en una sola consulta, así
+   * que no hay nada que encadenar: antes se esperaba a dos y el cliente
+   * alcanzaba a ver sus propias estrellas aparecer solas sobre el formulario
+   * ya dibujado.
    */
-  const listo =
-    estado.data !== undefined &&
-    (estado.data.calificacionId === null || previa.data !== undefined);
-
-  if (!listo) {
+  if (estado.data === undefined) {
     return (
       <Marco titulo={TEXTOS_RESENA.tituloCalificarCocinero}>
         <CargandoFormulario />
@@ -102,11 +96,10 @@ export function CalificarCocinero({
 
   return (
     <Formulario
+      cocineroId={cocineroId}
       estado={estado.data}
-      fechaPedido={fechaPedido}
       fotoPerfilUrl={fotoPerfilUrl}
       nombre={nombre}
-      previa={previa.data ?? null}
     />
   );
 }
@@ -136,7 +129,7 @@ function CargandoFormulario() {
 /** US-RES-07 admite 500, a diferencia de los 300 de la calificación al cliente. */
 const MAXIMO_COMENTARIO = 500;
 
-function useCamposDeCalificacion(previa: CalificacionACocinero | null) {
+function useCamposDeCalificacion(previa: ResenaPublica | null) {
   const [calificacion, setCalificacion] = useState<number | null>(
     previa?.calificacion ?? null,
   );
@@ -168,55 +161,73 @@ function useCamposDeCalificacion(previa: CalificacionACocinero | null) {
  * LAS DOS MUTACIONES SE INSTANCIAN SIEMPRE —`useMutation` no dispara nada por
  * existir— porque los hooks no pueden vivir detrás de un `if`.
  *
+ * El alta arma el discriminador acá y no en la pantalla: `tipo: 'COCINERO'` es
+ * lo que le dice al servidor qué se está reseñando, y es un detalle del
+ * contrato y no una decisión del formulario.
+ *
  * El disparo vive acá y no en el componente por el límite de líneas por función
  * que fija ESLint, el mismo motivo por el que ya existe `useCamposDeCalificacion`.
  */
 function useEnvio(entrada: {
-  estado: EstadoCalificacionCocinero;
+  cocineroId: string;
+  mia: ResenaPublica | null;
   campos: ReturnType<typeof useCamposDeCalificacion>;
   onSinEstrellas: () => void;
   onPublicada: () => void;
 }) {
-  const { estado, campos } = entrada;
-  const crear = useCalificarCocinero(estado.pedidoId);
-  const editar = useEditarCalificacionDeCocinero(estado.calificacionId ?? '');
-  const mutacion = estado.calificacionId === null ? crear : editar;
+  const { cocineroId, mia, campos } = entrada;
+  const crear = useCrearResena();
+  const editar = useEditarResena(mia?.id ?? '');
 
   return {
-    enviando: mutacion.isPending,
-    error: mutacion.isError ? mensajeDeError(mutacion.error) : null,
+    enviando: crear.isPending || editar.isPending,
+    error: crear.isError
+      ? mensajeDeError(crear.error)
+      : editar.isError
+        ? mensajeDeError(editar.error)
+        : null,
     publicar: () => {
       if (campos.calificacion === null) {
         entrada.onSinEstrellas();
         return;
       }
-      mutacion.mutate(campos.aPayload(), { onSuccess: entrada.onPublicada });
+
+      const datos = campos.aPayload();
+      if (mia === null) {
+        crear.mutate(
+          { ...datos, tipo: 'COCINERO', cocineroId },
+          { onSuccess: entrada.onPublicada },
+        );
+      } else {
+        editar.mutate(
+          { ...datos, tipo: 'COCINERO' },
+          { onSuccess: entrada.onPublicada },
+        );
+      }
     },
   };
 }
 
 function Formulario({
+  cocineroId,
   estado,
   nombre,
   fotoPerfilUrl,
-  fechaPedido,
-  previa,
 }: {
-  estado: EstadoCalificacionCocinero;
+  cocineroId: string;
+  estado: EstadoResenaPersona;
   nombre: string | null;
   fotoPerfilUrl: string | null;
-  fechaPedido: string | null;
-  previa: CalificacionACocinero | null;
 }) {
-  const soloLectura = estado.calificacionId !== null && !estado.puedeEditar;
-  const editando = estado.calificacionId !== null && estado.puedeEditar;
+  const editando = estado.mia !== null;
 
-  const campos = useCamposDeCalificacion(previa);
+  const campos = useCamposDeCalificacion(estado.mia);
   const [intentoSinEstrellas, setIntentoSinEstrellas] = useState(false);
   const [publicada, setPublicada] = useState(false);
 
   const envio = useEnvio({
-    estado,
+    cocineroId,
+    mia: estado.mia,
     campos,
     onSinEstrellas: () => {
       setIntentoSinEstrellas(true);
@@ -226,17 +237,21 @@ function Formulario({
     },
   });
 
+  if (!editando && !estado.puedeResenar) return <SinDerechoAResenar />;
+
   return (
-    <Marco titulo={tituloSegunModo({ soloLectura, editando })}>
+    <Marco
+      titulo={
+        editando
+          ? TEXTOS_RESENA.tituloEditarMiCalificacion
+          : TEXTOS_RESENA.tituloCalificarCocinero
+      }
+    >
       <ScrollView
         contentContainerClassName="px-4 pt-4 pb-10"
         keyboardShouldPersistTaps="handled"
       >
-        <CabeceraDelCocinero
-          fechaPedido={fechaPedido}
-          fotoPerfilUrl={fotoPerfilUrl}
-          nombre={nombre}
-        />
+        <CabeceraDelCocinero fotoPerfilUrl={fotoPerfilUrl} nombre={nombre} />
 
         <CamposDeCalificacion
           campos={campos}
@@ -246,28 +261,22 @@ function Formulario({
           onTocarEstrella={() => {
             setIntentoSinEstrellas(false);
           }}
-          soloLectura={soloLectura}
+          soloLectura={false}
         />
 
         <AvisoEnRecuadro
-          mensaje={
-            soloLectura
-              ? TEXTOS_RESENA.avisoCalificacionCongelada
-              : TEXTOS_RESENA.avisoCalificacionDeServicio
-          }
+          mensaje={TEXTOS_RESENA.avisoCalificacionDeServicio}
           tono="informativo"
         />
 
         <AvisoEnRecuadro mensaje={envio.error} tono="error" />
 
-        {soloLectura ? null : (
-          <PieDelFormulario
-            editando={editando}
-            enviando={envio.enviando}
-            faltaCalificacion={campos.calificacion === null}
-            onPublicar={envio.publicar}
-          />
-        )}
+        <PieDelFormulario
+          editando={editando}
+          enviando={envio.enviando}
+          faltaCalificacion={campos.calificacion === null}
+          onPublicar={envio.publicar}
+        />
       </ScrollView>
 
       <ConfirmacionDePublicacion
@@ -276,6 +285,27 @@ function Formulario({
           setPublicada(false);
         }}
       />
+    </Marco>
+  );
+}
+
+/**
+ * Se llegó acá sin derecho a reseñar: por un enlace directo, o por un pedido
+ * que dejó de estar completado.
+ *
+ * El aviso explica por qué en vez de dibujar campos que el servidor va a
+ * rechazar. Es el mismo texto que acompaña al botón deshabilitado del perfil
+ * público, para que el motivo sea uno solo.
+ */
+function SinDerechoAResenar() {
+  return (
+    <Marco titulo={TEXTOS_RESENA.tituloCalificarCocinero}>
+      <View className="px-4 pt-4">
+        <Aviso
+          mensaje={MENSAJES_RESENA.sinPedidoCompletadoConCocinero}
+          tono="informativo"
+        />
+      </View>
     </Marco>
   );
 }
@@ -372,18 +402,6 @@ function AvisoEnRecuadro({
   );
 }
 
-function tituloSegunModo({
-  soloLectura,
-  editando,
-}: {
-  soloLectura: boolean;
-  editando: boolean;
-}): string {
-  if (soloLectura) return TEXTOS_RESENA.tituloVerMiCalificacion;
-  if (editando) return TEXTOS_RESENA.tituloEditarMiCalificacion;
-  return TEXTOS_RESENA.tituloCalificarCocinero;
-}
-
 /** Los tres campos: estrellas, comentario y tags de servicio. */
 function CamposDeCalificacion({
   campos,
@@ -462,11 +480,9 @@ function CamposDeCalificacion({
 function CabeceraDelCocinero({
   nombre,
   fotoPerfilUrl,
-  fechaPedido,
 }: {
   nombre: string | null;
   fotoPerfilUrl: string | null;
-  fechaPedido: string | null;
 }) {
   if (nombre === null) return null;
 
@@ -492,11 +508,6 @@ function CabeceraDelCocinero({
         >
           {nombre}
         </Text>
-        {fechaPedido === null ? null : (
-          <Text className="text-caption text-text-secondary">
-            {TEXTOS_RESENA.pedidoDelDia(formatearFecha(fechaPedido))}
-          </Text>
-        )}
       </View>
     </View>
   );

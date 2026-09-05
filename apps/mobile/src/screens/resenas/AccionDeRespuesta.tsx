@@ -26,7 +26,13 @@ import { TEXTOS_RESENA } from '../../lib/textos';
 export function AccionDeRespuesta({ resena }: { resena: ResenaPublica }) {
   const [abierto, setAbierto] = useState(false);
 
-  if (resena.respuesta !== null && !resena.respuesta.puedeEditar) return null;
+  /**
+   * Sin conversación pública no hay derecho a réplica: es el caso de las
+   * reseñas a un cliente, que el cliente ni siquiera ve (US-RES-02).
+   */
+  const respuesta = resena.social?.respuesta ?? null;
+  if (resena.social === null) return null;
+  if (respuesta !== null && !respuesta.puedeEditar) return null;
 
   return (
     <View className="mt-3 items-start">
@@ -35,7 +41,7 @@ export function AccionDeRespuesta({ resena }: { resena: ResenaPublica }) {
           setAbierto(true);
         }}
       >
-        {resena.respuesta === null
+        {respuesta === null
           ? MENSAJES_RESENA.responder
           : MENSAJES_RESENA.editarRespuesta}
       </BotonDeTexto>
@@ -68,12 +74,13 @@ function FormularioDeRespuesta({
   abierto: boolean;
   onCerrar: () => void;
 }) {
-  const editando = resena.respuesta !== null;
-  const [contenido, setContenido] = useState(resena.respuesta?.contenido ?? '');
+  const respuesta = resena.social?.respuesta ?? null;
+  const editando = respuesta !== null;
+  const [contenido, setContenido] = useState(respuesta?.contenido ?? '');
   const [confirmando, setConfirmando] = useState(false);
 
   const crear = useResponderResena(resena.id);
-  const editar = useEditarRespuesta(resena.respuesta?.id ?? '');
+  const editar = useEditarRespuesta(respuesta?.id ?? '');
   const envio = editando ? editar : crear;
 
   const vacia = contenido.trim() === '';

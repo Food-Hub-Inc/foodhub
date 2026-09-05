@@ -9,6 +9,7 @@ import {
 } from '@foodhub/shared';
 import { IconoCocinero } from '../../components/iconos';
 import { SafeAreaView } from '../../components/SafeAreaView';
+import { Aviso } from '../../components/ui/Aviso';
 import { Boton } from '../../components/ui/Boton';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../components/ui/Esqueleto';
@@ -16,14 +17,13 @@ import { EstadoDeError } from '../../components/ui/EstadoDeError';
 import { EstadoVacio } from '../../components/ui/EstadoVacio';
 import { useCocineroPublico } from '../../hooks/useExploracion';
 import { useAlternarCocineroFavorito } from '../../hooks/useFavoritos';
-import { useEstadoDeResenas } from '../../hooks/useResenas';
+import { useMiResenaDeCocinero } from '../../hooks/useResenas';
 import { useUbicacionActual } from '../../hooks/useUbicacionActual';
 import { mensajeDeError } from '../../lib/api';
 import { formatearPrecio } from '../../lib/formato';
 import { TEXTOS_EXPLORACION, TEXTOS_RESENA } from '../../lib/textos';
 import { BotonDeMensajes } from '../mensajeria/BotonDeMensajes';
 import { Pestanas } from '../pedidos/Piezas';
-import { BloqueDeReputacion } from '../resenas/BloqueDeReputacion';
 import { ListaDeResenas } from '../resenas/ListaDeResenas';
 import { BotonFlotanteDelCarrito } from './BotonFlotanteDelCarrito';
 import {
@@ -125,22 +125,33 @@ function Contenido({
   );
 
   /**
-   * US-RES-03 — dos bloques diferenciados, en este orden: arriba la reputación
-   * del cocinero (las calificaciones de servicio de US-RES-07) y debajo el
-   * listado de reseñas de sus platos. Son métricas independientes y pueden
-   * diferir; el listado no altera el promedio de arriba.
+   * US-RES-03 — la solapa muestra LO QUE LE DIJERON AL COCINERO, no las reseñas
+   * de sus platos.
+   *
+   * Las de los platos se movieron al detalle de cada plato (RF019), que es
+   * donde sirven para decidir si pedirlo. Acá abajo eran un listado sobre
+   * comida colgando de un perfil sobre una persona, y encima con su propio
+   * promedio al lado del de la ficha: dos números para el mismo cocinero, a
+   * dos centímetros de distancia.
+   *
+   * El promedio de arriba y el del resumen de este listado salen ahora de la
+   * misma consulta, así que no pueden discrepar.
    */
   if (solapa === 'RESENAS') {
     return (
       <ListaDeResenas
-        accionVacio={<AccionDejarLaPrimera cocinero={cocinero} />}
-        cocineroId={cocinero.id}
         encabezado={
           <>
             {cabecera}
-            <BloqueDeReputacion cocineroId={cocinero.id} />
+            <BotonDeResenarAlCocinero cocineroId={cocinero.id} />
           </>
         }
+        origen={{ tipo: 'COCINERO', cocineroId: cocinero.id }}
+        textosVacio={{
+          titulo: MENSAJES_RESENA.cocineroSinResenasTitulo,
+          subtitulo: MENSAJES_RESENA.cocineroSinResenasSubtitulo,
+        }}
+        titulo={TEXTOS_RESENA.tituloOpinionesDelCocinero}
       />
     );
   }
@@ -171,35 +182,61 @@ function Contenido({
 }
 
 /**
- * Botón "Dejar una reseña" del estado vacío — US-RES-03, último tramo del
- * criterio del cocinero sin reseñas.
+ * Botón para reseñar al cocinero — US-RES-03.
  *
- * El criterio lo condiciona a que el cliente tenga un pedido completado con ese
- * cocinero, y esa pregunta ya la contesta `/resenas/estado`: `puedeResenar`
- * significa exactamente "hay pedido completado con este plato, no hay reseña y
- * el plazo no venció". Se consulta por los platos del perfil y alcanza con que
- * uno la cumpla; ese es el que abre el formulario.
+ * SIEMPRE VISIBLE, y no solo dentro del estado vacío como estaba antes. Un
+ * botón que aparece únicamente cuando el cocinero no tiene ninguna reseña es
+ * un botón que casi nadie ve: en cuanto tiene la primera, el cliente que le
+ * compró se queda sin forma de opinar desde el perfil.
  *
- * Devuelve `null` cuando no hay ninguno, y entonces `EstadoVacio` queda sin
- * acción, que es lo correcto para un visitante que nunca le compró.
+ * TRES ESTADOS, y el tercero es el que faltaba:
+ *
+ *   ya reseñó            "Editar mi calificación" — no hay ventana que vencer
+ *   puede reseñar        "Calificar al cocinero"
+ *   no tiene derecho     deshabilitado, y DEBAJO el motivo
+ *
+ * El motivo escrito es la mitad importante: el criterio dice cuándo mostrar el
+ * botón pero no qué decir cuando no corresponde, y un botón apagado sin
+ * explicación se lee como que la app está rota. El derecho lo resuelve el
+ * servidor —hace falta un pedido COMPLETADO con este cocinero— porque depende
+ * del historial de pedidos, que la pantalla no conoce.
+ *
+ * Mientras la consulta viaja no se dibuja nada: un botón que aparece
+ * habilitado y se apaga medio segundo después es peor que uno que llega tarde.
  */
-function AccionDejarLaPrimera({ cocinero }: { cocinero: CocineroPublico }) {
-  const publicacionIds = cocinero.publicaciones.map((plato) => plato.id);
-  const estado = useEstadoDeResenas(publicacionIds);
+function BotonDeResenarAlCocinero({ cocineroId }: { cocineroId: string }) {
+  const estado = useMiResenaDeCocinero(cocineroId);
 
-  const resenable = estado.data?.find((fila) => fila.puedeResenar);
-  if (!resenable) return null;
+  if (estado.data === undefined) return null;
+
+  const { puedeResenar, mia } = estado.data;
+
+  if (!puedeResenar && mia === null) {
+    return (
+      <View className="gap-2">
+        <Boton deshabilitado onPress={() => undefined}>
+          {MENSAJES_RESENA.calificarAlCocinero}
+        </Boton>
+        <Aviso
+          mensaje={TEXTOS_RESENA.botonSinDerechoAResenar}
+          tono="informativo"
+        />
+      </View>
+    );
+  }
 
   return (
     <Boton
       onPress={() => {
         router.push({
-          pathname: '/resenas/dejar',
-          params: { publicacionId: resenable.publicacionId },
+          pathname: '/resenas/calificar-cocinero',
+          params: { cocineroId },
         });
       }}
     >
-      {MENSAJES_RESENA.dejarUnaResena}
+      {mia === null
+        ? MENSAJES_RESENA.calificarAlCocinero
+        : MENSAJES_RESENA.editarMiCalificacion}
     </Boton>
   );
 }
