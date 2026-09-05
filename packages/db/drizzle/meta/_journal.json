@@ -99,6 +99,20 @@
       "when": 1787351786843,
       "tag": "0013_sembrar_terminos_moderacion",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1787438186843,
+      "tag": "0014_calificacion_al_cocinero",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1787438186844,
+      "tag": "0015_resena_por_objeto_resenado",
+      "breakpoints": true
     }
   ]
 }

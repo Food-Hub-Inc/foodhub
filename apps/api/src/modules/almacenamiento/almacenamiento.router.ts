@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   solicitarUrlCargaAdjuntoTicketSchema,
   solicitarUrlDeCargaCategoriaSchema,
+  solicitarUrlDeCargaFotoResenaSchema,
   solicitarUrlDeCargaImagenChatSchema,
   solicitarUrlDeCargaPlatoSchema,
   solicitarUrlDeCargaSchema,
@@ -61,6 +62,31 @@ almacenamientoRouter.post(
     const urlDeCarga = await almacenamientoService.crearUrlDeCargaDeFotoPlato({
       cocineroId: sesionDe(req).id,
       datos: solicitarUrlDeCargaPlatoSchema.parse(req.body),
+    });
+    res.status(201).json(urlDeCarga);
+  },
+);
+
+/**
+ * US-RES-01 - Foto que el cliente autenticado adjunta a una resena.
+ *
+ * EXISTE PORQUE `/foto-plato` NO SIRVE PARA ESTO. Aquel exige rol COCINERO, y
+ * el que adjunta la foto de una resena es el CLIENTE que recibio el plato.
+ * Reusarlo habria obligado a abrirle la carpeta del catalogo del cocinero a
+ * cualquier comprador.
+ *
+ * No verifica que el cliente tenga derecho a resenar ese plato: eso lo hace
+ * `POST /resenas` cuando llega la resena. Aca lo unico que se concede es
+ * escribir un archivo en la carpeta propia del cliente, y una foto huerfana
+ * -subida sin que la resena llegue a crearse- no es visible para nadie.
+ */
+almacenamientoRouter.post(
+  '/foto-resena',
+  requiereRol('CLIENTE'),
+  async (req, res) => {
+    const urlDeCarga = await almacenamientoService.crearUrlDeCargaDeFotoResena({
+      clienteId: sesionDe(req).id,
+      datos: solicitarUrlDeCargaFotoResenaSchema.parse(req.body),
     });
     res.status(201).json(urlDeCarga);
   },

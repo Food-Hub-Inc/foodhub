@@ -34,8 +34,40 @@ Sin eso, cualquier implementación es una invención.
 
 ## 2. US-DASH-03, cuarto criterio — Perfil público del cliente
 
-**Estado:** el destino existe como `PantallaPendiente`
-(`apps/mobile/app/clientes/[id].tsx`); la pantalla real, no.
+**Estado: ✅ RESUELTO el 2026-09-04**, junto con la corrección del módulo de
+Reseñas. La pantalla vive en `apps/mobile/src/screens/perfiles/PerfilDeCliente.tsx`
+y `apps/mobile/app/clientes/[id].tsx` dejó de ser un `PantallaPendiente`.
+
+Lo que faltaba para cerrarlo eran tres cosas, y el usuario definió las dos
+primeras (2026-09-04):
+
+| Faltaba                     | Cómo quedó                                                                                                                       |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| qué es «información básica» | nombre y apellido, foto, «Miembro desde &lt;mes&gt; de &lt;año&gt;», y el promedio con la cantidad de cocineros que lo reseñaron |
+| quién puede verlo           | **cualquier cocinero**, no solo los que le vendieron                                                                             |
+| el endpoint del historial   | `GET /pedidos/con-cliente/:clienteId`, nuevo                                                                                     |
+
+**Nunca muestra la ubicación ni el correo**, y no viajan en el contrato: la
+ubicación es el punto exacto que el cliente declaró, no una zona. Ocultarlos
+solo en la pantalla habría dejado el dato viajando en la respuesta.
+
+Dos solapas: las reseñas que le dejaron los cocineros (US-RES-02) y los pedidos
+que le hizo a quien mira (el criterio de US-DASH-03). La reputación respeta
+«Cliente nuevo» por debajo de tres pedidos completados.
+
+**Sigue sin código PAN asignado.** La pantalla no está en el inventario de la
+Etapa 5 y sus textos son todos propios (`TEXTOS_PERFIL_CLIENTE`): cuando el
+equipo le asigne un código y la maquete, son los primeros que hay que
+contrastar.
+
+Se entra desde el listado de clientes recurrentes del dashboard y, desde ahora,
+también desde la ficha del cliente en el detalle del pedido, que pasó a ser
+tocable.
+
+Lo que sigue es el registro de por qué estuvo pendiente.
+
+**Estado anterior:** el destino existía como `PantallaPendiente`; la pantalla
+real, no.
 
 El criterio dice:
 

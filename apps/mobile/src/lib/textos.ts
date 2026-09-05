@@ -657,6 +657,44 @@ export const TEXTOS_PENDIENTE = {
  * alcance de cada módulo; la maquetación no fija un texto para el estado
  * "pendiente" porque en la Etapa 5 todas las pantallas se dibujan terminadas.
  */
+/**
+ * PAN-? · Perfil público del cliente — cuarto criterio de US-DASH-03.
+ *
+ * [PROPIO] TODOS. La pantalla no está en el inventario de la Etapa 5 ni tiene
+ * criterios propios: el equipo la definió en la corrección del módulo de
+ * Reseñas. Cuando le asignen un código PAN y la maqueten, estos textos son los
+ * primeros que hay que contrastar.
+ */
+export const TEXTOS_PERFIL_CLIENTE = {
+  titulo: 'Perfil del cliente',
+  miembroDesde: (mesYAnio: string) => `Miembro desde ${mesYAnio}`,
+  cuentaEliminada: 'Esta cuenta ya no está activa.',
+
+  solapaResenas: 'Reseñas',
+  solapaPedidos: 'Sus pedidos',
+
+  /** Cuántos cocineros lo reseñaron, debajo del promedio. */
+  cocinerosQueLoResenaron: (cantidad: number) =>
+    cantidad === 1
+      ? '1 cocinero lo reseñó'
+      : `${String(cantidad)} cocineros lo reseñaron`,
+
+  /** Cuántos platos más lleva el pedido, además del que se muestra. */
+  masPlatos: (cantidad: number) =>
+    cantidad === 1 ? 'y 1 plato más' : `y ${String(cantidad)} platos más`,
+
+  sinPedidosConEsteCliente: 'Todavía no te hizo ningún pedido.',
+  sinPedidosConEsteClienteSubtitulo:
+    'Acá vas a ver el historial de lo que te pida.',
+
+  /**
+   * Un CLIENTE llegó por enlace directo. La ruta vive fuera del grupo
+   * `(cocinero)`, así que es alcanzable; el endpoint responde 403 igual, pero
+   * un error crudo de la API no explica nada.
+   */
+  soloParaCocineros: 'El perfil de un cliente solo pueden verlo los cocineros.',
+} as const;
+
 export const PANTALLAS_PENDIENTES = {
   pedidosCliente: {
     codigo: 'PAN-PED-05',
@@ -905,6 +943,8 @@ export const TEXTOS_RESENA = {
   etiquetaFoto: 'Foto del plato',
   ayudaFoto: 'Opcional. JPG, PNG o WEBP de hasta 5 MB.',
   quitarFoto: 'Quitar foto',
+  agregarFoto: 'Agregar foto',
+  cambiarFoto: 'Cambiar foto',
 
   /**
    * [PROPIO] Cuantos cocineros calificaron a un cliente (US-RES-02).
@@ -935,6 +975,89 @@ export const TEXTOS_RESENA = {
   /** [PROPIO] Estado de solo lectura, fuera de la ventana de 48 horas. */
   avisoSoloLectura:
     'Ya pasó el plazo para editar esta reseña. Si volvés a pedir el plato vas a poder actualizarla.',
+
+  /**
+   * [PROPIO] Titulos de los dos bloques del perfil publico (US-RES-03).
+   *
+   * SIN TITULOS LOS DOS BLOQUES SE LEEN COMO UNO SOLO CON DOS NUMEROS
+   * CONTRADICTORIOS. El criterio pide que el listado de platos sea "un bloque
+   * diferenciado" del de reputacion justamente porque miden cosas distintas, y
+   * en pantalla eso se resuelve nombrandolas.
+   */
+  tituloResenasDePlatos: 'Reseñas de los platos',
+  tituloResenasDelPlato: 'Reseñas de este plato',
+  tituloOpinionesDelCocinero: 'Lo que dicen sus clientes',
+  tituloResenasDelCliente: 'Lo que dicen otros cocineros',
+
+  /** [PROPIO] Solapas de "Mis reseñas" del cocinero (PAN-RES-02). */
+  solapaMisPlatos: 'Mis platos',
+  solapaSobreMi: 'Sobre mí',
+
+  /**
+   * [PROPIO] Estados vacíos de las dos solapas.
+   *
+   * No se reusan los de US-RES-03 —"Este cocinero aún no recibió reseñas." y
+   * "Se el primero en compartir tu experiencia."— porque son LITERALES escritos
+   * para el CLIENTE que mira el perfil: acá el cocinero se está mirando a sí
+   * mismo, y no puede ser el primero en opinar sobre su propio trabajo.
+   */
+  sinResenasEnMisPlatos: 'Todavía nadie reseñó tus platos.',
+  sinResenasSobreMi: 'Todavía nadie te reseñó como cocinero.',
+
+  /**
+   * [PROPIO] Estado vacío del resumen, cuando el listado no tiene ni una.
+   *
+   * Es genérico a propósito: el mismo resumen encabeza los cuatro listados y
+   * `MENSAJES_RESENA.cocineroSinResenasTitulo` -que decía "Este cocinero aún no
+   * recibió reseñas."- es un LITERAL de US-RES-03 que habla del cocinero.
+   * Debajo de un plato o de un cliente decía otra cosa.
+   */
+  sinResenasTodavia: 'Todavía no hay reseñas.',
+
+  /** [PROPIO] Cuantas calificaciones de servicio recibio el cocinero. */
+  calificacionesRecibidas: (cantidad: number) =>
+    cantidad === 1
+      ? '1 calificación recibida'
+      : `${String(cantidad)} calificaciones recibidas`,
+
+  /** [PROPIO] Estado vacio del bloque de reputacion. */
+  sinCalificacionesDeServicio: 'Todavía no recibió calificaciones de servicio.',
+
+  // --- PAN-RES-03, calificar al cocinero (US-RES-07) ------------------------
+  /** [PROPIO] Titulos de la pantalla, uno por cada uno de sus dos modos. */
+  tituloCalificarCocinero: 'Calificar al cocinero',
+  tituloEditarMiCalificacion: 'Editar mi calificación',
+
+  /**
+   * [PROPIO] Encabezado del selector. La pregunta apunta al SERVICIO y no al
+   * plato: es lo que separa esta pantalla de PAN-RES-01, y si el texto no lo
+   * dice el cliente vuelve a calificar la comida.
+   */
+  etiquetaCalificacionCocinero: '¿Cómo fue la atención?',
+
+  /** [PROPIO] Aviso al pie, para que no se confunda con la reseña del plato. */
+  avisoCalificacionDeServicio:
+    'Esto califica la atención del cocinero, no los platos. Cada plato se reseña por separado.',
+
+  /**
+   * [PROPIO] El cocinero no viajó en la navegación.
+   *
+   * Antes decía "no pudimos saber qué PEDIDO querés calificar": la reseña al
+   * cocinero se anclaba a un pedido y se entraba desde su detalle. Ahora es una
+   * sola por cocinero y se entra también desde su perfil.
+   */
+  sinCocinero:
+    'No pudimos saber a qué cocinero querés reseñar. Entrá desde su perfil o desde el pedido.',
+
+  /**
+   * [PROPIO] Botón de reseñar al cocinero desde su perfil público.
+   *
+   * `sinDerecho` acompaña al botón deshabilitado. El criterio de US-RES-03 solo
+   * dice cuándo mostrarlo, no qué decir cuando no corresponde; dejarlo apagado
+   * sin explicación es de las cosas que más se leen como que la app está rota.
+   */
+  botonSinDerechoAResenar:
+    'Vas a poder reseñarlo cuando te complete un pedido.',
 
   // --- PAN-RES-02, calificar al cliente -------------------------------------
   tituloCalificar: 'Calificar cliente',
@@ -999,6 +1122,49 @@ export const TEXTOS_RESENA = {
 
   /** [PROPIO] Etiqueta accesible de la foto adjunta a una resena. */
   fotoDeLaResena: 'Foto de la reseña',
+
+  // --- US-RES-05 y US-RES-06, lo social -------------------------------------
+  /** [PROPIO] Marca en el menu de una resena que este usuario ya reporto. */
+  yaReportada: 'Reportada',
+
+  /** [PROPIO] Textos del formulario de reporte. El criterio no los redacta. */
+  ayudaReporte:
+    'Contanos qué problema encontraste. Un moderador va a revisar la reseña.',
+  detalleOpcional: 'Detalle adicional (opcional)',
+  detalleObligatorio: 'Detalle adicional (obligatorio)',
+  placeholderDetalleReporte: 'Qué viste que no corresponde…',
+
+  /** [PROPIO] Textos del formulario de respuesta del cocinero. */
+  tituloResponder: 'Responder la reseña',
+  etiquetaRespuesta: 'Tu respuesta',
+  placeholderRespuesta: 'Gracias por tu comentario…',
+  avisoRespuestaCongelada:
+    'Ya pasó el plazo de 24 horas para editar esta respuesta.',
+  respuestaPublicada: '¡Respuesta publicada!',
+  /** [PROPIO] La resena que se esta respondiendo no traia comentario. */
+  sinComentario: 'Sin comentario.',
+
+  /**
+   * [PROPIO] Confirmacion antes de retirar la propia resena (US-RES-06).
+   *
+   * El criterio ofrece la accion pero no pide confirmarla. Se confirma igual
+   * porque es irreversible desde la app: la resena pasa a ELIMINADA_AUTOR y no
+   * hay pantalla que la vuelva a publicar.
+   */
+  tituloBajaDeResena: '¿Eliminar tu reseña?',
+  avisoBajaDeResena:
+    'Tu reseña deja de verse en el perfil del cocinero y sale del promedio. No vas a poder volver a publicarla.',
+  confirmarBaja: 'Eliminar',
+  cancelarBaja: 'Cancelar',
+
+  /**
+   * [PROPIO] Galeria a pantalla completa de US-RES-03. El criterio describe el
+   * comportamiento -"muestre una galeria en pantalla completa ... deslizando
+   * lateralmente"- pero no fija ningun rotulo, asi que los escribe el equipo.
+   */
+  cerrarGaleria: 'Cerrar',
+  posicionEnGaleria: (actual: number, total: number) =>
+    `${String(actual)} de ${String(total)}`,
 
   /** [PROPIO] Etiqueta accesible de cada barra de la distribucion. */
   nivelAccesible: (nivel: number, porcentaje: number) =>

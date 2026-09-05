@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { MENSAJES_RESENA } from '@foodhub/shared';
 import { IconoEstrella, IconoEstrellaRellena } from '../../components/iconos';
 import { Aviso } from '../../components/ui/Aviso';
@@ -24,6 +25,7 @@ export function VistaPreviaDeResena({
   calificacion,
   comentario,
   tags,
+  fotoUri,
   enviando,
   error,
   onEditar,
@@ -33,6 +35,7 @@ export function VistaPreviaDeResena({
   calificacion: number;
   comentario: string;
   tags: readonly string[];
+  fotoUri: string | null;
   enviando: boolean;
   error: string | null;
   onEditar: () => void;
@@ -54,6 +57,26 @@ export function VistaPreviaDeResena({
             <Text className="mt-2 text-body text-text-primary">
               {comentario}
             </Text>
+          )}
+
+          {/*
+            La foto entra en la vista previa porque el criterio pide previsualizar
+            "la reseña", y la foto adjunta es parte de lo que se va a publicar:
+            revisar todo menos la imagen dejaría fuera justo lo que más cuesta
+            corregir después, con la ventana de edición corriendo.
+          */}
+          {fotoUri === null ? null : (
+            <Image
+              accessibilityLabel={TEXTOS_RESENA.fotoDeLaResena}
+              contentFit="cover"
+              source={{ uri: fotoUri }}
+              style={{
+                width: '100%',
+                height: 140,
+                borderRadius: 8,
+                marginTop: 10,
+              }}
+            />
           )}
 
           {tags.length === 0 ? null : (

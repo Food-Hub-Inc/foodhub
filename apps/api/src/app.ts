@@ -26,6 +26,7 @@ import { categoriasRouter } from './modules/configuracion/categorias.router.js';
 import { motivosCancelacionRouter } from './modules/configuracion/motivosCancelacion.router.js';
 import { parametrosSistemaRouter } from './modules/configuracion/parametrosSistema.router.js';
 import { terminosRouter } from './modules/configuracion/terminos.router.js';
+import { moderacionRouter } from './modules/resenas/moderacion.router.js';
 import { resenasRouter } from './modules/resenas/resenas.router.js';
 import { seguridadRouter } from './modules/seguridad/seguridad.router.js';
 import { soporteRouter } from './modules/soporte/soporte.router.js';
@@ -163,9 +164,12 @@ export function crearApp(): Express {
   app.use(`${PREFIJO_API}/dashboard`, dashboardRouter);
 
   // Modulo de Resenas y Calificaciones (US-RES-01 a US-RES-03). Las tres
-  // sociales -reacciones, respuestas y reportes- suman sus rutas a este mismo
-  // router en el segundo PR del modulo.
+  // sociales -reacciones, respuestas y reportes- cuelgan de este mismo router.
   app.use(`${PREFIJO_API}/resenas`, resenasRouter);
+
+  // RF086 - La bandeja de moderacion va aparte: es del panel web y exclusiva
+  // del administrador, mientras que todo `/resenas` es de la app.
+  app.use(`${PREFIJO_API}/moderacion`, moderacionRouter);
 
   // A medida que avance la Etapa 6 se montan aca los routers de cada modulo:
   //   app.use(`${PREFIJO_API}/notificaciones`, notificacionesRouter);

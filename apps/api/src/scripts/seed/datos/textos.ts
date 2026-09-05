@@ -100,6 +100,19 @@ export const TAGS_CALIFICACION_CLIENTE = [
   'cambió el horario',
 ] as const;
 
+/**
+ * Tags de la resena del cliente al cocinero (US-RES-07). Valoran el SERVICIO
+ * -puntualidad, trato, si el pedido llego completo- y no el plato, que es lo
+ * que separa esta resena de la de US-RES-01.
+ */
+export const TAGS_CALIFICACION_COCINERO = [
+  'puntual',
+  'muy amable',
+  'pedido completo',
+  'buena comunicación',
+  'entrega demorada',
+] as const;
+
 /** Respuestas del cocinero a una resena (derecho a replica). */
 export const RESPUESTAS_COCINERO: Readonly<
   Record<'positiva' | 'neutra' | 'negativa', readonly string[]>

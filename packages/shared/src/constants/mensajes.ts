@@ -1153,6 +1153,58 @@ export const MENSAJES_RESENA = {
    */
   clienteNuevo: 'Cliente nuevo',
 
+  // --- Calificar al cocinero (US-RES-07, RF087) -----------------------------
+  /**
+   * LITERAL - US-RES-07, los tres estados de la accion segun exista
+   * calificacion y siga abierta la ventana de 48 horas.
+   *
+   * NO SE REUSAN LOS DE LA RESENA DEL PLATO. Son actos distintos -uno valora el
+   * plato y el otro el servicio del pedido- y el criterio escribe textos
+   * distintos: "Editar mi calificacion", no "Editar mi resena".
+   */
+  calificarAlCocinero: 'Calificar al cocinero',
+  editarMiCalificacion: 'Editar mi calificación',
+  verMiCalificacion: 'Ver mi calificación',
+
+  /** LITERAL - US-RES-07, boton que confirma el alta desde PAN-RES-03. */
+  publicarCalificacion: 'Publicar calificación',
+
+  /**
+   * LITERAL - US-RES-07: "El cliente omite la calificacion presionando
+   * 'Ahora no'". Es la salida del encadenado que ofrece US-RES-01 despues de
+   * resenar los platos de un pedido.
+   */
+  ahoraNo: 'Ahora no',
+
+  /** LITERAL - US-RES-07, confirmacion de la publicacion. */
+  calificacionPublicada: '¡Calificación publicada con éxito!',
+
+  /**
+   * LITERAL - US-RES-07 y RF087, rechazo del filtro de moderacion.
+   *
+   * Es OTRO texto que el de la resena del plato: dice "Tu calificacion" donde
+   * aquel dice "Tu resena". Los dos criterios los escriben por separado.
+   */
+  calificacionConTerminosModerados:
+    'Tu calificación contiene términos que no cumplen con nuestras normas de comunidad. Por favor, modificála antes de publicar.',
+
+  /**
+   * PROPIO - rechazo de la API para RF087, por el mismo motivo que los cinco
+   * de mas abajo: el criterio resuelve la interfaz y no dice que responde el
+   * servidor, pero la API tiene que explicar por que rechaza.
+   *
+   * Lo usa tambien la app, y no solo ante un 403: es el texto que acompana al
+   * boton deshabilitado del perfil publico, para que quien nunca le compro al
+   * cocinero entienda por que no puede opinar en vez de encontrarse un boton
+   * apagado sin explicacion.
+   *
+   * YA NO HAY "ya calificaste este pedido" NI "venció el plazo de edición":
+   * la resena al cocinero es una sola por cocinero y se edita siempre, asi que
+   * el alta nunca choca y la edicion nunca vence.
+   */
+  sinPedidoCompletadoConCocinero:
+    'Solo podés reseñar a un cocinero que te haya completado un pedido.',
+
   // --- Ver resenas en el perfil publico (US-RES-03) -------------------------
   /**
    * LITERAL - US-RES-03, estado vacio de la seccion de resenas.
@@ -1173,6 +1225,29 @@ export const MENSAJES_RESENA = {
   dejarUnaResena: 'Dejar una reseña',
 
   /**
+   * PROPIO - estado vacio del listado de resenas del detalle del plato
+   * (RF019). No se reusan los de `cocineroSinResenas*`, que son LITERAL de
+   * US-RES-03 y hablan del cocinero: decir "Este cocinero aún no recibió
+   * reseñas." debajo de un plato seria decir otra cosa.
+   */
+  platoSinResenasTitulo: 'Este plato todavía no tiene reseñas.',
+  platoSinResenasSubtitulo: 'Si ya lo pediste, contá qué te pareció.',
+
+  /**
+   * PROPIO - estado vacio del perfil publico del cliente. Lo lee un cocinero,
+   * asi que habla en tercera persona y no invita a opinar: si el cocinero
+   * puede reseñarlo, la accion vive en el detalle del pedido.
+   */
+  clienteSinResenas: 'Todavía ningún cocinero reseñó a este cliente.',
+
+  /**
+   * PROPIO - un CLIENTE pidiendo el perfil publico de otro cliente. Las
+   * resenas a un cliente son informacion entre cocineros (US-RES-02).
+   */
+  sinDerechoAVerCliente:
+    'El perfil de un cliente solo pueden verlo los cocineros.',
+
+  /**
    * LITERAL - US-RES-03: la publicacion resenada fue dada de baja por el
    * cocinero. La resena sobrevive y sigue promediando; lo unico que cambia es
    * el nombre del plato y que el enlace deja de funcionar.
@@ -1182,22 +1257,18 @@ export const MENSAJES_RESENA = {
   /**
    * LITERAL - US-RES-03, opciones del selector de orden.
    *
-   * "Mas utiles" NO esta: ordena por cantidad de reacciones y las reacciones
-   * son US-RES-04, que no entra en este PR. Se agrega junto con esa historia,
-   * no antes: una opcion de orden que siempre devuelve lo mismo es peor que no
-   * ofrecerla.
+   * "Mas utiles" ordena por cantidad de "Me gusta" y por eso llego con
+   * US-RES-04: antes de que existieran las reacciones habria devuelto siempre
+   * lo mismo.
    */
   ordenMasRecientes: 'Más recientes',
   ordenMejorCalificacion: 'Mejor calificación',
   ordenPeorCalificacion: 'Peor calificación',
+  ordenMasUtiles: 'Más útiles',
 
-  /**
-   * LITERAL - US-RES-03, filtros del listado.
-   *
-   * Falta "Solo resenas con respuesta del cocinero" por el mismo motivo que
-   * "Mas utiles": depende de US-RES-05.
-   */
+  /** LITERAL - US-RES-03, los dos toggles del listado. */
   filtroSoloConFoto: 'Solo reseñas con foto',
+  filtroSoloConRespuesta: 'Solo reseñas con respuesta del cocinero',
 
   // --- Rechazos de la API ---------------------------------------------------
   /**
@@ -1233,6 +1304,115 @@ export const MENSAJES_RESENA = {
   /** PROPIO - el cocinero nunca tuvo un pedido aceptado con ese cliente. */
   sinDerechoACalificar:
     'Solo podés calificar a un cliente con el que hayas tenido un pedido aceptado.',
+
+  /**
+   * PROPIO - la foto adjunta no es una imagen admitida o supera los 5 MB.
+   *
+   * RF080 fija el tope ("foto del plato en formato de imagen de hasta 5 MB")
+   * pero no redacta el rechazo. Se calca la forma de `MENSAJES_PUBLICACION` y
+   * `MENSAJES_USUARIO`, que ya resuelven lo mismo para el plato y el perfil.
+   */
+  fotoInvalida: 'La foto debe ser una imagen JPG, PNG o WEBP de hasta 5 MB.',
+
+  /**
+   * PROPIO - la subida a Storage fallo y por eso no se publico nada.
+   *
+   * Importa que diga que la resena NO se publico: el usuario ya toco
+   * "Publicar", y un error que no aclara el desenlace lo deja sin saber si
+   * tiene que reintentar o si va a terminar con dos resenas.
+   */
+  fotoNoSePudoSubir:
+    'No se pudo subir la foto, así que la reseña no se publicó. Probá de nuevo o quitá la foto.',
+
+  // --- Reaccionar a una resena (US-RES-04, RF083) ---------------------------
+  /** LITERAL - US-RES-04: "dos botones de reaccion: 'Me gusta' y 'No me gusta'". */
+  meGusta: 'Me gusta',
+  noMeGusta: 'No me gusta',
+
+  /**
+   * LITERAL - US-RES-04: el autor de una resena no reacciona a la suya; en su
+   * lugar ve "el contador total de reacciones recibidas en modo solo lectura".
+   */
+  reaccionesRecibidas: 'Reacciones recibidas',
+
+  // --- Responder una resena (US-RES-05, RF084) ------------------------------
+  /** LITERAL - US-RES-05, los dos estados del boton segun exista respuesta. */
+  responder: 'Responder',
+  editarRespuesta: 'Editar respuesta',
+
+  /** LITERAL - US-RES-05, botones del formulario de respuesta. */
+  publicarRespuesta: 'Publicar respuesta',
+  cancelarRespuesta: 'Cancelar',
+
+  /** LITERAL - US-RES-05 y RF084, rechazo del filtro de moderacion.
+   *
+   * NO TERMINA CON "Por favor, modificala antes de publicar" como el de la
+   * resena: el criterio de US-RES-05 corta la frase antes. Son textos distintos
+   * y las pruebas de la Etapa 6 comparan palabra por palabra.
+   */
+  respuestaConTerminosModerados:
+    'Tu respuesta contiene términos que no cumplen con nuestras normas de comunidad.',
+
+  /** LITERAL - US-RES-05 y RF084, confirmacion previa a publicar. */
+  confirmarRespuesta:
+    '¿Publicar respuesta? Tu respuesta será visible públicamente debajo de la reseña original y el cliente recibirá una notificación.',
+  confirmarRespuestaSi: 'Si, publicar',
+  confirmarRespuestaNo: 'No, volver',
+
+  /** LITERAL - US-RES-03 y US-RES-05, encabezado de la respuesta publicada. */
+  respuestaDelCocinero: 'Respuesta del cocinero',
+
+  /** LITERAL - US-RES-05, marca de una respuesta editada dentro del plazo. */
+  respuestaEditada: '(editada)',
+
+  /** PROPIO - rechazos de la API para US-RES-05. */
+  sinDerechoAResponder:
+    'Solo podés responder una reseña sobre uno de tus platos.',
+  respuestaYaExiste: 'Ya respondiste esta reseña. Podés editar tu respuesta.',
+  edicionDeRespuestaVencida:
+    'Ya pasó el plazo de 24 horas para editar esta respuesta.',
+
+  // --- Reportar y moderar (US-RES-06, RF085 y RF086) ------------------------
+  /** LITERAL - US-RES-06, opciones del menu contextual de cada resena. */
+  reportarResena: 'Reportar reseña',
+  eliminarMiResena: 'Eliminar mi reseña',
+
+  /** LITERAL - US-RES-06, boton que envia el reporte. */
+  enviarReporte: 'Enviar reporte',
+
+  /** LITERAL - US-RES-06, falta el motivo obligatorio.
+   *
+   * "Seleccióná" va con esa tilde: asi esta transcrito el criterio. Mismo
+   * criterio que con "Se el primero en compartir tu experiencia" — gana el
+   * documento por sobre la ortografia.
+   */
+  reporteSinMotivo: 'Seleccióná al menos un motivo para reportar esta reseña.',
+
+  /**
+   * LITERAL - US-RES-06, confirmacion del envio.
+   *
+   * RF085 escribe una version mas corta ("Reporte enviado. Nuestro equipo
+   * revisara..."). Se toma la del criterio de aceptacion, que es lo que la
+   * Etapa 6 verifica.
+   */
+  reporteEnviado:
+    '¡Reporte enviado! Nuestro equipo revisará la reseña y tomará las acciones correspondientes. Gracias por contribuir a la comunidad.',
+
+  /** LITERAL - US-RES-06, el usuario ya reporto esta resena. */
+  reporteDuplicado:
+    'Ya reportaste esta reseña. Nuestro equipo esta revisándola.',
+
+  /** LITERAL - US-RES-06 y RF086, aviso al que reporto cuando se rechaza. */
+  reporteRechazadoAviso:
+    'Revisamos tu reporte sobre una reseña y consideramos que cumple con nuestras normas de comunidad. La reseña se mantiene visible. Gracias por tu colaboracion.',
+
+  /** PROPIO - rechazos de la API para US-RES-04 y US-RES-06. */
+  sinDerechoAReaccionar: 'No podés reaccionar a tu propia reseña.',
+  sinDerechoAReportar: 'No podés reportar tu propia reseña.',
+  sinDerechoAEliminar: 'Solo podés eliminar una reseña que hayas escrito.',
+
+  /** PROPIO - la bandeja de moderacion no encontro reportes pendientes. */
+  sinReportesPendientes: 'No hay reportes pendientes de revisión.',
 } as const;
 
 /**
