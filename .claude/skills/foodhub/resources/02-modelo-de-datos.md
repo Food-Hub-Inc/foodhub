@@ -135,31 +135,51 @@ CREADO ──→ ACEPTADO ──→ LISTO ──→ COMPLETADO
 
 ### Reseñas — `schema/social.ts`
 
-`resena` · `calificacion_cocinero` · `reaccion_resena` · `respuesta_cocinero` ·
-`reporte_resena`
+`resena` · `reaccion_resena` · `respuesta_cocinero` · `reporte_resena`
 
-- **Ninguna de las dos tablas referencia `pedido`.** La reseña del cliente cuelga
-  de `publicacion` (`resena.publicacion_id`): es **por plato**. La calificación
-  del cocinero cuelga solo del par de usuarios. El derecho a opinar se valida por
-  consulta, no por FK.
-- `resena_cliente_publicacion_uq` sobre `(cliente_res_id, publicacion_id)`: una
-  reseña por cliente y plato. Si vuelve a pedirlo, **edita** la que ya tiene.
-- `calificacion_cocinero_uq` sobre `(cocinero_evaluador_id, cliente_evaluado_id)`:
-  una calificación por par, editable.
-- Sin esas dos restricciones se podría inflar o hundir la reputación de alguien
-  repitiendo la reseña.
-- `resena.cocinero_res_id` está desnormalizado respecto de
-  `publicacion.cocinero_id`: sostiene el promedio del perfil público sin un join
-  extra, y una publicación no se transfiere de cocinero.
-- Calificación entre 1 y 5, verificado por CHECK.
-- Solo las reseñas `VISIBLE` promedian, tanto en el perfil público del cocinero
-  (`resena_cocinero_idx`) como en el plato (`resena_publicacion_idx`).
+- **Una reseña se identifica por (autor, objeto reseñado)**, y el objeto es un
+  **plato, un cocinero o un cliente**. Hay una sola por autor y objeto: si se
+  vuelve a opinar, se **edita** la que ya existe. Sin esa restricción cualquiera
+  podría inflar o hundir una reputación repitiendo la reseña.
+- **El pedido no aparece en ninguna tabla del módulo.** Solo responde "¿tiene
+  derecho a reseñar?" en el momento del alta, y eso se verifica por consulta
+  contra `historial_estado_pedido`.
+- **Los tres tipos viven en UNA tabla con discriminador** `tipo_resena`, igual
+  que `mensaje` y al revés que `favorito`. El motivo es que los tres agregados
+  sociales cuelgan de `resena_id` y así sirven a los tres tipos sin una línea
+  extra, incluida la cola de moderación de PAN-ADM-02.
+
+| `tipo_resena` | destino              | autor    | quién la ve                  |
+| ------------- | -------------------- | -------- | ---------------------------- |
+| `PLATO`       | `publicacion_id`     | cliente  | cualquiera (US-RES-01/03)    |
+| `COCINERO`    | `cocinero_res_id`    | cliente  | cualquiera (RF087/US-RES-07) |
+| `CLIENTE`     | `cliente_destino_id` | cocinero | solo cocineros (US-RES-02)   |
+
+- El CHECK `resena_destino_segun_tipo` garantiza que esté poblado **exactamente**
+  el destino de su tipo. Los tres índices únicos son **parciales**, uno por tipo:
+  la columna de destino es `NULL` en los otros dos y en PostgreSQL los NULL no
+  chocan entre sí, así que un único índice no restringiría nada.
+- `cocinero_res_id` cumple dos papeles: es el **destino** en las de tipo
+  COCINERO y el **dueño del plato** —desnormalizado— en las de tipo PLATO. Toda
+  consulta sobre esa columna tiene que filtrar además por tipo.
+- **La reputación pública del cocinero sale de las reseñas de tipo COCINERO**, no
+  de las de sus platos. El promedio **por plato** sale de las de tipo PLATO. Son
+  dos preguntas distintas y las dos aplican `resena_minimo_para_promedio`.
+- **Las de tipo CLIENTE no llevan reacciones, respuesta ni reporte**, y no es un
+  olvido: el cliente no las ve. Su privacidad ya no la da el modelo —comparten
+  tabla con las públicas— sino el `requiereRol('COCINERO')` de sus rutas, con una
+  prueba de router dedicada.
+- Calificación entre 1 y 5, verificado por CHECK. Solo las `VISIBLE` promedian.
 
 > **Cambio del 2026-08-18.** Antes la reseña era por pedido. Se cambió porque
 > US-EXP-03 (filtro por valoración mínima) y US-EXP-05 (promedio en el detalle
-> del plato) exigen la valoración de UNA publicación, y con `resena` colgada de
-> `pedido` era imposible: un pedido puede incluir varios platos del mismo
-> cocinero. El diagrama `DG12082026_V5` refleja este cambio.
+> del plato) exigen la valoración de UNA publicación.
+>
+> **Corrección del 2026-09-04 (migración `0015`).** La reseña al cocinero había
+> quedado anclada al PEDIDO —una por pedido— y eso permitía que un cliente
+> frecuente pesara varias veces sobre la misma reputación. Se unificaron las tres
+> tablas bajo la regla de arriba. **El diagrama `DG12082026_V5` todavía no
+> refleja esto**: ver el punto 14 de `PENDIENTE_RESENAS.md`.
 
 ### Mensajería — `schema/mensajeria.ts`
 

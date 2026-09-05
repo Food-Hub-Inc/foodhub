@@ -11,6 +11,55 @@ Este documento existe para que lo que falta no se pierda y para que quede claro
 que **son decisiones, no olvidos** — mismo criterio que
 `PENDIENTE_DASHBOARD_COCINERO.md`.
 
+> ## Actualización del 2026-09-04 — se corrigió el modelo: la reseña es por objeto reseñado
+>
+> Al revisar el módulo apareció **un error de modelado de raíz**, y de él salían
+> casi todos los problemas de interfaz que se notaron al mismo tiempo.
+>
+> **Qué estaba mal.** `calificacion_a_cocinero` se ancló al PEDIDO: `pedido_id`
+> NOT NULL con UNIQUE sobre esa columna, y el schema lo declaraba deliberado. Un
+> cliente podía entonces dejar **una reseña por cada pedido** al mismo cocinero
+> y multiplicar su peso sobre esa reputación.
+>
+> **La regla correcta**, que ahora rige todo el módulo:
+>
+> > Una reseña se identifica por **(autor, objeto reseñado)**, y el objeto es un
+> > **plato, un cocinero o un cliente**. Hay una sola por autor y objeto. El
+> > pedido **solo valida el derecho** a reseñar; no es la clave de negocio y no
+> > aparece en ninguna tabla del módulo.
+>
+> **Qué se hizo.** Las tres tablas de reseña se fusionaron en `resena` con un
+> discriminador `tipo_resena` (migración `0015`). Se eligió una tabla con
+> discriminador —el patrón de `mensaje`— y no FK anulables porque
+> `reaccion_resena`, `respuesta_cocinero` y `reporte_resena` cuelgan de
+> `resena_id` y así sirven a los tres tipos **sin un solo cambio**, incluida la
+> cola de moderación. La alternativa obligaba a duplicar cada índice único en
+> versiones parciales (en PostgreSQL los NULL no chocan entre sí, así que un
+> índice único sobre una FK anulable deja de proteger **sin dar error**) y a
+> reescribir el `GROUP BY` de `listarReportesPendientes`. Los dos son fallos
+> silenciosos.
+>
+> | Cambio                                                                                                          | Estado |
+> | --------------------------------------------------------------------------------------------------------------- | ------ |
+> | Modelo unificado con `tipo_resena` + migración `0015`                                                           | ✅     |
+> | Las reseñas de platos salen del perfil del cocinero y **pasan al detalle del plato** (cierra el punto 5, RF019) | ✅     |
+> | El perfil del cocinero lista las reseñas **a él** con su detalle, no solo el número                             | ✅     |
+> | Paridad social completa: reacciones, respuesta, reporte y moderación sobre las reseñas al cocinero              | ✅     |
+> | Botón para reseñar al cocinero **siempre visible**, con el motivo escrito cuando no corresponde                 | ✅     |
+> | Ícono de **bandera** / **tacho** en lugar del `⋮`                                                               | ✅     |
+> | Promedio del cocinero unificado en todo el sistema (cierra el punto 12)                                         | ✅     |
+> | Perfil público del cliente (cierra el punto 2 de `PENDIENTE_DASHBOARD_COCINERO.md`)                             | ✅     |
+> | El bug del `queryKey` de "Solo con respuesta"                                                                   | ✅     |
+>
+> **Verificado sin la app**, que sigue sin poder arrancar (sección 15): los tres
+> comandos pasan —lint sin advertencias, typecheck en los 5 workspaces, 377
+> pruebas— y la migración se ensayó contra `foodhub-dev` dentro de una
+> transacción con ROLLBACK: las 275 filas se traspasan exactas (206 de plato, 3
+> al cocinero, 66 al cliente), el CHECK rechaza una reseña sin destino y otra
+> con dos, y el índice parcial rechaza la reseña duplicada.
+>
+> **Falta correr `pnpm db:migrate`.** Ver la sección 16.
+
 > ## Actualización del 2026-09-02 — las siete historias quedaron codificadas
 >
 > La rama `feature/resenas-completar-modulo` cerró **US-RES-04, US-RES-05 y
@@ -170,7 +219,23 @@ migración de enum.
 
 ## 5. RF019 — el listado de reseñas en el detalle del plato
 
-**Estado:** fuera de este PR, por decisión del equipo (2026-08-23).
+**Estado: ✅ RESUELTO el 2026-09-04.** El listado vive ahora en PAN-EXP-05, con
+sus filtros, su orden, su paginación de a diez y su galería: es el mismo
+componente que servía al perfil, parametrizado por objeto reseñado.
+
+Entró junto con la corrección del modelo y no por su cuenta: al sacar las
+reseñas de platos del perfil del cocinero había que darles un lugar, y el
+detalle del plato es donde sirven —es lo que un cliente lee justo antes de
+decidir si lo pide—.
+
+`DetalleDePlato` pasó de `ScrollView` a lista con el detalle como encabezado:
+anidar el `FlatList` de reseñas dentro del scroll rompía la virtualización. El
+`PieDeAccion` **no se movió**, con su medición de alto y el botón flotante del
+carrito.
+
+Lo que sigue es el registro de por qué estuvo diferido.
+
+**Estado anterior:** fuera de aquel PR, por decisión del equipo (2026-08-23).
 
 La corrección de RF019 pide dos cosas sobre PAN-EXP-05. Una está y la otra no:
 
@@ -379,9 +444,34 @@ Si da tres o más, el comportamiento es correcto y no hay nada que arreglar.
 
 ---
 
-## 12. Exploración sigue mostrando el promedio viejo — RF082
+## 12. Exploración mostraba el promedio viejo — RF082
 
-**Estado:** abierto. Es la mitad de RF082 que no entró, por acuerdo de alcance.
+**Estado: ✅ RESUELTO el 2026-09-04.** `subconsultaValoracionPorCocinero` agrega
+ahora sobre las reseñas AL cocinero, así que el feed, el mapa, las tarjetas,
+favoritos, el carrito y los pedidos muestran **el mismo número** que el perfil.
+
+Se cerró junto con la corrección del modelo porque el argumento de alcance que
+lo había dejado abierto se cayó: hasta entonces la contradicción vivía entre un
+badge del feed y un bloque agregado del perfil; desde que el perfil muestra el
+listado **con nombre y apellido de quién puso cada estrella**, quedaba a dos
+toques de distancia.
+
+**El mínimo de reseñas sigue aplicando**, y esa es la otra mitad. El bloque de
+reputación viejo no lo aplicaba y la subconsulta sí: mantener esa diferencia
+habría conservado los dos números distintos que el cambio venía a eliminar.
+Ahora los dos salen de `resena_minimo_para_promedio`, y el resumen del listado
+del perfil usa el mismo umbral. El parámetro sigue rigiendo, además, el promedio
+**por plato**.
+
+> ⚠️ **Efecto inmediato en `foodhub-dev`:** hoy hay 3 reseñas al cocinero en toda
+> la base, así que después de migrar **ningún cocinero alcanza el mínimo** y todo
+> el feed muestra "Sin calificaciones aún". No es un defecto: es que el dataset
+> nunca tuvo esta métrica. Se resuelve corriendo `pnpm db:seed`, que desde esta
+> corrección siembra también esa dirección (`sembrarResenasDeCocinero`).
+
+Lo que sigue es el registro de por qué estuvo abierto.
+
+**Estado anterior:** abierto, la mitad de RF082 que no entró por acuerdo de alcance.
 
 RF082 cambió de raíz de dónde sale la reputación del cocinero:
 
@@ -442,13 +532,22 @@ desaparecería por el `ON DELETE CASCADE` de `publicacion_id`.
 diagrama vigente (`FoodHub - DG12082026_V5.drawio`). La migración `0014` no lo
 hizo, por un motivo concreto: **la carpeta `../Docs/` no existe en este clon**.
 
-Lo que hay que reflejar cuando se pueda:
+Lo que hay que reflejar cuando se pueda, ya con la corrección del 2026-09-04:
 
-- La entidad `CalificacionCocinero` del diagrama **cambia de significado**: pasa
-  a llamarse `CalificacionACliente` (el cocinero evalúa al cliente).
-- Entra `CalificacionACocinero`, nueva, con FK a `Pedido` y unicidad por pedido.
+- **`Resena` absorbe a las otras dos.** Queda una sola entidad con un
+  discriminador `tipoResena` (PLATO / COCINERO / CLIENTE) y tres asociaciones
+  excluyentes: a `Publicacion`, a `Cocinero` y a `Usuario`. Es una jerarquía
+  resuelta con discriminador, igual que `Mensaje`.
+- **`CalificacionACliente` y `CalificacionACocinero` desaparecen** del diagrama.
+  La primera existía desde el V5; la segunda entró con la migración `0014` y
+  nunca llegó a ser correcta —colgaba de `Pedido`, que es justamente lo que esta
+  corrección revierte—.
+- **`Resena` no tiene ninguna asociación con `Pedido`**, en ninguna dirección.
+- `ReaccionResena`, `RespuestaCocinero` y `ReporteResena` **no cambian**: siguen
+  colgando de `Resena`, y ahora sirven a los tres tipos.
 - Las matrices de trazabilidad suman la fila **US-RES-07 / RF087 / PAN-RES-03**,
-  y el actor de US-RES-06 pasa a incluir **Administrador**.
+  el actor de US-RES-06 pasa a incluir **Administrador**, y el perfil público del
+  cliente necesita un código PAN (hoy anotado como `PAN-?`).
 
 ---
 
@@ -529,3 +628,76 @@ suma es `0013_sembrar_terminos_moderacion`, que siembra un parámetro vacío.
 El promedio público del cocinero pasa a ocultarse hasta alcanzar
 `resena_minimo_para_promedio` (3 por defecto). **Es un cambio intencional en lo
 que muestra Exploración**, aprobado por el equipo el 2026-08-23.
+
+---
+
+## 16. Falta aplicar la migración `0015`
+
+**Estado:** abierto, y es lo primero que hay que hacer.
+
+`foodhub-dev` es compartida y el código anterior deja de funcionar en cuanto
+esto corra, así que hay que avisar al equipo. Antes de migrar:
+
+```bash
+pg_dump -t calificacion_a_cliente -t calificacion_a_cocinero -t resena
+```
+
+```sql
+-- cuántas filas se consolidan (al 2026-09-04 daba 0)
+select count(*) - count(distinct (cliente_id, cocinero_id))
+  from calificacion_a_cocinero;
+```
+
+Después:
+
+```bash
+pnpm db:migrate
+pnpm db:seed     # necesario: sin él ningún cocinero alcanza el mínimo (punto 12)
+```
+
+Y comprobar a mano lo que el ensayo ya verificó con ROLLBACK:
+
+```sql
+-- tiene que dar dos números iguales
+select count(*), count(distinct (autor_id, cocinero_res_id))
+  from resena where tipo_resena = 'COCINERO';
+```
+
+**Ojo con el journal.** La base tiene dos migraciones sin registrar
+(`0002_seed_ayuda` y `0012_sembrar_horario_atencion_soporte`) que `db:migrate`
+va a aplicar de paso. Las dos son idempotentes (`ON CONFLICT DO NOTHING`), así
+que no rompen nada, pero conviene saberlo antes de ver el log.
+
+---
+
+## 17. Divergencias deliberadas respecto de la especificación
+
+Tres cosas que el documento del módulo pide y que esta corrección **no cumple a
+propósito**. Van acá para que la Etapa 6 tenga con qué contrastarlas y no se
+lean como omisiones.
+
+**1. La reseña al cocinero ya no se ancla al pedido.** RF087 la define como una
+por pedido, con una ventana de edición de 48 horas que "no se reabre, dado que
+la calificación refiere a la experiencia de un pedido determinado". Con el
+cambio de modelo mueren las tres cosas: la unicidad por pedido, la ventana y la
+fecha del pedido en la cabecera del formulario. La reseña sobre una persona es
+la opinión vigente y se edita siempre. **Decisión del usuario, 2026-09-04**, y
+es la corrección de fondo del módulo: el anclaje al pedido permitía que un
+cliente frecuente pesara varias veces sobre la misma reputación.
+
+**2. El ícono de reportar.** US-RES-06 pide textualmente "un ícono de tres
+puntos verticales que, al presionarlo, despliegue un menú contextual con la
+opción 'Reportar reseña'". Se reemplazó por una **bandera** (reportar una reseña
+ajena) y un **tacho** (eliminar la propia), con acción directa. El menú tenía
+una sola opción —la que corresponda a quién mira— así que era un paso de más
+detrás de un control que no anticipaba nada. **Los dos literales del criterio
+sobreviven como `accessibilityLabel`**, de modo que "Reportar reseña" y
+"Eliminar mi reseña" siguen siendo verificables palabra por palabra.
+
+**3. El perfil del cocinero no lista las reseñas de sus platos.** US-RES-03 las
+ubica ahí. Se movieron al detalle del plato (RF019): en el perfil eran un
+listado sobre comida colgando de un perfil sobre una persona, y con su propio
+promedio al lado del de la ficha. El resto del criterio —resumen con
+distribución, paginado de a diez, los cuatro órdenes, los tres filtros, la
+galería y el estado vacío con su botón— **se cumple igual**, ahora sobre las
+reseñas al cocinero.
