@@ -1,11 +1,5 @@
 import { and, asc, avg, count, eq, inArray, sql, type SQL } from 'drizzle-orm';
-import {
-  calificacionACliente,
-  itemPedido,
-  pedido,
-  resena,
-  usuario,
-} from '@foodhub/db';
+import { itemPedido, pedido, resena, usuario } from '@foodhub/db';
 import type {
   ContadoresPedido,
   EstadoPedido,
@@ -67,14 +61,18 @@ export const siguienteNumeroPedido = sql<string>`'FH-' || lpad(nextval('pedido_n
 export function subconsultaValoracionPorCliente() {
   const tabla = db
     .select({
-      clienteId: calificacionACliente.clienteEvaluadoId,
-      promedio: avg(calificacionACliente.calificacion).as(
-        'valoracion_promedio',
-      ),
+      clienteId: resena.clienteDestinoId,
+      promedio: avg(resena.calificacion).as('valoracion_promedio'),
       cantidad: count().as('cantidad_calificaciones'),
     })
-    .from(calificacionACliente)
-    .groupBy(calificacionACliente.clienteEvaluadoId)
+    .from(resena)
+    // El filtro por tipo no es opcional: sin el, el promedio del cliente
+    // sumaria tambien las resenas de platos y las de cocineros, que viven en
+    // la misma tabla desde la migracion 0015.
+    .where(
+      and(eq(resena.tipoResena, 'CLIENTE'), eq(resena.estadoResena, 'VISIBLE')),
+    )
+    .groupBy(resena.clienteDestinoId)
     .as('valoracion_por_cliente');
 
   return { tabla, promedio: tabla.promedio };
@@ -107,25 +105,27 @@ export function clienteTienePlatosSinResenar(clienteId: string): SQL<boolean> {
        and not exists (
          select 1
            from ${resena}
-          where ${resena.publicacionId} = ${itemPedido.publicacionId}
-            and ${resena.clienteResId} = ${clienteId}
+          where ${resena.tipoResena} = 'PLATO'
+            and ${resena.publicacionId} = ${itemPedido.publicacionId}
+            and ${resena.autorId} = ${clienteId}
        )
   )`;
 }
 
 /**
- * El cocinero todavia no califico al cliente de este pedido (US-PED-08).
+ * El cocinero todavia no resenó al cliente de este pedido (US-PED-08).
  *
- * La calificacion es UNA POR PAR cocinero-cliente
- * (`calificacion_cocinero_uq`), no una por pedido: si el cocinero ya califico a
- * ese cliente en un pedido anterior, el boton "Calificar cliente" no vuelve a
- * aparecer, y lo que corresponde es editar la calificacion que ya existe.
+ * La resena es UNA POR PAR cocinero-cliente (`resena_cliente_uq`), no una por
+ * pedido: si el cocinero ya resenó a ese cliente en un pedido anterior, el
+ * boton "Calificar cliente" no vuelve a aparecer, y lo que corresponde es
+ * editar la que ya existe.
  */
 export const cocineroNoCalificoAlCliente = sql<boolean>`not exists (
   select 1
-    from ${calificacionACliente}
-   where ${calificacionACliente.cocineroEvaluadorId} = ${pedido.cocineroPedidoId}
-     and ${calificacionACliente.clienteEvaluadoId} = ${pedido.clientePedidoId}
+    from ${resena}
+   where ${resena.tipoResena} = 'CLIENTE'
+     and ${resena.autorId} = ${pedido.cocineroPedidoId}
+     and ${resena.clienteDestinoId} = ${pedido.clientePedidoId}
 )`;
 
 /**
@@ -216,8 +216,9 @@ export async function leerItemsDePedidos(
   const yaResenado = clienteIdParaResenas
     ? sql<boolean>`exists (
         select 1 from ${resena}
-         where ${resena.publicacionId} = ${itemPedido.publicacionId}
-           and ${resena.clienteResId} = ${clienteIdParaResenas}
+         where ${resena.tipoResena} = 'PLATO'
+           and ${resena.publicacionId} = ${itemPedido.publicacionId}
+           and ${resena.autorId} = ${clienteIdParaResenas}
       )`
     : sql<boolean>`false`;
 

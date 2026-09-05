@@ -533,6 +533,17 @@ export const TEXTOS_MODERACION = {
   sinComentario: 'La reseña no tiene comentario.',
   plato: 'Plato',
   cocinero: 'Cocinero',
+  /**
+   * [PROPIO] Qué se reseñó. La cola de moderación recibe los tres tipos desde
+   * que comparten tabla, y el administrador necesita distinguirlos: no es lo
+   * mismo ocultar una opinión sobre un plato que una sobre una persona.
+   */
+  tipoDeResena: {
+    PLATO: 'Reseña de un plato',
+    COCINERO: 'Reseña a un cocinero',
+    CLIENTE: 'Reseña a un cliente',
+  },
+
   autor: 'Autor de la reseña',
   primerReporte: 'Primer reporte',
 

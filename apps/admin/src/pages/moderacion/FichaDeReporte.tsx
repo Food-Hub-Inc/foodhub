@@ -68,14 +68,35 @@ export function FichaDeReporte({
   );
 }
 
-/** La reseña original: quién, sobre qué plato, cuántas estrellas y qué dijo. */
+/**
+ * La reseña original: de qué tipo es, quién la escribió, sobre quién o qué,
+ * cuántas estrellas y qué dijo.
+ *
+ * EL TIPO VA PRIMERO Y NO ES DECORACIÓN. Desde que las tres reseñas comparten
+ * tabla, la cola trae reportes sobre reseñas de un plato y sobre opiniones
+ * acerca de un cocinero, y se moderan con criterios distintos: ocultar la
+ * primera saca una opinión sobre comida, ocultar la segunda saca una sobre una
+ * persona. Sin el rótulo, el administrador no sabe cuál de las dos está por
+ * ocultar.
+ *
+ * Las dos líneas de contexto son condicionales por lo mismo: una opinión sobre
+ * un cocinero no tiene plato, y antes esta ficha las daba por hechas.
+ */
 function ResenaDenunciada({ resena }: { resena: ReporteModeracion['resena'] }) {
   return (
     <div className="space-y-2 rounded-md bg-background p-4">
+      <span className="inline-block rounded-full bg-surface px-2.5 py-1 text-caption font-semibold text-text-secondary">
+        {TEXTOS_MODERACION.tipoDeResena[resena.tipo]}
+      </span>
+
       <div className="flex flex-wrap gap-x-6 gap-y-1 text-caption text-text-secondary">
         <span>{`${TEXTOS_MODERACION.autor}: ${resena.autorNombre}`}</span>
-        <span>{`${TEXTOS_MODERACION.plato}: ${resena.nombrePlato}`}</span>
-        <span>{`${TEXTOS_MODERACION.cocinero}: ${resena.cocineroNombre}`}</span>
+        {resena.nombrePlato === null ? null : (
+          <span>{`${TEXTOS_MODERACION.plato}: ${resena.nombrePlato}`}</span>
+        )}
+        {resena.cocineroNombre === null ? null : (
+          <span>{`${TEXTOS_MODERACION.cocinero}: ${resena.cocineroNombre}`}</span>
+        )}
       </div>
 
       <p className="text-body font-bold text-warning">

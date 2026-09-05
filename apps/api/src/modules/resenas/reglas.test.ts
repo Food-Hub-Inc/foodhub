@@ -2,11 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   contieneTerminoModerado,
   dentroDelPlazoParaResenar,
-  HORAS_VENTANA_EDICION_CALIFICACION_COCINERO,
   HORAS_VENTANA_EDICION_RESENA,
   limiteDeEdicionResena,
   MENSAJES_RESENA,
-  ventanaDeCalificacionAbierta,
   ventanaDeEdicionAbierta,
 } from '@foodhub/shared';
 import { aAutor, aResenaPublica, type FilaResena } from './consultas.js';
@@ -176,6 +174,7 @@ describe('contieneTerminoModerado', () => {
 function filaDeEjemplo(cambios: Partial<FilaResena> = {}): FilaResena {
   return {
     id: 'a1b2c3d4-0000-4000-8000-000000000001',
+    tipoResena: 'PLATO',
     publicacionId: 'a1b2c3d4-0000-4000-8000-000000000002',
     calificacion: 5,
     comentario: 'Excelente',
@@ -228,8 +227,12 @@ describe('aResenaPublica', () => {
   it('muestra el nombre del plato y habilita el enlace si la publicación está activa', () => {
     const publica = aResenaPublica(filaDeEjemplo());
 
-    expect(publica.nombrePlato).toBe('Milanesa napolitana');
-    expect(publica.enlaceAlPlatoHabilitado).toBe(true);
+    expect(publica.tipo).toBe('PLATO');
+    expect(publica.plato).toEqual({
+      publicacionId: 'a1b2c3d4-0000-4000-8000-000000000002',
+      nombre: 'Milanesa napolitana',
+      enlaceHabilitado: true,
+    });
   });
 
   /**
@@ -240,65 +243,79 @@ describe('aResenaPublica', () => {
   it('sustituye el nombre y deshabilita el enlace si la publicación fue dada de baja', () => {
     const publica = aResenaPublica(filaDeEjemplo({ publicacionActiva: false }));
 
-    expect(publica.nombrePlato).toBe(MENSAJES_RESENA.platoNoDisponible);
-    expect(publica.enlaceAlPlatoHabilitado).toBe(false);
+    expect(publica.plato?.nombre).toBe(MENSAJES_RESENA.platoNoDisponible);
+    expect(publica.plato?.enlaceHabilitado).toBe(false);
   });
 
   it('normaliza los tags ausentes a una lista vacía', () => {
     expect(aResenaPublica(filaDeEjemplo({ tags: null })).tags).toEqual([]);
   });
+
+  /**
+   * Las tres resenas comparten tabla desde la migracion 0015, asi que el mapeo
+   * es lo unico que impide que una opinion sobre un cocinero salga al contrato
+   * con un plato pegado.
+   */
+  it('no adjunta plato a una reseña que no es de un plato', () => {
+    const publica = aResenaPublica(
+      filaDeEjemplo({
+        tipoResena: 'COCINERO',
+        publicacionId: null,
+        nombrePlato: null,
+        publicacionActiva: null,
+      }),
+    );
+
+    expect(publica.tipo).toBe('COCINERO');
+    expect(publica.plato).toBeNull();
+  });
+
+  /**
+   * US-RES-02: la resena a un cliente no es visible para el cliente ni para
+   * otros clientes, asi que no hay conversacion publica sobre ella. `social`
+   * en `null` es lo que le dice a la tarjeta que no dibuje reacciones, ni
+   * respuesta, ni el boton de reportar.
+   */
+  it('no expone reacciones ni reporte en una reseña a un cliente', () => {
+    const publica = aResenaPublica(
+      filaDeEjemplo({
+        tipoResena: 'CLIENTE',
+        publicacionId: null,
+        nombrePlato: null,
+        publicacionActiva: null,
+      }),
+    );
+
+    expect(publica.social).toBeNull();
+    expect(publica.plato).toBeNull();
+  });
+
+  /** En cambio las de plato y las de cocinero si la tienen. */
+  it('expone la conversación pública en las reseñas de plato y de cocinero', () => {
+    expect(aResenaPublica(filaDeEjemplo()).social).not.toBeNull();
+    expect(
+      aResenaPublica(
+        filaDeEjemplo({
+          tipoResena: 'COCINERO',
+          publicacionId: null,
+          nombrePlato: null,
+          publicacionActiva: null,
+        }),
+      ).social,
+    ).not.toBeNull();
+  });
 });
 
 /**
- * US-RES-07 - La ventana de la calificacion al cocinero.
+ * US-RES-07 - La resena al cocinero NO TIENE VENTANA DE EDICION.
  *
- * SE PRUEBA APARTE DE `ventanaDeEdicionAbierta` aunque las dos duren 48 horas,
- * porque la diferencia entre ellas es justo lo que un cambio distraido podria
- * borrar: la de la resena SE REABRE con cada pedido completado del mismo plato
- * y esta no se reabre nunca. Una prueba que solo mirara el numero 48 pasaria
- * igual si alguien unificara las dos reglas por error.
+ * Aca habia un `describe` de `ventanaDeCalificacionAbierta`, que comprobaba
+ * que la calificacion al cocinero se congelaba a las 48 horas y no se reabria.
+ * Esa regla se cayo con el modelo: la ventana se justificaba en que la
+ * calificacion referia a la experiencia de UN PEDIDO, y al pasar a ser una por
+ * cocinero es la opinion vigente del cliente sobre esa persona. Congelarla
+ * obligaria a arrastrar para siempre una opinion que ya cambio.
+ *
+ * La ventana de la resena DE PLATO sigue viva y se prueba mas arriba: esa si
+ * describe un producto que se consumio una vez.
  */
-describe('ventanaDeCalificacionAbierta', () => {
-  const publicada = new Date('2026-09-01T10:00:00Z');
-
-  it('está abierta apenas se publica', () => {
-    expect(ventanaDeCalificacionAbierta(publicada, publicada)).toBe(true);
-  });
-
-  it('sigue abierta un minuto antes de las 48 horas', () => {
-    const casi = new Date(
-      publicada.getTime() +
-        HORAS_VENTANA_EDICION_CALIFICACION_COCINERO * HORA -
-        60_000,
-    );
-    expect(ventanaDeCalificacionAbierta(publicada, casi)).toBe(true);
-  });
-
-  it('se cierra exactamente a las 48 horas', () => {
-    const justo = new Date(
-      publicada.getTime() + HORAS_VENTANA_EDICION_CALIFICACION_COCINERO * HORA,
-    );
-    expect(ventanaDeCalificacionAbierta(publicada, justo)).toBe(false);
-  });
-
-  it('no la reabre el paso del tiempo, a diferencia de la reseña del plato', () => {
-    const unaSemanaDespues = new Date(publicada.getTime() + 7 * DIA);
-    expect(ventanaDeCalificacionAbierta(publicada, unaSemanaDespues)).toBe(
-      false,
-    );
-
-    /*
-     * El contraste explicito: con la MISMA fecha de publicacion, la resena del
-     * plato si vuelve a abrirse cuando hay un pedido completado reciente.
-     */
-    expect(
-      ventanaDeEdicionAbierta(
-        {
-          fechaPublicacion: publicada,
-          ultimoPedidoCompletado: new Date(unaSemanaDespues.getTime() - HORA),
-        },
-        unaSemanaDespues,
-      ),
-    ).toBe(true);
-  });
-});

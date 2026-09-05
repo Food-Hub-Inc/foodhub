@@ -102,7 +102,7 @@ export async function contextosDeResenas(entrada: {
       .where(
         todas([
           inArray(resena.id, [...resenaIds]),
-          eq(resena.clienteResId, usuarioId),
+          eq(resena.autorId, usuarioId),
         ]),
       ),
   ]);
@@ -196,7 +196,7 @@ export async function reaccionar(entrada: {
   const { usuarioId, resenaId, datos } = entrada;
 
   const [suResena] = await db
-    .select({ autorId: resena.clienteResId })
+    .select({ autorId: resena.autorId })
     .from(resena)
     .where(eq(resena.id, resenaId))
     .limit(1);
@@ -273,6 +273,17 @@ export async function responderResena(entrada: {
 
   if (!suResena) throw noEncontrado('la reseña');
 
+  /**
+   * UNA SOLA COMPARACION CUBRE LOS TRES TIPOS, porque `cocinero_res_id`
+   * significa "el cocinero al que le toca esta resena" en los tres:
+   *
+   *   PLATO     el dueno del plato resenado
+   *   COCINERO  el cocinero resenado, que es quien tiene derecho a replica
+   *   CLIENTE   NULL, con lo cual nunca coincide y la respuesta se rechaza
+   *
+   * Ese ultimo caso es el que hay que preservar: las resenas a un cliente no
+   * se responden porque el cliente ni siquiera las ve.
+   */
   if (suResena.cocineroResId !== cocineroId) {
     throw new AppError(
       403,
@@ -395,7 +406,7 @@ export async function reportarResena(entrada: {
   const { usuarioId, resenaId, datos } = entrada;
 
   const [suResena] = await db
-    .select({ autorId: resena.clienteResId })
+    .select({ autorId: resena.autorId })
     .from(resena)
     .where(eq(resena.id, resenaId))
     .limit(1);
@@ -445,7 +456,7 @@ export async function eliminarMiResena(entrada: {
   const { clienteId, resenaId } = entrada;
 
   const [existente] = await db
-    .select({ autorId: resena.clienteResId })
+    .select({ autorId: resena.autorId })
     .from(resena)
     .where(eq(resena.id, resenaId))
     .limit(1);

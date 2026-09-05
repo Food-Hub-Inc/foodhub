@@ -10,9 +10,12 @@ import {
 import {
   MENSAJES_RESENA,
   type AutorResena,
+  type PlatoResenado,
   type ResenaPublica,
   type RespuestaCocinero,
+  type SocialDeResena,
   type TipoReaccion,
+  type TipoResena,
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
 
@@ -127,6 +130,42 @@ export async function hubopedidoAceptado(entrada: {
 }
 
 /**
+ * `true` si el cliente tuvo con ese cocinero al menos un pedido que ALCANZO el
+ * estado COMPLETADO (US-RES-07).
+ *
+ * ES POR COCINERO Y NO POR PEDIDO, y ahi estaba el defecto que esta correccion
+ * revierte: la resena al cocinero se anclaba al pedido, con lo cual un cliente
+ * podia dejar una por cada pedido y multiplicar su peso sobre la reputacion.
+ * El pedido solo habilita; la resena es una sola por cocinero.
+ *
+ * Alcanza con que exista UNO: no interesa cual ni cuando, solo el derecho.
+ */
+export async function existePedidoCompletadoConCocinero(entrada: {
+  clienteId: string;
+  cocineroId: string;
+}): Promise<boolean> {
+  const [fila] = await db
+    .select({ existe: sql<number>`1` })
+    .from(pedido)
+    .innerJoin(
+      historialEstadoPedido,
+      todas([
+        eq(historialEstadoPedido.pedidoId, pedido.id),
+        eq(historialEstadoPedido.estadoPedidoActual, 'COMPLETADO'),
+      ]),
+    )
+    .where(
+      todas([
+        eq(pedido.clientePedidoId, entrada.clienteId),
+        eq(pedido.cocineroPedidoId, entrada.cocineroId),
+      ]),
+    )
+    .limit(1);
+
+  return fila !== undefined;
+}
+
+/**
  * Pedidos COMPLETADOS que acumula un cliente en toda la plataforma.
  *
  * Es el umbral de "Cliente nuevo" (US-RES-02). Cuenta pedidos, no
@@ -158,14 +197,20 @@ export async function pedidosCompletadosDelCliente(
 // ---------------------------------------------------------------------------
 
 /**
- * Columnas de una resena tal como la dibuja el perfil publico (US-RES-03).
+ * Columnas de una resena, cualquiera sea su tipo.
  *
- * `nombrePlato` y `enlaceHabilitado` NO son columnas de la base: se derivan de
- * `publicacion.activo`. La baja de un plato es logica y la resena sobrevive,
- * pero deja de tener a donde enlazar.
+ * `nombrePlato` y `publicacionActiva` NO son columnas de `resena`: salen del
+ * LEFT JOIN con `publicacion` y son `null` salvo en las de tipo PLATO. El join
+ * tiene que ser LEFT y no INNER justamente por eso -una resena a un cocinero o
+ * a un cliente no tiene plato-, y con INNER esas filas desaparecerian del
+ * listado sin dar ningun error.
+ *
+ * La baja de un plato es logica: la resena sobrevive y sigue promediando, pero
+ * deja de tener a donde enlazar.
  */
 export const columnasResena = {
   id: resena.id,
+  tipoResena: resena.tipoResena,
   publicacionId: resena.publicacionId,
   calificacion: resena.calificacion,
   comentario: resena.comentario,
@@ -184,15 +229,16 @@ export const columnasResena = {
 
 export interface FilaResena {
   id: string;
-  publicacionId: string;
+  tipoResena: TipoResena;
+  publicacionId: string | null;
   calificacion: number;
   comentario: string | null;
   tags: string[] | null;
   fotoUrl: string | null;
   editada: boolean;
   fechaPublicacion: Date;
-  nombrePlato: string;
-  publicacionActiva: boolean;
+  nombrePlato: string | null;
+  publicacionActiva: boolean | null;
   autorId: string;
   autorNombre: string;
   autorApellido: string;
@@ -247,6 +293,52 @@ export function aAutor(fila: FilaResena): AutorResena {
   };
 }
 
+/**
+ * El plato resenado, o `null` si esta resena no es sobre un plato.
+ *
+ * Funcion PURA. Devuelve `null` en dos casos que conviene no confundir: la
+ * resena no es de tipo PLATO -no hay plato del que hablar-, y la resena es de
+ * plato pero el join no trajo la publicacion, que no deberia pasar y por eso
+ * se trata igual que la ausencia en vez de romper el listado entero.
+ */
+export function aPlatoResenado(fila: FilaResena): PlatoResenado | null {
+  if (fila.tipoResena !== 'PLATO') return null;
+  if (fila.publicacionId === null || fila.nombrePlato === null) return null;
+
+  const activa = fila.publicacionActiva ?? false;
+  return {
+    publicacionId: fila.publicacionId,
+    nombre: activa ? fila.nombrePlato : MENSAJES_RESENA.platoNoDisponible,
+    enlaceHabilitado: activa,
+  };
+}
+
+/**
+ * La conversacion publica alrededor de la resena, o `null` si su tipo no la
+ * admite.
+ *
+ * LAS RESENAS A UN CLIENTE NO LA TIENEN: el cliente no las ve, asi que no hay
+ * reacciones, respuesta ni reporte que mostrar. Devolver `null` -y no un
+ * objeto en cero- es lo que le permite a la tarjeta no dibujar el pie social
+ * en vez de dibujarlo vacio.
+ */
+export function aSocialDeResena(
+  fila: FilaResena,
+  contexto: ContextoDeResena,
+): SocialDeResena | null {
+  if (fila.tipoResena === 'CLIENTE') return null;
+
+  return {
+    reacciones: {
+      meGusta: contexto.meGusta,
+      noMeGusta: contexto.noMeGusta,
+      mia: contexto.miReaccion,
+    },
+    respuesta: contexto.respuesta,
+    reportadaPorMi: contexto.reportadaPorMi,
+  };
+}
+
 /** Mapeador PURO de una fila al contrato publico de la resena. */
 export function aResenaPublica(
   fila: FilaResena,
@@ -254,25 +346,16 @@ export function aResenaPublica(
 ): ResenaPublica {
   return {
     id: fila.id,
+    tipo: fila.tipoResena,
     autor: aAutor(fila),
-    publicacionId: fila.publicacionId,
-    nombrePlato: fila.publicacionActiva
-      ? fila.nombrePlato
-      : MENSAJES_RESENA.platoNoDisponible,
-    enlaceAlPlatoHabilitado: fila.publicacionActiva,
+    plato: aPlatoResenado(fila),
     calificacion: fila.calificacion,
     comentario: fila.comentario,
     tags: fila.tags ?? [],
     fotoUrl: fila.fotoUrl,
     editada: fila.editada,
     fechaPublicacion: fila.fechaPublicacion.toISOString(),
-    reacciones: {
-      meGusta: contexto.meGusta,
-      noMeGusta: contexto.noMeGusta,
-      mia: contexto.miReaccion,
-    },
-    respuesta: contexto.respuesta,
+    social: aSocialDeResena(fila, contexto),
     esMia: contexto.esMia,
-    reportadaPorMi: contexto.reportadaPorMi,
   };
 }

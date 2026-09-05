@@ -1,29 +1,39 @@
 import { z } from 'zod';
-import { ESTADO_RESENA, TIPO_REACCION } from '../constants/enums.js';
+import {
+  ESTADO_RESENA,
+  TIPO_REACCION,
+  TIPO_RESENA,
+} from '../constants/enums.js';
 import { MENSAJES_RESENA } from '../constants/mensajes.js';
 
 /**
  * Contratos del modulo de Resenas y Calificaciones
- * (US-RES-01 a US-RES-03, RF080 a RF082).
+ * (US-RES-01 a US-RES-07, RF080 a RF087).
  *
- * LA RESENA ES POR PLATO, NO POR PEDIDO (decision del equipo, 2026-08-18). El
- * objeto resenado es la publicacion: una resena por par cliente-publicacion,
- * editable. El pedido no aparece en ningun contrato de este archivo porque no
- * es parte del objeto resenado; solo habilita el derecho a opinar, y esa
- * verificacion la hace el servidor contra `pedido` e `item_pedido`.
+ * UNA RESENA SE IDENTIFICA POR (AUTOR, OBJETO RESENADO), y el objeto es un
+ * PLATO, un COCINERO o un CLIENTE. Hay una sola resena por autor y objeto: si
+ * se vuelve a opinar, se edita la que ya existe.
  *
- * TRES PLAZOS QUE CONVIVEN Y SE CONFUNDEN FACIL:
+ * EL PEDIDO NO APARECE EN NINGUN CONTRATO DE ESTE ARCHIVO. No es parte del
+ * objeto resenado: solo habilita el derecho a opinar, y esa verificacion la
+ * hace el servidor contra el historial de pedidos. Que el cliente mandara el
+ * pedido seria darle a elegir con cual se habilita.
  *
- *   14 dias   para CREAR la resena, desde que se completa el pedido. Sale del
- *             parametro `resena_limite_dias_para_resenar` (PAN-ADM-04).
- *   48 horas  para EDITAR una resena ya publicada, desde su publicacion. Cada
- *             nuevo pedido completado con el mismo plato REABRE la ventana.
- *   3 resenas minimo para que el promedio del cocinero sea publico. Sale de
+ * DOS PLAZOS Y UN UMBRAL QUE SE CONFUNDEN FACIL:
+ *
+ *   14 dias   para CREAR la resena de un plato, desde que se completa el
+ *             pedido. Sale del parametro `resena_limite_dias_para_resenar`
+ *             (PAN-ADM-04).
+ *   48 horas  para EDITAR una resena de PLATO ya publicada. Cada nuevo pedido
+ *             completado con el mismo plato REABRE la ventana. Las resenas a
+ *             un cocinero y a un cliente NO tienen ventana: son la opinion
+ *             vigente sobre una persona y se editan siempre.
+ *   3 resenas minimo para que el promedio POR PLATO sea publico. Sale de
  *             `resena_minimo_para_promedio`. No es un plazo, pero es el tercer
  *             umbral parametrizable del modulo y se olvida igual de seguido.
  *
- * Los dos primeros se resuelven con las funciones puras de mas abajo, que se
- * prueban sin base de datos. El tercero vive en `lib/valoraciones.ts` porque lo
+ * Los dos plazos se resuelven con las funciones puras de mas abajo, que se
+ * prueban sin base de datos. El umbral vive en `lib/valoraciones.ts` porque lo
  * aplican tambien Exploracion y Publicaciones.
  */
 
@@ -57,6 +67,24 @@ export const TAGS_CALIFICACION_CLIENTE = [
   'Coordinación clara',
 ] as const;
 export type TagCalificacionCliente = (typeof TAGS_CALIFICACION_CLIENTE)[number];
+
+/**
+ * Tags de la calificacion al cocinero (RF087).
+ *
+ * ACA VIVEN "Puntualidad" Y "Atencion del cocinero", los dos que la version
+ * corregida del modulo retiro del formulario de resena de plato: evaluan el
+ * SERVICIO del pedido y no el producto. Que "Buena comunicacion" aparezca
+ * tambien en `TAGS_CALIFICACION_CLIENTE` no es un error: las dos direcciones
+ * valoran la coordinacion y cada lista responde a su propio criterio.
+ */
+export const TAGS_CALIFICACION_COCINERO = [
+  'Puntualidad',
+  'Atención del cocinero',
+  'Buena comunicación',
+  'Pedido completo',
+] as const;
+export type TagCalificacionCocinero =
+  (typeof TAGS_CALIFICACION_COCINERO)[number];
 
 /**
  * Etiqueta que acompana a cada valor del selector de estrellas (US-RES-01).
@@ -202,54 +230,85 @@ const calificacionSchema = z
   .max(5, MENSAJES_RESENA.calificacionRequerida);
 
 /**
- * Campos editables de una resena. Se comparten entre el alta y la edicion
- * porque son exactamente los mismos: lo que cambia es que el alta ademas
- * necesita saber QUE publicacion se resena.
+ * Lo que tienen en comun las tres resenas: la nota y un comentario opcional.
+ *
+ * El tope del comentario NO esta aca porque cambia con el tipo -500 en PLATO y
+ * COCINERO, 300 en CLIENTE-, y tampoco los tags, que son un set distinto por
+ * tipo. Cada rama del alta agrega los suyos.
  */
-const cuerpoResenaSchema = z.object({
-  calificacion: calificacionSchema,
-  comentario: z
+const comentarioHasta = (maximo: number) =>
+  z
     .string()
     .trim()
-    .max(500, 'El comentario no puede superar los 500 caracteres.')
-    .optional(),
+    .max(maximo, `El comentario no puede superar los ${maximo} caracteres.`)
+    .optional();
+
+const camposDeResenaDePlato = {
+  calificacion: calificacionSchema,
+  comentario: comentarioHasta(500),
   tags: z.array(z.enum(TAGS_RESENA_PLATO)).max(TAGS_RESENA_PLATO.length),
   // La imagen se sube antes a Supabase Storage con una URL firmada; aca solo
   // viaja la URL publica resultante. La API nunca procesa el binario.
   fotoUrl: z.url().nullable(),
-});
+};
 
-/** US-RES-01 - Alta de la resena. PAN-RES-01. */
-export const crearResenaSchema = cuerpoResenaSchema.extend({
-  publicacionId: z.uuid('La publicación indicada no es válida.'),
-});
-
-/** US-RES-01 - Edicion dentro de la ventana de 48 horas. */
-export const editarResenaSchema = cuerpoResenaSchema;
-
-// ---------------------------------------------------------------------------
-// Entradas — US-RES-02, calificacion del cocinero al cliente
-// ---------------------------------------------------------------------------
-
-/**
- * US-RES-02 - Alta o edicion de la calificacion de un cliente. PAN-RES-02.
- *
- * Un unico contrato para las dos operaciones porque el modelo tiene una sola
- * calificacion vigente por par cocinero-cliente: el endpoint es un PUT y el
- * servicio resuelve si inserta o actualiza. Separar alta y edicion obligaria al
- * cliente de la API a saber de antemano cual de las dos corresponde.
- */
-export const calificarClienteSchema = z.object({
+const camposDeResenaACocinero = {
   calificacion: calificacionSchema,
-  comentario: z
-    .string()
-    .trim()
-    .max(300, 'El comentario no puede superar los 300 caracteres.')
-    .optional(),
+  // 500 y no 300: el criterio de US-RES-07 fija ese tope, distinto del de US-RES-02.
+  comentario: comentarioHasta(500),
+  tags: z
+    .array(z.enum(TAGS_CALIFICACION_COCINERO))
+    .max(TAGS_CALIFICACION_COCINERO.length),
+};
+
+const camposDeResenaACliente = {
+  calificacion: calificacionSchema,
+  comentario: comentarioHasta(300),
   tags: z
     .array(z.enum(TAGS_CALIFICACION_CLIENTE))
     .max(TAGS_CALIFICACION_CLIENTE.length),
-});
+};
+
+/**
+ * Alta de una resena, discriminada por lo que se resena.
+ *
+ * UN SOLO CONTRATO PARA LOS TRES CASOS porque los tres describen el mismo
+ * hecho -alguien opina sobre algo- y solo cambian el destino, el tope del
+ * comentario y el set de tags. La union discriminada deja que zod elija la
+ * rama y rechace, por ejemplo, un tag de plato en una resena al cocinero.
+ *
+ * NINGUNA RAMA RECIBE UN PEDIDO. El derecho a resenar se verifica en el
+ * servidor contra el historial de pedidos; que el cliente mandara el pedido
+ * seria darle a elegir con cual se habilita.
+ */
+export const crearResenaSchema = z.discriminatedUnion('tipo', [
+  z.object({
+    tipo: z.literal('PLATO'),
+    publicacionId: z.uuid('La publicación indicada no es válida.'),
+    ...camposDeResenaDePlato,
+  }),
+  z.object({
+    tipo: z.literal('COCINERO'),
+    cocineroId: z.uuid('El cocinero indicado no es válido.'),
+    ...camposDeResenaACocinero,
+  }),
+  z.object({
+    tipo: z.literal('CLIENTE'),
+    clienteId: z.uuid('El cliente indicado no es válido.'),
+    ...camposDeResenaACliente,
+  }),
+]);
+
+/**
+ * Edicion de una resena existente. No lleva destino -lo determina el id de la
+ * fila- pero si el tipo, para saber contra que set validar los tags. El
+ * servicio verifica que coincida con el de la fila antes de escribir.
+ */
+export const editarResenaSchema = z.discriminatedUnion('tipo', [
+  z.object({ tipo: z.literal('PLATO'), ...camposDeResenaDePlato }),
+  z.object({ tipo: z.literal('COCINERO'), ...camposDeResenaACocinero }),
+  z.object({ tipo: z.literal('CLIENTE'), ...camposDeResenaACliente }),
+]);
 
 // ---------------------------------------------------------------------------
 // Entradas — US-RES-03, listado del perfil publico
@@ -333,22 +392,29 @@ export const respuestaCocineroSchema = z.object({
   puedeEditar: z.boolean(),
 });
 
-/** Una resena en el listado del perfil publico (US-RES-03). */
-export const resenaPublicaSchema = z.object({
-  id: z.uuid(),
-  autor: autorResenaSchema,
+/**
+ * Los datos del plato resenado. Solo viaja en las resenas de tipo PLATO; en
+ * las otras dos es `null`, y eso le alcanza a la tarjeta para saber si dibuja
+ * la linea "Sobre: [plato]".
+ */
+export const platoResenadoSchema = z.object({
   publicacionId: z.uuid(),
   /** Nombre del plato, o "[Plato no disponible]" si la publicacion fue dada de baja. */
-  nombrePlato: z.string(),
+  nombre: z.string(),
   /** `false` cuando la publicacion esta dada de baja: la fila se ve, el enlace no navega. */
-  enlaceAlPlatoHabilitado: z.boolean(),
-  calificacion: z.number().int().min(1).max(5),
-  comentario: z.string().nullable(),
-  tags: z.array(z.string()),
-  fotoUrl: z.url().nullable(),
-  editada: z.boolean(),
-  fechaPublicacion: z.iso.datetime(),
+  enlaceHabilitado: z.boolean(),
+});
 
+/**
+ * La conversacion publica alrededor de una resena: reacciones (US-RES-04),
+ * respuesta del cocinero (US-RES-05) y reporte (US-RES-06).
+ *
+ * ES `null` EN LAS RESENAS DE TIPO CLIENTE, y no es un olvido: el cliente no
+ * las ve, asi que no hay conversacion publica que tener sobre ellas. Que viaje
+ * como un objeto anulable en vez de tres campos sueltos hace que la tarjeta lo
+ * resuelva con una guarda en lugar de con tres condiciones dispersas.
+ */
+export const socialDeResenaSchema = z.object({
   /**
    * US-RES-04. `mia` es la reaccion del usuario de la sesion, o `null`; los
    * contadores son de todos. Viajan siempre, tambien sobre la resena propia:
@@ -359,19 +425,39 @@ export const resenaPublicaSchema = z.object({
     noMeGusta: z.number().int().min(0),
     mia: z.enum(TIPO_REACCION).nullable(),
   }),
-
   /** US-RES-05. `null` mientras el cocinero no haya respondido. */
   respuesta: respuestaCocineroSchema.nullable(),
-
-  /**
-   * `true` si la escribio el usuario de la sesion. Decide dos cosas del menu
-   * contextual de US-RES-06 -reportar ajena, eliminar propia- y si se dibujan
-   * los botones de reaccion.
-   */
-  esMia: z.boolean(),
-
   /** `true` si el usuario de la sesion ya la reporto (US-RES-06). */
   reportadaPorMi: z.boolean(),
+});
+
+/**
+ * Una resena en cualquiera de los cuatro listados que existen: las de un
+ * plato, las de un cocinero, las de los platos de un cocinero y las de un
+ * cliente.
+ *
+ * `tipo` dice sobre que se opino, y de el dependen los dos objetos anulables:
+ * `plato` solo en PLATO, `social` en PLATO y COCINERO.
+ */
+export const resenaPublicaSchema = z.object({
+  id: z.uuid(),
+  tipo: z.enum(TIPO_RESENA),
+  autor: autorResenaSchema,
+  plato: platoResenadoSchema.nullable(),
+  calificacion: z.number().int().min(1).max(5),
+  comentario: z.string().nullable(),
+  tags: z.array(z.string()),
+  fotoUrl: z.url().nullable(),
+  editada: z.boolean(),
+  fechaPublicacion: z.iso.datetime(),
+  social: socialDeResenaSchema.nullable(),
+
+  /**
+   * `true` si la escribio el usuario de la sesion. Decide dos cosas de
+   * US-RES-06 -reportar la ajena, eliminar la propia- y si se dibujan los
+   * botones de reaccion.
+   */
+  esMia: z.boolean(),
 });
 
 /**
@@ -420,14 +506,6 @@ export const estadoResenasSchema = z.object({
   datos: z.array(estadoResenaPublicacionSchema),
 });
 
-/** US-RES-02 - La calificacion que el cocinero de la sesion le puso a un cliente. */
-export const miCalificacionClienteSchema = z.object({
-  calificacion: z.number().int().min(1).max(5),
-  comentario: z.string().nullable(),
-  tags: z.array(z.string()),
-  fechaPublicacion: z.iso.datetime(),
-});
-
 /**
  * US-RES-02 - Reputacion de un cliente, tal como la ve OTRO cocinero en el
  * detalle del pedido.
@@ -442,122 +520,78 @@ export const reputacionClienteSchema = z.object({
   esClienteNuevo: z.boolean(),
 });
 
-// ---------------------------------------------------------------------------
-// US-RES-07 / RF087 — el CLIENTE califica al COCINERO
-// ---------------------------------------------------------------------------
-
 /**
- * Tags de la calificacion al cocinero (RF087).
+ * Perfil publico de un cliente, tal como lo ve un cocinero.
  *
- * ACA VIVEN "Puntualidad" Y "Atencion del cocinero", los dos que la version
- * corregida del modulo retiro del formulario de resena de plato: evaluan el
- * SERVICIO del pedido y no el producto. Que "Buena comunicacion" aparezca
- * tambien en `TAGS_CALIFICACION_CLIENTE` no es un error: las dos direcciones
- * valoran la coordinacion y cada lista responde a su propio criterio.
+ * NO LLEVA `email` NI `ubicacion`, Y NO ES UN DESCUIDO. El correo identifica a
+ * la persona fuera de la plataforma, y `usuario.ubicacion` es el punto exacto
+ * que el cliente declaro -no una zona-, asi que publicarlo a cualquier cocinero
+ * seria decir donde vive. Los dos estan disponibles en la misma consulta que
+ * arma esto: no se agregan.
+ *
+ * Tampoco lleva `motivo_suspension` ni los campos de aceptacion de terminos,
+ * que son internos. Por eso este contrato existe en vez de reusar
+ * `perfilUsuarioSchema`, que si trae todo eso y por lo mismo su endpoint es
+ * `soloAdministrador`.
  */
-export const TAGS_CALIFICACION_COCINERO = [
-  'Puntualidad',
-  'Atención del cocinero',
-  'Buena comunicación',
-  'Pedido completo',
-] as const;
-export type TagCalificacionCocinero =
-  (typeof TAGS_CALIFICACION_COCINERO)[number];
-
-/**
- * Ventana de edicion de la calificacion al cocinero, en horas (RF087).
- *
- * COINCIDE EN 48 CON LA DE LA RESENA PERO NO ES LA MISMA REGLA, y por eso es
- * otra constante: la de la resena SE REABRE con cada pedido completado del
- * mismo plato, y esta no se reabre nunca. "La ventana es independiente de la de
- * las resenas de plato del mismo pedido y no se reabre por pedidos posteriores,
- * dado que la calificacion refiere a la experiencia de un pedido determinado."
- */
-export const HORAS_VENTANA_EDICION_CALIFICACION_COCINERO = 48;
-
-/**
- * `true` si la calificacion al cocinero todavia admite edicion.
- *
- * Funcion PURA, con `ahora` inyectable para poder probarla. Mucho mas simple
- * que `ventanaDeEdicionAbierta`: un solo hito, sin reapertura.
- */
-export function ventanaDeCalificacionAbierta(
-  fechaPublicacion: Date,
-  ahora: Date = new Date(),
-): boolean {
-  const limite =
-    fechaPublicacion.getTime() +
-    HORAS_VENTANA_EDICION_CALIFICACION_COCINERO * 3_600_000;
-  return ahora.getTime() < limite;
-}
-
-/**
- * RF087 - Alta o edicion de la calificacion al cocinero de un pedido.
- *
- * Un solo contrato para las dos operaciones, igual que `calificarClienteSchema`
- * y por el mismo motivo: hay una sola calificacion por pedido y el servicio
- * resuelve si inserta o actualiza.
- *
- * El comentario admite 500 y no 300: el criterio de US-RES-07 fija ese tope,
- * distinto del de US-RES-02.
- */
-export const calificarCocineroSchema = z.object({
-  calificacion: calificacionSchema,
-  comentario: z
-    .string()
-    .trim()
-    .max(500, 'El comentario no puede superar los 500 caracteres.')
-    .optional(),
-  tags: z
-    .array(z.enum(TAGS_CALIFICACION_COCINERO))
-    .max(TAGS_CALIFICACION_COCINERO.length),
-});
-
-/** RF087 - La calificacion que el cliente de la sesion le puso a un pedido. */
-export const calificacionACocineroSchema = z.object({
+export const perfilPublicoClienteSchema = z.object({
   id: z.uuid(),
-  pedidoId: z.uuid(),
-  calificacion: z.number().int().min(1).max(5),
-  comentario: z.string().nullable(),
-  tags: z.array(z.string()),
-  editada: z.boolean(),
-  fechaPublicacion: z.iso.datetime(),
+  nombre: z.string(),
+  apellido: z.string(),
+  fotoPerfilUrl: z.url().nullable(),
+  /** Alimenta el "Miembro desde <mes> de <ano>" de la ficha. */
+  fechaRegistro: z.iso.datetime(),
+  /** La cuenta se dio de baja: la pantalla muestra la identidad como no disponible. */
+  cuentaEliminada: z.boolean(),
+  reputacion: reputacionClienteSchema,
 });
 
-/**
- * RF031 - Cual de las tres acciones dibuja el detalle del pedido para la
- * calificacion al cocinero: "Calificar al cocinero", "Editar mi calificacion"
- * o "Ver mi calificacion".
- *
- * Se resuelve en el servidor por el mismo motivo que
- * `estadoResenaPublicacionSchema`: depende del estado del pedido y de un plazo,
- * y la pantalla no conoce ninguno de los dos con certeza.
- */
-export const estadoCalificacionCocineroSchema = z.object({
-  pedidoId: z.uuid(),
-  calificacionId: z.uuid().nullable(),
-  /** El pedido esta COMPLETADO y todavia no tiene calificacion. */
-  puedeCalificar: z.boolean(),
-  /** Ya hay calificacion y la ventana de 48 horas sigue abierta. */
-  puedeEditar: z.boolean(),
-});
+// ---------------------------------------------------------------------------
+// US-RES-07 / RF087 — el CLIENTE resena al COCINERO
+// ---------------------------------------------------------------------------
 
 /**
- * RF082 - Bloque de reputacion del perfil publico del cocinero.
+ * LA RESENA AL COCINERO NO TIENE VENTANA DE EDICION, y por eso aca no hay una
+ * constante ni una funcion como las de la resena de plato.
  *
- * SALE DE LAS CALIFICACIONES AL COCINERO Y NO DE LAS RESENAS DE PLATOS. Son dos
- * metricas independientes: esta valora el servicio y `resumenResenasSchema`
- * valora los platos. Pueden diferir, y el perfil las muestra en dos bloques.
- *
- * NO APLICA UN MINIMO (decision del equipo, 2026-09-02): el promedio se muestra
- * desde la primera calificacion. `resena_minimo_para_promedio` sigue rigiendo
- * donde ya regia, sobre el promedio derivado de las resenas de platos.
+ * La tenia -48 horas- mientras fue "una por pedido": se justificaba en que la
+ * calificacion referia a la experiencia de un pedido determinado, y por eso no
+ * se reabria. Al pasar a ser una por cocinero deja de referirse a un pedido y
+ * pasa a ser la opinion vigente del cliente sobre esa persona, que puede
+ * cambiar con cada pedido nuevo. Congelarla a las 48 horas del primero
+ * obligaria al cliente a arrastrar para siempre una opinion que ya no tiene.
  */
-export const reputacionCocineroSchema = z.object({
-  promedio: z.number().nullable(),
-  total: z.number().int().min(0),
-  /** Cantidad de calificaciones por cada nivel, de 1 a 5 estrellas. */
-  distribucion: z.record(z.string(), z.number().int().min(0)),
+
+/**
+ * Que puede hacer el usuario de la sesion respecto de OTRA PERSONA: resenarla,
+ * editar la resena que ya le dejo, o nada.
+ *
+ * UN SOLO CONTRATO PARA LAS DOS DIRECCIONES -el cliente sobre el cocinero
+ * (US-RES-07) y el cocinero sobre el cliente (US-RES-02)- porque desde la
+ * correccion del modelo las dos son la misma pregunta: hay una unica resena
+ * por par, y lo que cambia es que hito del pedido la habilita. La persona no
+ * viaja en el cuerpo: ya esta en la URL.
+ *
+ * ES POR PERSONA Y NO POR PEDIDO. Lo consultan el boton del perfil publico
+ * (US-RES-03) y el del detalle del pedido (RF031), que ahora preguntan lo
+ * mismo.
+ *
+ * Trae ademas la resena vigente, asi el formulario se precarga con una sola
+ * consulta en vez de encadenar dos.
+ *
+ * `puedeResenar` lo resuelve el servidor porque depende del historial de
+ * pedidos entre las dos personas, que la pantalla no conoce.
+ */
+export const estadoResenaPersonaSchema = z.object({
+  /**
+   * Hubo un pedido que habilita la resena: COMPLETADO para resenar a un
+   * cocinero, ACEPTADO para resenar a un cliente -US-RES-02 quiere que el
+   * cocinero pueda dejar constancia del que no aparecio a retirar, y ese
+   * pedido nunca se completa-.
+   */
+  puedeResenar: z.boolean(),
+  /** La resena vigente sobre esa persona, si ya la dejo. */
+  mia: resenaPublicaSchema.nullable(),
 });
 
 // ---------------------------------------------------------------------------
@@ -678,8 +712,16 @@ export const reporteModeracionSchema = z.object({
     fotoUrl: z.url().nullable(),
     fechaPublicacion: z.iso.datetime(),
     estadoResena: z.enum(ESTADO_RESENA),
-    nombrePlato: z.string(),
-    cocineroNombre: z.string(),
+    /**
+     * Sobre que se opino. El administrador necesita saberlo para entender que
+     * esta por ocultar: una resena de un plato y una opinion sobre el trato de
+     * un cocinero se moderan con criterios distintos.
+     */
+    tipo: z.enum(TIPO_RESENA),
+    /** Solo en las de tipo PLATO; `null` en las demas. */
+    nombrePlato: z.string().nullable(),
+    /** El cocinero involucrado: dueno del plato, o el resenado. `null` en las de tipo CLIENTE. */
+    cocineroNombre: z.string().nullable(),
   }),
 });
 
@@ -708,9 +750,10 @@ export const resolverReporteSchema = z.object({
 
 export type CrearResenaInput = z.infer<typeof crearResenaSchema>;
 export type EditarResenaInput = z.infer<typeof editarResenaSchema>;
-export type CalificarClienteInput = z.infer<typeof calificarClienteSchema>;
 export type FiltrosResenas = z.infer<typeof filtrosResenasSchema>;
 export type AutorResena = z.infer<typeof autorResenaSchema>;
+export type PlatoResenado = z.infer<typeof platoResenadoSchema>;
+export type SocialDeResena = z.infer<typeof socialDeResenaSchema>;
 export type ResenaPublica = z.infer<typeof resenaPublicaSchema>;
 export type ResumenResenas = z.infer<typeof resumenResenasSchema>;
 export type PaginaResenas = z.infer<typeof paginaResenasSchema>;
@@ -718,14 +761,9 @@ export type EstadoResenaPublicacion = z.infer<
   typeof estadoResenaPublicacionSchema
 >;
 export type EstadoResenas = z.infer<typeof estadoResenasSchema>;
-export type MiCalificacionCliente = z.infer<typeof miCalificacionClienteSchema>;
+export type EstadoResenaPersona = z.infer<typeof estadoResenaPersonaSchema>;
 export type ReputacionCliente = z.infer<typeof reputacionClienteSchema>;
-export type CalificarCocineroInput = z.infer<typeof calificarCocineroSchema>;
-export type CalificacionACocinero = z.infer<typeof calificacionACocineroSchema>;
-export type EstadoCalificacionCocinero = z.infer<
-  typeof estadoCalificacionCocineroSchema
->;
-export type ReputacionCocinero = z.infer<typeof reputacionCocineroSchema>;
+export type PerfilPublicoCliente = z.infer<typeof perfilPublicoClienteSchema>;
 export type ReaccionarInput = z.infer<typeof reaccionarSchema>;
 export type RespuestaCocinero = z.infer<typeof respuestaCocineroSchema>;
 export type ResponderResenaInput = z.infer<typeof responderResenaSchema>;

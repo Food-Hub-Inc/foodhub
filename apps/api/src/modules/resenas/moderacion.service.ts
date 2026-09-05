@@ -116,16 +116,28 @@ async function contenidoDeResenas(
 
   /**
    * DOS ALIAS SOBRE `usuario` EN LA MISMA CONSULTA. La reseña tiene dos
-   * personas —quien la escribió y el cocinero dueño del plato— y las dos salen
+   * personas —quien la escribió y el cocinero al que le toca— y las dos salen
    * de la misma tabla; sin alias, Postgres no sabe a cuál de las dos se refiere
    * cada columna.
    */
   const autor = alias(usuario, 'autor_resena');
   const cocinero = alias(usuario, 'cocinero_resena');
 
+  /**
+   * LOS DOS JOINS DE CONTEXTO SON `left` Y NO `inner`, y ese cambio es lo que
+   * hace que la bandeja sirva a los tres tipos de reseña:
+   *
+   *   publicacion  solo existe en las de PLATO
+   *   cocinero     no existe en las de CLIENTE
+   *
+   * Con `inner`, un reporte sobre una opinión a un cocinero o sobre una reseña
+   * a un cliente desaparecía de la cola SIN DAR NINGÚN ERROR: el reporte
+   * seguía contado en el listado de arriba y su ficha no se podía abrir.
+   */
   const filas = await db
     .select({
       id: resena.id,
+      tipo: resena.tipoResena,
       autorNombre: sql<string>`${autor.nombre} || ' ' || ${autor.apellido}`,
       calificacion: resena.calificacion,
       comentario: resena.comentario,
@@ -133,17 +145,20 @@ async function contenidoDeResenas(
       fechaPublicacion: resena.fechaPublicacion,
       estadoResena: resena.estadoResena,
       nombrePlato: publicacion.nombre,
-      cocineroNombre: sql<string>`${cocinero.nombre} || ' ' || ${cocinero.apellido}`,
+      cocineroNombre: sql<
+        string | null
+      >`${cocinero.nombre} || ' ' || ${cocinero.apellido}`,
     })
     .from(resena)
-    .innerJoin(publicacion, eq(publicacion.id, resena.publicacionId))
-    .innerJoin(autor, eq(autor.id, resena.clienteResId))
-    .innerJoin(cocinero, eq(cocinero.id, resena.cocineroResId))
+    .leftJoin(publicacion, eq(publicacion.id, resena.publicacionId))
+    .innerJoin(autor, eq(autor.id, resena.autorId))
+    .leftJoin(cocinero, eq(cocinero.id, resena.cocineroResId))
     .where(inArray(resena.id, [...resenaIds]));
 
   for (const fila of filas) {
     mapa.set(fila.id, {
       id: fila.id,
+      tipo: fila.tipo,
       autorNombre: fila.autorNombre,
       calificacion: fila.calificacion,
       comentario: fila.comentario,

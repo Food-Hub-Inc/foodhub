@@ -1189,16 +1189,21 @@ export const MENSAJES_RESENA = {
     'Tu calificación contiene términos que no cumplen con nuestras normas de comunidad. Por favor, modificála antes de publicar.',
 
   /**
-   * PROPIO - rechazos de la API para RF087, por el mismo motivo que los cinco
+   * PROPIO - rechazo de la API para RF087, por el mismo motivo que los cinco
    * de mas abajo: el criterio resuelve la interfaz y no dice que responde el
    * servidor, pero la API tiene que explicar por que rechaza.
+   *
+   * Lo usa tambien la app, y no solo ante un 403: es el texto que acompana al
+   * boton deshabilitado del perfil publico, para que quien nunca le compro al
+   * cocinero entienda por que no puede opinar en vez de encontrarse un boton
+   * apagado sin explicacion.
+   *
+   * YA NO HAY "ya calificaste este pedido" NI "venció el plazo de edición":
+   * la resena al cocinero es una sola por cocinero y se edita siempre, asi que
+   * el alta nunca choca y la edicion nunca vence.
    */
-  sinDerechoACalificarCocinero:
-    'Solo podés calificar al cocinero de un pedido que hayas recibido.',
-  calificacionYaExiste:
-    'Ya calificaste este pedido. Podés editar tu calificación.',
-  edicionDeCalificacionVencida:
-    'Ya pasó el plazo de 48 horas para editar esta calificación.',
+  sinPedidoCompletadoConCocinero:
+    'Solo podés reseñar a un cocinero que te haya completado un pedido.',
 
   // --- Ver resenas en el perfil publico (US-RES-03) -------------------------
   /**
@@ -1218,6 +1223,29 @@ export const MENSAJES_RESENA = {
    * "Dejar una reseña" con articulo. No unificarlos.
    */
   dejarUnaResena: 'Dejar una reseña',
+
+  /**
+   * PROPIO - estado vacio del listado de resenas del detalle del plato
+   * (RF019). No se reusan los de `cocineroSinResenas*`, que son LITERAL de
+   * US-RES-03 y hablan del cocinero: decir "Este cocinero aún no recibió
+   * reseñas." debajo de un plato seria decir otra cosa.
+   */
+  platoSinResenasTitulo: 'Este plato todavía no tiene reseñas.',
+  platoSinResenasSubtitulo: 'Si ya lo pediste, contá qué te pareció.',
+
+  /**
+   * PROPIO - estado vacio del perfil publico del cliente. Lo lee un cocinero,
+   * asi que habla en tercera persona y no invita a opinar: si el cocinero
+   * puede reseñarlo, la accion vive en el detalle del pedido.
+   */
+  clienteSinResenas: 'Todavía ningún cocinero reseñó a este cliente.',
+
+  /**
+   * PROPIO - un CLIENTE pidiendo el perfil publico de otro cliente. Las
+   * resenas a un cliente son informacion entre cocineros (US-RES-02).
+   */
+  sinDerechoAVerCliente:
+    'El perfil de un cliente solo pueden verlo los cocineros.',
 
   /**
    * LITERAL - US-RES-03: la publicacion resenada fue dada de baja por el

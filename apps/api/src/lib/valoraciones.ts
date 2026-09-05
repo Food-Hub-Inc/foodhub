@@ -1,4 +1,4 @@
-import { avg, count, eq, sql } from 'drizzle-orm';
+import { and, avg, count, eq, sql } from 'drizzle-orm';
 import { resena } from '@foodhub/db';
 import { db } from './db.js';
 
@@ -53,7 +53,12 @@ export function subconsultaValoracionPorPublicacion() {
       cantidad: count().as('cantidad_resenas'),
     })
     .from(resena)
-    .where(eq(resena.estadoResena, 'VISIBLE'))
+    // El filtro por tipo entro con la migracion 0015: las tres resenas viven
+    // en la misma tabla y sin el se promediarian tambien las que no son de un
+    // plato. `resena_publicacion_idx` lleva las dos condiciones.
+    .where(
+      and(eq(resena.tipoResena, 'PLATO'), eq(resena.estadoResena, 'VISIBLE')),
+    )
     .groupBy(resena.publicacionId)
     .as('valoracion_por_publicacion');
 
@@ -61,8 +66,8 @@ export function subconsultaValoracionPorPublicacion() {
 }
 
 /**
- * Minimo de resenas que necesita un cocinero para que su promedio sea PUBLICO
- * (US-RES-03), leido de `configuracion_sistema` en la misma consulta.
+ * Minimo de OPINIONES AL COCINERO que necesita para que su promedio sea
+ * PUBLICO (US-RES-03), leido de `configuracion_sistema` en la misma consulta.
  *
  * POR QUE UN SUBSELECT Y NO UN PARAMETRO DE LA FUNCION
  *
@@ -88,20 +93,33 @@ const minimoResenasParaPromedio = sql`coalesce((
 /**
  * Promedio y cantidad de resenas VISIBLE por COCINERO.
  *
- * Se apoya en `resena.cocineroResId`, la columna desnormalizada del schema:
- * evita pasar por `publicacion` para un dato que no cambia (una publicacion no
- * se transfiere de cocinero) y deja la agregacion cubierta por
- * `resena_cocinero_idx`.
+ * SALE DE LAS RESENAS AL COCINERO (tipo COCINERO), NO DE LAS DE SUS PLATOS.
+ * Antes se derivaba de las resenas de plato, y eso producia dos numeros
+ * distintos para el mismo cocinero: el feed mostraba el promedio de sus platos
+ * y su perfil el de su servicio. Con el listado de opiniones a la vista en el
+ * perfil -con nombre y apellido de quien puso cada estrella- la contradiccion
+ * quedaba a dos toques de distancia, asi que se unifico (punto 12 del
+ * pendiente del modulo). El promedio POR PLATO sigue existiendo y sigue
+ * saliendo de las resenas de plato: es otra pregunta.
  *
- * EL PROMEDIO ES `null` HASTA ALCANZAR EL MINIMO (US-RES-03). Con dos o tres
- * opiniones un promedio no describe a nadie: una sola resena mala dejaria a un
- * cocinero en 1,0 de por vida. `cantidad` NO se recorta -sigue informando el
- * total real- para que la interfaz pueda distinguir "todavia no tiene resenas"
- * de "tiene pocas y por eso no mostramos promedio".
+ * SIGUE APLICANDO `resena_minimo_para_promedio`, y el resumen del listado de
+ * opiniones del perfil aplica el mismo umbral: esa es la otra mitad de la
+ * unificacion. El bloque de reputacion viejo no lo aplicaba, asi que dejarlo
+ * como estaba habria conservado los dos numeros distintos que este cambio
+ * viene a eliminar -solo que ahora con el listado de quien puso cada estrella
+ * a la vista, al lado del promedio-. El umbral protege lo mismo que protegia
+ * antes: con dos o tres opiniones un promedio no describe a nadie, y una sola
+ * resena mala dejaria a un cocinero en 1,0 de por vida.
  *
- * Devolver `null` es ademas lo que hace que este cambio no rompa a ningun
- * consumidor: los seis ya pasan el valor por `aValoracion`, que trata `null`
- * como "Sin calificaciones aun".
+ * `cantidad` NO se recorta -sigue informando el total real- para que la
+ * interfaz pueda distinguir "todavia no tiene resenas" de "tiene pocas y por
+ * eso no mostramos promedio". Devolver `null` es ademas lo que hace que esto
+ * no rompa a ningun consumidor: los seis ya pasan el valor por `aValoracion`,
+ * que trata `null` como "Sin calificaciones aun".
+ *
+ * Se apoya en `resena.cocineroResId`, que en las resenas de tipo COCINERO es
+ * el resenado, y deja la agregacion cubierta por
+ * `resena_opiniones_cocinero_idx`.
  */
 export function subconsultaValoracionPorCocinero() {
   const tabla = db
@@ -114,7 +132,12 @@ export function subconsultaValoracionPorCocinero() {
       cantidad: count().as('cantidad_resenas'),
     })
     .from(resena)
-    .where(eq(resena.estadoResena, 'VISIBLE'))
+    .where(
+      and(
+        eq(resena.tipoResena, 'COCINERO'),
+        eq(resena.estadoResena, 'VISIBLE'),
+      ),
+    )
     .groupBy(resena.cocineroResId)
     .as('valoracion_por_cocinero');
 

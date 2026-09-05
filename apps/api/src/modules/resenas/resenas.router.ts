@@ -1,8 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import {
-  calificarClienteSchema,
-  calificarCocineroSchema,
   crearResenaSchema,
   editarResenaSchema,
   filtrosResenasSchema,
@@ -14,28 +12,40 @@ import {
 import { sesionDe } from '../../lib/request.js';
 import { requiereAutenticacion } from '../../middleware/auth.middleware.js';
 import { requiereRol } from '../../middleware/rbac.middleware.js';
-import * as calificacionCocinero from './calificacionCocinero.service.js';
-import * as calificaciones from './calificaciones.service.js';
+import * as clientes from './calificaciones.service.js';
 import * as resenasService from './resenas.service.js';
 import * as social from './social.service.js';
 
 /**
- * Rutas del modulo de Resenas y Calificaciones (US-RES-01 a US-RES-03).
+ * Rutas del modulo de Resenas y Calificaciones (US-RES-01 a US-RES-07).
  *
- * DOS RECURSOS DISTINTOS BAJO EL MISMO PREFIJO, y no es casual que no compartan
- * forma:
+ * LA RUTA NOMBRA AL OBJETO RESENADO, que es la regla del modelo hecha URL:
  *
- *   /resenas/...            la resena PUBLICA de un plato. Tiene id propio
- *                           porque se crea, se edita y se lista.
- *   /resenas/clientes/:id   la calificacion PRIVADA de un cliente. No tiene id
- *                           en la URL: hay una sola por par cocinero-cliente y
- *                           el cocinero sale de la sesion, asi que el par ya
- *                           esta completamente determinado. Por eso es un PUT
- *                           idempotente y no un POST.
+ *   /resenas/publicaciones/:id   las resenas de un plato (RF019)
+ *   /resenas/cocineros/:id/opiniones   las que le dejaron a un cocinero
+ *   /resenas/cocineros/:id/platos      las de todos sus platos (PAN-RES-02)
+ *   /resenas/clientes/:id        las que los cocineros le dejaron a un cliente
+ *
+ * NINGUNA CUELGA DE UN PEDIDO, y las que lo hacian se retiraron. El pedido
+ * habilita el derecho a opinar y nada mas; que apareciera en la URL era la
+ * forma visible del defecto que esta correccion revierte.
+ *
+ * `GET /resenas/cocineros/:id` TAMBIEN SE RETIRO, en vez de cambiarle el
+ * significado: antes devolvia las resenas de sus PLATOS y ahora eso vive en
+ * `/platos`. Conservar el path habria hecho que un bundle viejo recibiera otra
+ * lista sin ningun error, y el equipo esta justo en esa situacion -Metro
+ * corriendo contra una build anterior-. Un 404 se diagnostica; una lista
+ * equivocada, no.
  *
  * NINGUNA RUTA RECIBE EL ID DEL AUTOR. Cliente y cocinero salen siempre de la
  * sesion; la pertenencia se verifica en el WHERE de cada consulta. Cambiar el
  * id de una resena en la URL devuelve 404, no la resena de otro.
+ *
+ * LAS RESENAS A UN CLIENTE SON EL UNICO CONTENIDO NO PUBLICO del modulo
+ * (US-RES-02: "no es visible para el cliente calificado ni para otros
+ * clientes"). Con las tres resenas en una tabla, esa privacidad ya no la da el
+ * modelo: la dan el `requiereRol('COCINERO')` de sus dos rutas y la prueba de
+ * router que lo verifica.
  *
  * US-RES-04, US-RES-05 y US-RES-06 -reacciones, respuestas y reportes- cuelgan
  * de `/:id/...` al final del archivo; la moderacion del administrador (RF086)
@@ -69,22 +79,26 @@ const idsDePublicacionesSchema = z
 resenasRouter.use(requiereAutenticacion);
 
 // ---------------------------------------------------------------------------
-// Perfil publico del cocinero (US-RES-03)
+// Listados (US-RES-03, RF019, US-RES-02)
 // ---------------------------------------------------------------------------
 
 /**
- * US-RES-03 - Resenas y resumen de un cocinero. PAN-EXP-04.
+ * LOS PREFIJOS LITERALES VAN ANTES QUE `/:id`, o Express interpretaria
+ * "publicaciones", "cocineros" y "clientes" como el identificador de una
+ * resena.
  *
- * Abierta a CLIENTE y COCINERO: la precondicion de la historia es "el usuario
- * tiene sesion iniciada", sin acotar el rol, y un cocinero mirando el perfil de
- * otro es un caso legitimo. No se usa `requiereRol` justamente por eso.
- *
- * Va antes que `/:id` para que Express no interprete "cocineros" como el
- * identificador de una resena.
+ * Los tres primeros listados estan abiertos a CLIENTE y COCINERO: la
+ * precondicion de US-RES-03 es "el usuario tiene sesion iniciada", sin acotar
+ * el rol, y un cocinero mirando el perfil de otro es un caso legitimo.
  */
-resenasRouter.get('/cocineros/:cocineroId', async (req, res) => {
-  const pagina = await resenasService.listarResenasDeCocinero({
-    cocineroId: idUsuarioSchema.parse(req.params.cocineroId),
+
+/** RF019 - Resenas de un plato. PAN-EXP-05. */
+resenasRouter.get('/publicaciones/:publicacionId', async (req, res) => {
+  const pagina = await resenasService.listarResenas({
+    objeto: {
+      tipo: 'PLATO',
+      publicacionId: idUsuarioSchema.parse(req.params.publicacionId),
+    },
     usuarioId: sesionDe(req).id,
     filtros: filtrosResenasSchema.parse(req.query),
   });
@@ -92,153 +106,115 @@ resenasRouter.get('/cocineros/:cocineroId', async (req, res) => {
 });
 
 /**
- * RF082 - Bloque de reputacion del perfil publico.
+ * US-RES-03 - Las resenas que le dejaron AL cocinero. PAN-EXP-04.
  *
- * SEPARADO DEL LISTADO A PROPOSITO. Son dos metricas independientes: el resumen
- * que viaja con el listado describe las RESENAS DE LOS PLATOS, y esto describe
- * las CALIFICACIONES AL COCINERO. Meterlas en la misma respuesta invitaria a
- * confundirlas, que es exactamente lo que la version corregida del modulo vino
- * a separar.
- *
- * Abierta a los dos roles por el mismo motivo que el listado.
+ * El resumen que viaja con el listado -promedio, distribucion y total- es el
+ * mismo que dibuja el bloque de arriba de la solapa. Antes ese bloque pedia su
+ * numero a `/reputacion`, un endpoint aparte que consultaba otra tabla: por eso
+ * podian discrepar. Ahora salen de la misma consulta y no pueden.
  */
-resenasRouter.get('/cocineros/:cocineroId/reputacion', async (req, res) => {
-  const reputacion = await calificacionCocinero.reputacionDeCocinero(
-    idUsuarioSchema.parse(req.params.cocineroId),
-  );
-  res.json(reputacion);
+resenasRouter.get('/cocineros/:cocineroId/opiniones', async (req, res) => {
+  const pagina = await resenasService.listarResenas({
+    objeto: {
+      tipo: 'COCINERO',
+      cocineroId: idUsuarioSchema.parse(req.params.cocineroId),
+    },
+    usuarioId: sesionDe(req).id,
+    filtros: filtrosResenasSchema.parse(req.query),
+  });
+  res.json(pagina);
 });
 
-// ---------------------------------------------------------------------------
-// Calificacion del cocinero al cliente (US-RES-02)
-// ---------------------------------------------------------------------------
+/** US-RES-03 - Las resenas de los PLATOS de un cocinero. PAN-RES-02. */
+resenasRouter.get('/cocineros/:cocineroId/platos', async (req, res) => {
+  const pagina = await resenasService.listarResenas({
+    objeto: {
+      tipo: 'PLATOS_DEL_COCINERO',
+      cocineroId: idUsuarioSchema.parse(req.params.cocineroId),
+    },
+    usuarioId: sesionDe(req).id,
+    filtros: filtrosResenasSchema.parse(req.query),
+  });
+  res.json(pagina);
+});
 
-/** US-RES-02 - Lo que este cocinero ya opino de ese cliente, o `null`. */
+/** US-RES-03 - Que puede hacer el cliente de la sesion con ese cocinero. */
 resenasRouter.get(
-  '/clientes/:clienteId/mi-calificacion',
-  requiereRol('COCINERO'),
-  async (req, res) => {
-    const calificacion = await calificaciones.miCalificacionDeCliente({
-      cocineroId: sesionDe(req).id,
-      clienteId: idUsuarioSchema.parse(req.params.clienteId),
-    });
-    res.json(calificacion);
-  },
-);
-
-/**
- * US-RES-02 - Reputacion agregada del cliente, para el detalle del pedido.
- *
- * Solo COCINERO: la calificacion del cliente "no es visible para el cliente
- * calificado ni para otros clientes". Exponerla a un CLIENTE romperia el
- * criterio aunque sea su propia reputacion, porque el criterio no la hace
- * visible ni para el.
- */
-resenasRouter.get(
-  '/clientes/:clienteId/reputacion',
-  requiereRol('COCINERO'),
-  async (req, res) => {
-    const reputacion = await calificaciones.reputacionDeCliente(
-      idUsuarioSchema.parse(req.params.clienteId),
-    );
-    res.json(reputacion);
-  },
-);
-
-/**
- * US-RES-02 - Alta o edicion de la calificacion. PAN-RES-02.
- *
- * PUT y no POST: hay una sola calificacion por par cocinero-cliente y el par lo
- * determinan la sesion y la URL, asi que la operacion es idempotente. Enviarla
- * dos veces deja el mismo estado, que es exactamente lo que un POST no
- * garantiza.
- */
-resenasRouter.put(
-  '/clientes/:clienteId/calificacion',
-  requiereRol('COCINERO'),
-  async (req, res) => {
-    const calificacion = await calificaciones.calificarCliente({
-      cocineroId: sesionDe(req).id,
-      clienteId: idUsuarioSchema.parse(req.params.clienteId),
-      datos: calificarClienteSchema.parse(req.body),
-    });
-    res.json(calificacion);
-  },
-);
-
-// ---------------------------------------------------------------------------
-// Calificacion al cocinero (US-RES-07, RF087)
-// ---------------------------------------------------------------------------
-
-/**
- * LAS CUATRO RUTAS VAN ANTES QUE `/:id` por el mismo motivo que `/cocineros` y
- * `/clientes`: Express interpretaria "calificaciones" o "pedidos" como el
- * identificador de una resena.
- *
- * Cuelgan de `/pedidos/:pedidoId` y no de `/cocineros/:id` porque la unicidad
- * es por PEDIDO: el recurso que se crea es "la calificacion de este pedido", no
- * "mi calificacion de este cocinero".
- */
-
-/** RF031 - Que accion corresponde para la calificacion al cocinero del pedido. */
-resenasRouter.get(
-  '/pedidos/:pedidoId/calificacion',
+  '/cocineros/:cocineroId/mi-resena',
   requiereRol('CLIENTE'),
   async (req, res) => {
-    const estado = await calificacionCocinero.estadoDeCalificacionDeCocinero({
-      clienteId: sesionDe(req).id,
-      pedidoId: idResenaSchema.parse(req.params.pedidoId),
+    const estado = await resenasService.estadoDeResenaSobrePersona({
+      autorId: sesionDe(req).id,
+      personaId: idUsuarioSchema.parse(req.params.cocineroId),
+      tipo: 'COCINERO',
     });
     res.json(estado);
   },
 );
 
-/** US-RES-07 - Alta de la calificacion al cocinero. PAN-RES-03. */
-resenasRouter.post(
-  '/pedidos/:pedidoId/calificacion',
-  requiereRol('CLIENTE'),
-  async (req, res) => {
-    const calificacion = await calificacionCocinero.calificarCocinero({
-      clienteId: sesionDe(req).id,
-      pedidoId: idResenaSchema.parse(req.params.pedidoId),
-      datos: calificarCocineroSchema.parse(req.body),
-    });
-    res.status(201).json(calificacion);
-  },
-);
+// ---------------------------------------------------------------------------
+// El cliente resenado (US-RES-02)
+// ---------------------------------------------------------------------------
 
 /**
- * US-RES-07 - Una calificacion puntual, para precargar la edicion o verla en
- * modo solo lectura.
- *
- * Con `requiereRol('CLIENTE')` a diferencia de `GET /resenas/:id`: la
- * calificacion al cocinero no es contenido publico. En el perfil se muestra
- * agregada en el bloque de reputacion, nunca fila por fila.
+ * LAS TRES SON `requiereRol('COCINERO')`, y no por simetria: US-RES-02 dice que
+ * la resena de un cliente "no es visible para el cliente calificado ni para
+ * otros clientes". Exponerla a un CLIENTE romperia el criterio AUNQUE FUERA SU
+ * PROPIA REPUTACION, porque el criterio no la hace visible ni para el.
  */
+
+/** US-RES-02 - Las resenas que los cocineros le dejaron a un cliente. */
 resenasRouter.get(
-  '/calificaciones/:id',
-  requiereRol('CLIENTE'),
+  '/clientes/:clienteId',
+  requiereRol('COCINERO'),
   async (req, res) => {
-    const calificacion = await calificacionCocinero.leerCalificacionDeCocinero({
-      clienteId: sesionDe(req).id,
-      calificacionId: idResenaSchema.parse(req.params.id),
+    const pagina = await resenasService.listarResenas({
+      objeto: {
+        tipo: 'CLIENTE',
+        clienteId: idUsuarioSchema.parse(req.params.clienteId),
+      },
+      usuarioId: sesionDe(req).id,
+      filtros: filtrosResenasSchema.parse(req.query),
     });
-    res.json(calificacion);
+    res.json(pagina);
   },
 );
 
-/** US-RES-07 - Edicion dentro de la ventana de 48 horas, que no se reabre. */
-resenasRouter.patch(
-  '/calificaciones/:id',
-  requiereRol('CLIENTE'),
+/** US-RES-02 - Que puede hacer el cocinero de la sesion con ese cliente. */
+resenasRouter.get(
+  '/clientes/:clienteId/mi-resena',
+  requiereRol('COCINERO'),
   async (req, res) => {
-    const calificacion =
-      await calificacionCocinero.editarCalificacionDeCocinero({
-        clienteId: sesionDe(req).id,
-        calificacionId: idResenaSchema.parse(req.params.id),
-        datos: calificarCocineroSchema.parse(req.body),
-      });
-    res.json(calificacion);
+    const estado = await resenasService.estadoDeResenaSobrePersona({
+      autorId: sesionDe(req).id,
+      personaId: idUsuarioSchema.parse(req.params.clienteId),
+      tipo: 'CLIENTE',
+    });
+    res.json(estado);
+  },
+);
+
+/** US-DASH-03 - Ficha del perfil publico del cliente. */
+resenasRouter.get(
+  '/clientes/:clienteId/perfil',
+  requiereRol('COCINERO'),
+  async (req, res) => {
+    const perfil = await clientes.perfilPublicoDeCliente(
+      idUsuarioSchema.parse(req.params.clienteId),
+    );
+    res.json(perfil);
+  },
+);
+
+/** US-RES-02 - Reputacion agregada del cliente, para el detalle del pedido. */
+resenasRouter.get(
+  '/clientes/:clienteId/reputacion',
+  requiereRol('COCINERO'),
+  async (req, res) => {
+    const reputacion = await clientes.reputacionDeCliente(
+      idUsuarioSchema.parse(req.params.clienteId),
+    );
+    res.json(reputacion);
   },
 );
 
@@ -262,10 +238,25 @@ resenasRouter.get('/estado', requiereRol('CLIENTE'), async (req, res) => {
   res.json({ datos });
 });
 
-/** US-RES-01 - Alta de la resena de un plato. PAN-RES-01. */
-resenasRouter.post('/', requiereRol('CLIENTE'), async (req, res) => {
+/**
+ * Alta de una resena, cualquiera sea su objeto. PAN-RES-01, PAN-RES-02 y
+ * PAN-RES-03.
+ *
+ * UN SOLO ENDPOINT PARA LOS TRES CASOS, discriminado por `tipo` en el cuerpo.
+ * El destino no va en la URL porque no es siempre del mismo recurso -una vez es
+ * una publicacion y dos veces una persona-, y tres rutas para el mismo hecho
+ * habrian obligado a la app a elegir cual llamar antes de saber que esta
+ * haciendo.
+ *
+ * SIN `requiereRol`: quien resena un plato o un cocinero es un cliente y quien
+ * resena a un cliente es un cocinero, asi que el rol depende del cuerpo. El
+ * servicio lo verifica donde de verdad importa -contra el historial de pedidos
+ * del autor-, que es un control mas fuerte que el rol: un cocinero sin pedidos
+ * con ese cliente tampoco puede.
+ */
+resenasRouter.post('/', async (req, res) => {
   const resena = await resenasService.crearResena({
-    clienteId: sesionDe(req).id,
+    autorId: sesionDe(req).id,
     datos: crearResenaSchema.parse(req.body),
   });
   res.status(201).json(resena);
@@ -288,10 +279,14 @@ resenasRouter.get('/:id', async (req, res) => {
   res.json(resena);
 });
 
-/** US-RES-01 - Edicion dentro de la ventana de 48 horas. */
-resenasRouter.patch('/:id', requiereRol('CLIENTE'), async (req, res) => {
+/**
+ * Edicion de una resena propia. Sin `requiereRol` por el mismo motivo que el
+ * alta: el rol depende de que se resenó, y el servicio verifica lo que importa
+ * -que la resena sea del autor de la sesion-.
+ */
+resenasRouter.patch('/:id', async (req, res) => {
   const resena = await resenasService.editarResena({
-    clienteId: sesionDe(req).id,
+    autorId: sesionDe(req).id,
     resenaId: idResenaSchema.parse(req.params.id),
     datos: editarResenaSchema.parse(req.body),
   });
