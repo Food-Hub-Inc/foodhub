@@ -3,6 +3,8 @@ import { RutaProtegida } from './components/RutaProtegida.js';
 import { LayoutPanel } from './components/layout/LayoutPanel.js';
 import { RUTAS } from './lib/rutas.js';
 import { Auditoria } from './pages/auditoria/Auditoria.js';
+import { Ayuda } from './pages/ayuda/Ayuda.js';
+import { PaginaDeCapitulo } from './pages/ayuda/manual/PaginaDeCapitulo.js';
 import { Configuracion } from './pages/configuracion/Configuracion.js';
 import { Login } from './pages/Login.js';
 import { NuevaPassword } from './pages/NuevaPassword.js';
@@ -54,6 +56,12 @@ export function App() {
         <Route element={<Moderacion />} path="moderacion" />
         <Route element={<Metricas />} path="metricas" />
         <Route element={<Auditoria />} path="auditoria" />
+        <Route element={<Ayuda />} path="ayuda" />
+        <Route element={<PaginaDeCapitulo />} path="ayuda/capitulos/nuevo" />
+        <Route
+          element={<PaginaDeCapitulo />}
+          path="ayuda/capitulos/:id/editar"
+        />
         <Route element={<Configuracion />} path="configuracion" />
       </Route>
 

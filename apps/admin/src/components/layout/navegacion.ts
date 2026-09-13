@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import type { PropsIcono } from '../iconos/tipos.js';
 import {
   IconoAuditoria,
+  IconoAyuda,
   IconoConfiguracion,
   IconoInicio,
   IconoMetricas,
@@ -37,6 +38,11 @@ export const ITEMS_DE_NAVEGACION: readonly ItemDeNavegacion[] = [
   },
   { ruta: '/metricas', etiqueta: 'Métricas', Icono: IconoMetricas },
   { ruta: '/auditoria', etiqueta: 'Auditoría', Icono: IconoAuditoria },
+  {
+    ruta: '/ayuda',
+    etiqueta: 'Gestión de ayuda',
+    Icono: IconoAyuda,
+  },
   {
     ruta: '/configuracion',
     etiqueta: 'Configuración',

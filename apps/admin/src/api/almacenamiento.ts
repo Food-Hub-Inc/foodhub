@@ -34,3 +34,10 @@ export function solicitarUrlDeCargaDeLogoPlataforma(
 ): Promise<UrlDeCarga> {
   return api.enviar<UrlDeCarga>('/almacenamiento/logo-plataforma', datos);
 }
+
+/** US-AYU-05 - Imagen ilustrativa del manual de usuario. */
+export function solicitarUrlDeCargaDeImagenAyuda(
+  datos: SolicitarUrlDeCargaCategoriaInput,
+): Promise<UrlDeCarga> {
+  return api.enviar<UrlDeCarga>('/almacenamiento/imagen-ayuda', datos);
+}

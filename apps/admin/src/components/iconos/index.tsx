@@ -98,10 +98,19 @@ export function IconoConfiguracion({ className }: PropsIcono) {
   );
 }
 
+export function IconoAyuda({ className }: PropsIcono) {
+  return (
+    <Trazo className={className}>
+      <circle cx="12" cy="12" r="8.25" />
+      <circle cx="12" cy="12" r="3.25" />
+      <path d="m6.2 6.2 3.6 3.6M14.2 14.2l3.6 3.6M17.8 6.2l-3.6 3.6M9.8 14.2l-3.6 3.6" />
+    </Trazo>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Acciones
 // ---------------------------------------------------------------------------
-
 export function IconoCerrarSesion({ className }: PropsIcono) {
   return (
     <Trazo className={className}>
