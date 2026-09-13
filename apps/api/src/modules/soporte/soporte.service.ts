@@ -1,16 +1,21 @@
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import {
   adjuntoTicket,
+  capituloAyuda,
   faq,
   rolDestino,
+  seccionAyuda,
   ticketSoporte,
   tipoConsulta,
   usuario,
 } from '@foodhub/db';
 import type {
   AdjuntoTicketInput,
+  CapituloManualPublico,
   EnviarConsultaInput,
   Faq,
+  ManualPublico,
+  SeccionManualPublica,
   TipoUsuario,
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
@@ -23,6 +28,13 @@ import {
 import { registrarOperacion } from '../auditoria/auditoria.service.js';
 
 type RolFaq = Exclude<TipoUsuario, 'ADMINISTRADOR'>;
+
+/**
+ * US-AYU-05 - Contenido dirigido a "Ambos" llega a los dos roles de la app.
+ * Se resuelve en la lectura: el rol del usuario MAS el codigo AMBOS, no solo
+ * el rol exacto.
+ */
+const ROL_DESTINO_AMBOS = 'AMBOS';
 
 /** US-AYU-02 · Preguntas activas correspondientes al rol autenticado. */
 export async function listarFaqPorRol(rol: RolFaq): Promise<Faq[]> {
@@ -37,7 +49,12 @@ export async function listarFaqPorRol(rol: RolFaq): Promise<Faq[]> {
     })
     .from(faq)
     .innerJoin(rolDestino, eq(faq.rolDestinoId, rolDestino.id))
-    .where(and(eq(rolDestino.nombre, rol), eq(faq.activo, true)))
+    .where(
+      and(
+        inArray(rolDestino.nombre, [rol, ROL_DESTINO_AMBOS]),
+        eq(faq.activo, true),
+      ),
+    )
     .orderBy(asc(faq.categoria), desc(faq.votosUtil), asc(faq.pregunta));
 }
 
@@ -58,7 +75,11 @@ export async function registrarVotoFaq(
     .from(faq)
     .innerJoin(rolDestino, eq(faq.rolDestinoId, rolDestino.id))
     .where(
-      and(eq(faq.id, id), eq(faq.activo, true), eq(rolDestino.nombre, rol)),
+      and(
+        eq(faq.id, id),
+        eq(faq.activo, true),
+        inArray(rolDestino.nombre, [rol, ROL_DESTINO_AMBOS]),
+      ),
     )
     .limit(1);
 
@@ -80,6 +101,71 @@ export async function registrarVotoFaq(
 /** Evita que una llamada futura al servicio omita la guarda de rol. */
 export function validarRolFaq(rol: TipoUsuario): asserts rol is RolFaq {
   if (rol === 'ADMINISTRADOR') throw noAutorizado();
+}
+
+// ---------------------------------------------------------------------------
+// US-AYU-01 · Manual de usuario dentro de la app (consumo)
+// ---------------------------------------------------------------------------
+
+function aSeccionManualPublica(
+  fila: typeof seccionAyuda.$inferSelect,
+): SeccionManualPublica {
+  return {
+    id: fila.id,
+    titulo: fila.titulo,
+    contenidoHtml: fila.contenidoHtml,
+    orden: fila.orden,
+  };
+}
+
+/**
+ * US-AYU-01 - Manual visible para el rol autenticado: capitulos activos
+ * dirigidos a su rol o a "Ambos", con sus secciones habilitadas y en el orden
+ * que definio el administrador (US-AYU-05).
+ *
+ * El contenido del manual lo gestiona US-AYU-05 desde el panel; aca solo se
+ * lee, de modo que un cambio publicado se refleja sin desplegar la app.
+ */
+export async function listarManualPorRol(rol: RolFaq): Promise<ManualPublico> {
+  const filas = await db
+    .select({ capitulo: capituloAyuda })
+    .from(capituloAyuda)
+    .innerJoin(rolDestino, eq(rolDestino.id, capituloAyuda.rolDestinoId))
+    .where(
+      and(
+        inArray(rolDestino.nombre, [rol, ROL_DESTINO_AMBOS]),
+        eq(capituloAyuda.activo, true),
+      ),
+    )
+    .orderBy(asc(capituloAyuda.orden), asc(capituloAyuda.titulo));
+
+  const ids = filas.map((fila) => fila.capitulo.id);
+  const secciones = ids.length
+    ? await db
+        .select()
+        .from(seccionAyuda)
+        .where(
+          and(
+            inArray(seccionAyuda.capituloId, ids),
+            eq(seccionAyuda.habilitado, true),
+          ),
+        )
+        .orderBy(asc(seccionAyuda.orden), asc(seccionAyuda.titulo))
+    : [];
+
+  const porCapitulo = new Map<string, SeccionManualPublica[]>();
+  for (const fila of secciones) {
+    const lista = porCapitulo.get(fila.capituloId) ?? [];
+    lista.push(aSeccionManualPublica(fila));
+    porCapitulo.set(fila.capituloId, lista);
+  }
+
+  return filas.map((fila): CapituloManualPublico => ({
+    id: fila.capitulo.id,
+    titulo: fila.capitulo.titulo,
+    orden: fila.capitulo.orden,
+    secciones: porCapitulo.get(fila.capitulo.id) ?? [],
+  }));
 }
 
 // ---------------------------------------------------------------------------
