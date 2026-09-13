@@ -137,6 +137,18 @@ almacenamientoRouter.post(
   },
 );
 
+/** US-AYU-05 - Imagen ilustrativa del manual de usuario (editor enriquecido). */
+almacenamientoRouter.post(
+  '/imagen-ayuda',
+  soloAdministrador,
+  async (req, res) => {
+    const urlDeCarga = await almacenamientoService.crearUrlDeCargaDeImagenAyuda(
+      solicitarUrlDeCargaCategoriaSchema.parse(req.body),
+    );
+    res.status(201).json(urlDeCarga);
+  },
+);
+
 /**
  * US-MSG-03 - Imagen de una conversacion del chat.
  *

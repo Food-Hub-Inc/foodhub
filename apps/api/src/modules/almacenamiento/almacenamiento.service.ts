@@ -154,6 +154,32 @@ export async function crearUrlDeCargaDeLogoPlataforma(
 }
 
 /**
+ * US-AYU-05 - Permiso para subir una imagen ilustrativa del manual de usuario.
+ *
+ * Reusa el bucket de configuracion y su contrato de imagen de categoria (2 MB,
+ * JPG/PNG/WEBP): la US no fija un tope propio y el bucket ya admite esos MIME
+ * types, asi que no hace falta crear otro. La carpeta `ayuda/` separa estos
+ * archivos de las imagenes de categoria y del logo.
+ */
+export async function crearUrlDeCargaDeImagenAyuda(
+  datos: SolicitarUrlDeCargaCategoriaInput,
+): Promise<UrlDeCarga> {
+  const extension = EXTENSION[datos.mimeType];
+  const ruta = `ayuda/${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_CONFIGURACION);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
+}
+
+/**
  * Borra las fotos anteriores del usuario y deja solo la vigente.
  *
  * Se invoca DESPUES de que la URL nueva quedo guardada en `usuario`, nunca
