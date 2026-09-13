@@ -14,6 +14,7 @@ import {
 import { saludRouter } from './modules/salud/salud.router.js';
 import { almacenamientoRouter } from './modules/almacenamiento/almacenamiento.router.js';
 import { authRouter } from './modules/auth/auth.router.js';
+import { ayudaRouter } from './modules/ayuda/ayuda.router.js';
 import { auditoriaRouter } from './modules/auditoria/auditoria.router.js';
 import { catalogoRouter } from './modules/catalogo/catalogo.router.js';
 import { dashboardRouter } from './modules/dashboard/dashboard.router.js';
@@ -170,6 +171,10 @@ export function crearApp(): Express {
   // RF086 - La bandeja de moderacion va aparte: es del panel web y exclusiva
   // del administrador, mientras que todo `/resenas` es de la app.
   app.use(`${PREFIJO_API}/moderacion`, moderacionRouter);
+
+  // US-AYU-05 - Gestion del manual y las FAQ desde el panel. Tambien exclusivo
+  // del administrador, por eso no cuelga de `/soporte`, que es de la app movil.
+  app.use(`${PREFIJO_API}/ayuda`, ayudaRouter);
 
   // A medida que avance la Etapa 6 se montan aca los routers de cada modulo:
   //   app.use(`${PREFIJO_API}/notificaciones`, notificacionesRouter);
