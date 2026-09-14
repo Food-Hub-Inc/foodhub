@@ -521,6 +521,76 @@ export const MENSAJES_AYUDA = {
     /** LITERAL - US-AYU-03, opcion que descarta el borrador. */
     borradorBotonNuevo: 'Empezar nuevo',
   },
+
+  /**
+   * US-AYU-05 - Gestion del contenido del manual y las FAQ desde el panel web
+   * de administracion. Las cadenas que fijan los criterios de aceptacion van
+   * como LITERAL; las que la documentacion no redacta quedan como PROPIO.
+   */
+  admin: {
+    /** LITERAL - US-AYU-05, nombre de la seccion del panel. */
+    titulo: 'Gestión de ayuda',
+    /** LITERAL - US-AYU-05, pestañas de la seccion. */
+    pestanaManual: 'Manual de usuario',
+    pestanaFaq: 'Preguntas frecuentes',
+
+    /** LITERAL - US-AYU-05, accion de alta de capitulo. */
+    nuevoCapitulo: 'Nuevo capítulo',
+    /** LITERAL - US-AYU-05, accion de alta de pregunta. */
+    nuevaPregunta: 'Nueva pregunta',
+    /** LITERAL - US-AYU-05, accion de baja logica. */
+    deshabilitar: 'Deshabilitar',
+
+    /** LITERAL - US-AYU-05, etiquetas de campos del manual. */
+    tituloCampo: 'Título',
+    contenidoCampo: 'Contenido',
+    rolCampo: 'Rol destinatario',
+    /** LITERAL - US-AYU-05, etiquetas de campos de la FAQ. */
+    categoriaCampo: 'Categoría',
+    preguntaCampo: 'Enunciado de la pregunta',
+    respuestaCampo: 'Respuesta',
+    /** PROPIO - US-AYU-05, etiqueta del orden de presentacion. */
+    ordenCampo: 'Orden',
+    /** PROPIO - US-AYU-05, encabezado de la lista de secciones del capitulo. */
+    seccionesCampo: 'Secciones',
+    /** PROPIO - US-AYU-05, accion para sumar una seccion al capitulo. */
+    agregarSeccion: 'Agregar sección',
+    /** PROPIO - US-AYU-05, accion para quitar una seccion del capitulo. */
+    quitarSeccion: 'Quitar sección',
+
+    /** LITERAL - US-AYU-05, tope del titulo del capitulo. */
+    tituloMaximo: 'El título no puede superar los 100 caracteres.',
+    /** LITERAL - US-AYU-05, tope del enunciado de la pregunta. */
+    preguntaMaxima: 'La pregunta no puede superar los 200 caracteres.',
+    /** LITERAL - US-AYU-05, tope de la respuesta. */
+    respuestaMaxima: 'La respuesta no puede superar los 1500 caracteres.',
+    /** PROPIO - US-AYU-05, mensaje de campo obligatorio (la US solo dice "obligatorio"). */
+    campoObligatorio: 'Este campo es obligatorio',
+    /** PROPIO - US-AYU-05, el capitulo necesita al menos una seccion con contenido. */
+    seccionObligatoria: 'Agregá al menos una sección con su contenido.',
+    /** PROPIO - US-AYU-05, tope defensivo del editor de contenido enriquecido. */
+    contenidoExtenso: 'El contenido es demasiado extenso.',
+
+    /** LITERAL - US-AYU-05, dialogo de confirmacion al deshabilitar. */
+    confirmarDeshabilitar:
+      '¿Deshabilitar este contenido? Dejará de ser visible para los usuarios pero permanecerá en el sistema.',
+
+    /** PROPIO - US-AYU-05, confirmaciones de exito (la US no fija estos textos). */
+    capituloCreado: 'Capítulo creado con éxito.',
+    capituloActualizado: 'Guardamos los cambios del capítulo.',
+    capituloHabilitado: 'El capítulo vuelve a estar visible.',
+    capituloDeshabilitado: 'El capítulo quedó deshabilitado.',
+    faqCreada: 'Pregunta creada con éxito.',
+    faqActualizada: 'Guardamos los cambios de la pregunta.',
+    faqHabilitada: 'La pregunta vuelve a estar visible.',
+    faqDeshabilitada: 'La pregunta quedó deshabilitada.',
+
+    /** PROPIO - US-AYU-05, estados vacios de los listados. */
+    sinCapitulos: 'Todavía no cargaste capítulos del manual.',
+    sinCapitulosFiltrados: 'No hay capítulos que coincidan con los filtros.',
+    sinFaqs: 'Todavía no cargaste preguntas frecuentes.',
+    sinFaqsFiltradas: 'No hay preguntas que coincidan con los filtros.',
+  },
 } as const;
 
 /**

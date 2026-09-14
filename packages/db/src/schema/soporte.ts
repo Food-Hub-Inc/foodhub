@@ -29,6 +29,16 @@ export const capituloAyuda = pgTable(
     // secuencia didactica, no el orden de carga.
     orden: integer('orden').notNull().default(0),
     activo: boolean('activo').notNull().default(true),
+    fechaCreacion: timestamp('fecha_creacion', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // US-AYU-05: al editar se registra la fecha de modificacion. No hay trigger:
+    // la actualiza el servicio en cada edicion, igual que configuracion_sistema.
+    fechaUltimaModificacion: timestamp('fecha_ultima_modificacion', {
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [index('capitulo_ayuda_rol_idx').on(t.rolDestinoId, t.orden)],
 ).enableRLS();
@@ -48,6 +58,14 @@ export const seccionAyuda = pgTable(
       .references(() => rolDestino.id, { onDelete: 'restrict' }),
     orden: integer('orden').notNull().default(0),
     habilitado: boolean('habilitado').notNull().default(true),
+    fechaCreacion: timestamp('fecha_creacion', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    fechaUltimaModificacion: timestamp('fecha_ultima_modificacion', {
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [index('seccion_ayuda_capitulo_idx').on(t.capituloId, t.orden)],
 ).enableRLS();
@@ -70,6 +88,14 @@ export const faq = pgTable(
     votosUtil: integer('votos_util').notNull().default(0),
     votosNoUtil: integer('votos_no_util').notNull().default(0),
     activo: boolean('activo').notNull().default(true),
+    fechaCreacion: timestamp('fecha_creacion', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    fechaUltimaModificacion: timestamp('fecha_ultima_modificacion', {
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [index('faq_rol_idx').on(t.rolDestinoId)],
 ).enableRLS();

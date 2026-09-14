@@ -40,6 +40,22 @@ soporteRouter.post('/faqs/:id/voto', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// US-AYU-01 · Manual de usuario
+// ---------------------------------------------------------------------------
+
+/**
+ * US-AYU-01 - Manual correspondiente al rol autenticado. El contenido lo
+ * administra US-AYU-05 desde el panel; la app solo lo lee, de modo que una
+ * edicion publicada se ve sin un despliegue nuevo.
+ */
+soporteRouter.get('/manual', async (req, res) => {
+  const rol = sesionDe(req).tipo;
+  soporteService.validarRolFaq(rol);
+  const manual = await soporteService.listarManualPorRol(rol);
+  res.json(manual);
+});
+
+// ---------------------------------------------------------------------------
 // US-AYU-03 · Envio de consulta al soporte
 // ---------------------------------------------------------------------------
 
