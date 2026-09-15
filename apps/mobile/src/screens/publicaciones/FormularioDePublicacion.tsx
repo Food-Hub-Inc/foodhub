@@ -286,7 +286,7 @@ function Campos({
 
       <CampoTexto
         className="mt-4"
-        etiqueta={TEXTOS_PUBLICACIONES.tiempoEstimado}
+        etiqueta={TEXTOS_PUBLICACIONES.campoTiempoEstimado}
         error={formulario.mensajeDe('tiempoEstimadoPreparacion')}
         nombre="tiempoEstimadoPreparacion"
         onChange={(valor) => {

@@ -416,15 +416,22 @@ export const TEXTOS_PUBLICACIONES = {
 
   /**
    * Formulario de alta/edición de un plato (US-PUB-01, PAN-PUB-02). Los
-   * rótulos de "Descripción", "Categoría" y "Tiempo estimado de preparación"
-   * reusan las claves homónimas que ya existen más arriba en este mismo
-   * bloque -son, letra por letra, la misma etiqueta que ya usan el detalle y
-   * la hoja de filtros- así que no se repiten acá.
+   * rótulos de "Descripción" y "Categoría" reusan las claves homónimas que ya
+   * existen más arriba en este mismo bloque -son, letra por letra, la misma
+   * etiqueta que ya usan el detalle y la hoja de filtros- así que no se
+   * repiten acá.
+   *
+   * "Precio" y "Tiempo estimado de preparación" SÍ tienen su propia clave acá
+   * -`campoPrecio`/`campoTiempoEstimado`, con la unidad entre paréntesis- en
+   * vez de reusar `tiempoEstimado` de más arriba: el campo del formulario
+   * pide un número pelado sin unidad visible en el valor, a diferencia del
+   * detalle, que ya la muestra ahí (`formatearPrecio`, `tiempoEstimadoMinutos`).
    */
   publicar: 'Publicar',
   cancelar: 'Cancelar',
   campoNombre: 'Nombre del plato',
-  campoPrecio: 'Precio',
+  campoPrecio: 'Precio (ARS)',
+  campoTiempoEstimado: 'Tiempo estimado de preparación (min)',
   campoImagen: 'Imagen del plato',
   /** [PROPIO] Placeholder del desplegable de categoría sin selección. */
   categoriaPlaceholder: 'Seleccioná una categoría',
