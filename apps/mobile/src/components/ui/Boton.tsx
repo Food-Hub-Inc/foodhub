@@ -164,7 +164,7 @@ export function BotonDeTexto({
       onPress={onPress}
       accessibilityRole="link"
       accessibilityLabel={accessibilityLabel ?? children}
-      className="min-h-11 justify-center py-2"
+      className="min-h-11 items-center justify-center py-2"
     >
       <Text className={`text-body font-bold ${className}`}>{children}</Text>
     </Pressable>

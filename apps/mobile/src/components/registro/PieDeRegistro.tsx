@@ -82,7 +82,7 @@ export function PieDeRegistro({
         {cuentaCreada ? TEXTOS_REGISTRO.continuar : TEXTOS_REGISTRO.registrarse}
       </Boton>
 
-      <View className="mt-6 flex-row justify-center">
+      <View className="mt-6 flex-col items-center justify-center">
         <Text className="text-body text-text-secondary">
           {TEXTOS_REGISTRO.yaTenesCuenta}
         </Text>

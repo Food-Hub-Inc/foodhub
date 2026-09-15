@@ -183,7 +183,7 @@ function CuerpoDelSelector({
           variante="secundario"
           tamano="sm"
           onPress={onReintentar}
-          className="mt-4"
+          className="mt-4 flex-row items-center justify-center gap-2"
         >
           {TEXTOS_UBICACION.reintentar}
         </Boton>
