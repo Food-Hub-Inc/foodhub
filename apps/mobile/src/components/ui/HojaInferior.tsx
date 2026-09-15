@@ -5,7 +5,7 @@ import {
   type ComponentRef,
   type ReactNode,
 } from 'react';
-import { BackHandler, View } from 'react-native';
+import { Keyboard, BackHandler, View } from 'react-native';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -86,6 +86,11 @@ export function HojaInferior({
 
   useEffect(() => {
     if (abierta) {
+      // Sin esto, tocar el campo mientras el teclado está abierto (por
+      // ejemplo, el de categoría con la descripción todavía enfocada) deja la
+      // hoja tapada detrás del teclado en Android: `present()` no lo cierra
+      // por sí solo.
+      Keyboard.dismiss();
       presentada.current = true;
       referencia.current?.present();
     } else if (presentada.current && !cerradaPorGesto.current) {
