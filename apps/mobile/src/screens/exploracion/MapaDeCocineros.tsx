@@ -13,7 +13,7 @@ import {
   type ZonaVisible,
 } from '@foodhub/shared';
 import { IconoUbicacion } from '../../components/iconos';
-import { SafeAreaView } from '../../components/SafeAreaView';
+import { PantallaDeTab } from '../../components/PantallaDeTab';
 import { Boton } from '../../components/ui/Boton';
 import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoVacio } from '../../components/ui/EstadoVacio';
@@ -151,9 +151,9 @@ export function MapaDeCocineros() {
 
   if (ubicacion.estado === 'pidiendo') {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <PantallaDeTab>
         <Esqueleto className="flex-1" />
-      </SafeAreaView>
+      </PantallaDeTab>
     );
   }
 
@@ -162,7 +162,7 @@ export function MapaDeCocineros() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <PantallaDeTab>
       <View
         accessible
         accessibilityLabel={TEXTOS_EXPLORACION.etiquetaMapa}
@@ -220,7 +220,7 @@ export function MapaDeCocineros() {
           seleccionado ? altoDeLaTarjeta + SEPARACION_DE_LA_TARJETA : 0
         }
       />
-    </SafeAreaView>
+    </PantallaDeTab>
   );
 }
 
@@ -323,7 +323,7 @@ function Marcadores({
  */
 function SinPermiso({ onReintentar }: { onReintentar: () => void }) {
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <PantallaDeTab>
       <EstadoVacio
         accion={
           <View className="gap-2">
@@ -346,7 +346,7 @@ function SinPermiso({ onReintentar }: { onReintentar: () => void }) {
         icono={<IconoUbicacion className="text-text-disabled" size={28} />}
         titulo={MENSAJES_EXPLORACION.sinPermisoUbicacion}
       />
-    </SafeAreaView>
+    </PantallaDeTab>
   );
 }
 

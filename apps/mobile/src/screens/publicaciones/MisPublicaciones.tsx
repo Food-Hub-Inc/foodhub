@@ -15,7 +15,7 @@ import {
   IconoFiltro,
   IconoMas,
 } from '../../components/iconos';
-import { SafeAreaView } from '../../components/SafeAreaView';
+import { PantallaDeTab } from '../../components/PantallaDeTab';
 import { BarraDeBusqueda } from '../../components/ui/BarraDeBusqueda';
 import { Boton } from '../../components/ui/Boton';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
@@ -103,7 +103,7 @@ export function MisPublicaciones() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <PantallaDeTab>
       <EncabezadoPantalla titulo={TEXTOS_PUBLICACIONES.titulo} />
 
       <BarraSuperior
@@ -162,7 +162,7 @@ export function MisPublicaciones() {
         }}
         valor={orden}
       />
-    </SafeAreaView>
+    </PantallaDeTab>
   );
 }
 

@@ -112,11 +112,14 @@ function Formulario({ publicacion }: { publicacion: PublicacionDetalle }) {
   const [guardado, setGuardado] = useState(false);
   const editar = useEditarPublicacion();
 
+  // `router.back()` y no `replace`: a esta pantalla se llega con `push` desde
+  // el detalle (ver `DetallePublicacion`), así que el detalle ya está debajo
+  // en la pila -con su propia caché ya actualizada por `useEditarPublicacion`-.
+  // Un `replace` agrega una segunda entrada de detalle en vez de sacar esta,
+  // y el botón de volver del sistema queda pidiendo un toque extra para volver
+  // a "Mis publicaciones".
   const volver = () => {
-    router.replace({
-      pathname: '/publicaciones/[id]',
-      params: { id: publicacion.id },
-    });
+    router.back();
   };
 
   const confirmarEdicion = () => {

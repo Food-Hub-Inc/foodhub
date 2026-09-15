@@ -5,13 +5,14 @@ import {
   type ComponentRef,
   type ReactNode,
 } from 'react';
-import { View } from 'react-native';
+import { Keyboard, BackHandler, View } from 'react-native';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useResolveClassNames } from 'uniwind';
 
 /**
@@ -69,7 +70,35 @@ export function HojaInferior({
   const estiloSuperficie = useResolveClassNames('bg-surface');
 
   useEffect(() => {
+    if (!abierta) return;
+
+    const suscripcion = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        onCerrar();
+        return true;
+      },
+    );
+
+    return () => {
+      suscripcion.remove();
+    };
+  }, [abierta, onCerrar]);
+  // Esta hoja NO vive bajo `NativeTabs` (a diferencia de las pantallas de
+  // `PantallaDeTab.tsx`, que por eso excluyen este mismo inset): el portal de
+  // `BottomSheetModal` cuelga directo de la raíz de la app, así que nada le
+  // reserva el espacio de la barra de gestos/navegación del sistema. Sin
+  // sumar `insets.bottom`, el `pb-10` fijo alcanza en algunos equipos pero en
+  // otros deja el último botón tapado por esa barra.
+  const { bottom: separacionDelSistema } = useSafeAreaInsets();
+
+  useEffect(() => {
     if (abierta) {
+      // Sin esto, tocar el campo mientras el teclado está abierto (por
+      // ejemplo, el de categoría con la descripción todavía enfocada) deja la
+      // hoja tapada detrás del teclado en Android: `present()` no lo cierra
+      // por sí solo.
+      Keyboard.dismiss();
       presentada.current = true;
       referencia.current?.present();
     } else if (presentada.current && !cerradaPorGesto.current) {
@@ -89,7 +118,7 @@ export function HojaInferior({
         {...props}
         appearsOnIndex={0}
         disappearsOnIndex={-1}
-        // Tocar fuera cierra: es la salida que el usuario intenta primero.
+        // El backdrop solo recibe los toques que quedan fuera de la hoja.
         pressBehavior="close"
       />
     ),
@@ -105,9 +134,18 @@ export function HojaInferior({
       backgroundStyle={estiloSuperficie}
       handleIndicatorStyle={estiloBorde}
       accessibilityLabel={etiquetaAccesible}
+      enableContentPanningGesture={false}
     >
       <BottomSheetView>
-        <View className="px-6 pb-10 pt-2">{children}</View>
+        {/* El `40` es el `pb-10` que tenía este `View` -uniwind no admite
+            sumarle un valor dinámico a una clase-, con `insets.bottom` como
+            extra para no quedar debajo de la barra del sistema. */}
+        <View
+          className="bg-surface px-6 pt-2"
+          style={{ paddingBottom: 40 + separacionDelSistema }}
+        >
+          {children}
+        </View>
       </BottomSheetView>
     </BottomSheetModal>
   );

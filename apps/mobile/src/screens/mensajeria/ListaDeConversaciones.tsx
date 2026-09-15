@@ -7,7 +7,7 @@ import {
   type FiltroConversaciones,
 } from '@foodhub/shared';
 import { IconoMensaje } from '../../components/iconos';
-import { SafeAreaView } from '../../components/SafeAreaView';
+import { PantallaDeTab } from '../../components/PantallaDeTab';
 import { Boton } from '../../components/ui/Boton';
 import { BarraDeBusqueda } from '../../components/ui/BarraDeBusqueda';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
@@ -54,7 +54,7 @@ export function ListaDeConversaciones({ esCliente }: { esCliente: boolean }) {
   const archivar = useArchivarConversacion();
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <PantallaDeTab>
       <EncabezadoPantalla titulo={MENSAJES_MENSAJERIA.mensajes} />
 
       <View className="flex-row border-b border-border bg-surface px-4 pb-3 pt-3">
@@ -86,7 +86,7 @@ export function ListaDeConversaciones({ esCliente }: { esCliente: boolean }) {
         }}
         termino={termino}
       />
-    </SafeAreaView>
+    </PantallaDeTab>
   );
 }
 

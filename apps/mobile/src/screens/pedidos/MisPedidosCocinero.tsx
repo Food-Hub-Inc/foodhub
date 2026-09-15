@@ -10,7 +10,7 @@ import {
   type PestanaPedidosCocinero,
 } from '@foodhub/shared';
 import { IconoBolsa, IconoChevronDerecha } from '../../components/iconos';
-import { SafeAreaView } from '../../components/SafeAreaView';
+import { PantallaDeTab } from '../../components/PantallaDeTab';
 import { Boton } from '../../components/ui/Boton';
 import { DialogoSevero } from '../../components/ui/DialogoSevero';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
@@ -95,7 +95,7 @@ export function MisPedidosCocinero() {
   const contadores = consulta.data?.pages[0]?.contadores;
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <PantallaDeTab>
       <EncabezadoPantalla titulo={MENSAJES_PEDIDO.misPedidos} />
 
       <Pestanas
@@ -109,7 +109,7 @@ export function MisPedidosCocinero() {
       />
 
       <Contenido consulta={consulta} pestana={pestana} />
-    </SafeAreaView>
+    </PantallaDeTab>
   );
 }
 
