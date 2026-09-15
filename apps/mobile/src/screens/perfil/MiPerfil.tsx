@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { MENSAJES_USUARIO } from '@foodhub/shared';
-import { SafeAreaView } from '../../components/SafeAreaView';
 import { IconoEngranaje } from '../../components/iconos';
+import { PantallaDeTab } from '../../components/PantallaDeTab';
 import { BotonDeNotificaciones } from '../../components/ui/BotonDeNotificaciones';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../components/ui/Esqueleto';
@@ -34,7 +34,7 @@ export function MiPerfil() {
   const foto = useCambiarFotoDePerfil();
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <PantallaDeTab>
       <EncabezadoPantalla
         accion={
           <View className="flex-row items-center">
@@ -77,7 +77,7 @@ export function MiPerfil() {
         onElegirDeGaleria={foto.elegirDeGaleria}
         onTomarFoto={foto.tomarFoto}
       />
-    </SafeAreaView>
+    </PantallaDeTab>
   );
 }
 

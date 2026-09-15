@@ -16,7 +16,7 @@ import {
   IconoFiltro,
   IconoTilde,
 } from '../../components/iconos';
-import { SafeAreaView } from '../../components/SafeAreaView';
+import { PantallaDeTab } from '../../components/PantallaDeTab';
 import { BotonDeNotificaciones } from '../../components/ui/BotonDeNotificaciones';
 import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
@@ -88,7 +88,7 @@ export function Feed() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <PantallaDeTab>
       <BarraSuperior
         busqueda={busqueda}
         filtrosActivos={hayFiltrosDelFeedActivos(filtros)}
@@ -133,7 +133,7 @@ export function Feed() {
       />
 
       <BotonFlotanteDelCarrito />
-    </SafeAreaView>
+    </PantallaDeTab>
   );
 }
 

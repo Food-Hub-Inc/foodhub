@@ -18,7 +18,7 @@ import {
   IconoCocinero,
   IconoUsuario,
 } from '../../components/iconos';
-import { SafeAreaView } from '../../components/SafeAreaView';
+import { PantallaDeTab } from '../../components/PantallaDeTab';
 import { BotonDeTexto } from '../../components/ui/Boton';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../components/ui/Esqueleto';
@@ -96,7 +96,7 @@ export function MiActividad() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <PantallaDeTab>
       <EncabezadoPantalla
         accion={
           <Pressable
@@ -146,7 +146,7 @@ export function MiActividad() {
         onSeleccionar={cambiarPeriodo}
         seleccion={seleccion}
       />
-    </SafeAreaView>
+    </PantallaDeTab>
   );
 }
 
