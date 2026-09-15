@@ -5,7 +5,7 @@ import {
   type ComponentRef,
   type ReactNode,
 } from 'react';
-import { View } from 'react-native';
+import { BackHandler, View } from 'react-native';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -69,6 +69,22 @@ export function HojaInferior({
   const estiloSuperficie = useResolveClassNames('bg-surface');
 
   useEffect(() => {
+    if (!abierta) return;
+
+    const suscripcion = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        onCerrar();
+        return true;
+      },
+    );
+
+    return () => {
+      suscripcion.remove();
+    };
+  }, [abierta, onCerrar]);
+
+  useEffect(() => {
     if (abierta) {
       presentada.current = true;
       referencia.current?.present();
@@ -89,7 +105,7 @@ export function HojaInferior({
         {...props}
         appearsOnIndex={0}
         disappearsOnIndex={-1}
-        // Tocar fuera cierra: es la salida que el usuario intenta primero.
+        // El backdrop solo recibe los toques que quedan fuera de la hoja.
         pressBehavior="close"
       />
     ),
@@ -105,9 +121,10 @@ export function HojaInferior({
       backgroundStyle={estiloSuperficie}
       handleIndicatorStyle={estiloBorde}
       accessibilityLabel={etiquetaAccesible}
+      enableContentPanningGesture={false}
     >
       <BottomSheetView>
-        <View className="px-6 pb-10 pt-2">{children}</View>
+        <View className="bg-surface px-6 pb-10 pt-2">{children}</View>
       </BottomSheetView>
     </BottomSheetModal>
   );
