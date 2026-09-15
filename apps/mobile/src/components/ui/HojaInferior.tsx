@@ -12,6 +12,7 @@ import {
   BottomSheetView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useResolveClassNames } from 'uniwind';
 
 /**
@@ -83,6 +84,13 @@ export function HojaInferior({
       suscripcion.remove();
     };
   }, [abierta, onCerrar]);
+  // Esta hoja NO vive bajo `NativeTabs` (a diferencia de las pantallas de
+  // `PantallaDeTab.tsx`, que por eso excluyen este mismo inset): el portal de
+  // `BottomSheetModal` cuelga directo de la raíz de la app, así que nada le
+  // reserva el espacio de la barra de gestos/navegación del sistema. Sin
+  // sumar `insets.bottom`, el `pb-10` fijo alcanza en algunos equipos pero en
+  // otros deja el último botón tapado por esa barra.
+  const { bottom: separacionDelSistema } = useSafeAreaInsets();
 
   useEffect(() => {
     if (abierta) {
@@ -129,7 +137,15 @@ export function HojaInferior({
       enableContentPanningGesture={false}
     >
       <BottomSheetView>
-        <View className="bg-surface px-6 pb-10 pt-2">{children}</View>
+        {/* El `40` es el `pb-10` que tenía este `View` -uniwind no admite
+            sumarle un valor dinámico a una clase-, con `insets.bottom` como
+            extra para no quedar debajo de la barra del sistema. */}
+        <View
+          className="bg-surface px-6 pt-2"
+          style={{ paddingBottom: 40 + separacionDelSistema }}
+        >
+          {children}
+        </View>
       </BottomSheetView>
     </BottomSheetModal>
   );

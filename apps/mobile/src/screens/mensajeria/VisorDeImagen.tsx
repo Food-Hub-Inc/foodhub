@@ -3,6 +3,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Directory, File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MENSAJES_MENSAJERIA } from '@foodhub/shared';
 import { Boton } from '../../components/ui/Boton';
 import { TEXTOS_MENSAJERIA } from '../../lib/textos';
@@ -97,6 +98,10 @@ export function VisorDeImagen({
   onCerrar: () => void;
 }) {
   const { error, descargando, descargar } = useDescarga(imagenUrl);
+  // Este modal no vive bajo `NativeTabs` (mismo motivo que `HojaInferior`):
+  // nada le reserva el espacio de la barra de gestos del sistema, así que la
+  // fila de botones necesita su propio inset inferior.
+  const { bottom: separacionDelSistema } = useSafeAreaInsets();
 
   return (
     <Modal
@@ -130,7 +135,13 @@ export function VisorDeImagen({
           </Text>
         ) : null}
 
-        <View className="flex-row gap-3 px-4 pb-8 pt-3">
+        {/* El `32` es el `pb-8` que tenía este `View` -uniwind no admite
+            sumarle un valor dinámico a una clase-, con `insets.bottom` como
+            extra para no quedar debajo de la barra del sistema. */}
+        <View
+          className="flex-row gap-3 px-4 pt-3"
+          style={{ paddingBottom: 32 + separacionDelSistema }}
+        >
           <View className="flex-1">
             <Boton
               cargando={descargando}
