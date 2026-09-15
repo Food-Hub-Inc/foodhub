@@ -334,7 +334,11 @@ function SinPermiso({ onReintentar }: { onReintentar: () => void }) {
             >
               {TEXTOS_EXPLORACION.abrirConfiguracion}
             </Boton>
-            <Boton onPress={onReintentar} variante="secundario">
+            <Boton
+              className="mt-4 flex-row items-center justify-center gap-2"
+              onPress={onReintentar}
+              variante="secundario"
+            >
               {TEXTOS_UBICACION.reintentar}
             </Boton>
           </View>
