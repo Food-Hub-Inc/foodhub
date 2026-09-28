@@ -380,6 +380,92 @@ export const TEXTOS_MOTIVOS = {
   limpiarFiltros: 'Limpiar filtros',
 } as const;
 
+/**
+ * Sección "Gestión de ayuda" del panel — US-AYU-05.
+ *
+ * Los textos que fijan los criterios de aceptación (pestañas, botones "Nuevo
+ * capítulo" / "Nueva pregunta" / "Deshabilitar", etiquetas de campos, diálogo
+ * de confirmación y confirmaciones de éxito) se importan de
+ * `MENSAJES_AYUDA.admin` en `@foodhub/shared`. Acá quedan solo los rótulos de
+ * columnas, títulos de diálogo y estados vacíos que la documentación no fija.
+ */
+export const TEXTOS_GESTION_AYUDA = {
+  /** [PROPIO] Bajada de la pantalla. */
+  subtitulo:
+    'Administrá el manual de usuario y las preguntas frecuentes que ven los usuarios de la app.',
+  /** [PROPIO] Acción que vuelve al listado desde la página de edición. */
+  volver: 'Volver',
+  /** [PROPIO] Bajada de la página de alta y edición de un capítulo. */
+  subtituloFormularioCapitulo:
+    'Completá el capítulo y sus secciones. Los cambios se reflejan de inmediato en la ayuda que ven los usuarios.',
+
+  // --- Manual de usuario ---
+  columnaTitulo: 'TÍTULO',
+  columnaRol: 'ROL DESTINATARIO',
+  columnaSecciones: 'SECCIONES',
+  columnaEstado: 'ESTADO',
+  columnaModificacion: 'ÚLTIMA MODIFICACIÓN',
+  columnaAcciones: 'ACCIONES',
+  /** [PROPIO] Acciones de fila del manual. */
+  accionEditarCapitulo: 'Editar capítulo',
+  accionHabilitarCapitulo: 'Habilitar capítulo',
+  accionDeshabilitarCapitulo: 'Deshabilitar capítulo',
+  dialogoAltaCapituloTitulo: 'Nuevo capítulo',
+  dialogoEdicionCapituloTitulo: 'Editar capítulo',
+  /** [PROPIO] Título corto; el texto completo es el literal de la US. */
+  dialogoDeshabilitarTitulo: 'Deshabilitar contenido',
+  /** [PROPIO] Placeholder del título de una sección. */
+  placeholderTituloSeccion: 'Título de la sección',
+  /** [PROPIO] Etiqueta del título de una sección del capítulo. */
+  etiquetaTituloSeccion: 'Título de la sección',
+  /** [PROPIO] Texto del botón que confirma el alta. */
+  guardarAlta: 'Guardar',
+
+  // --- Preguntas frecuentes ---
+  columnaPregunta: 'PREGUNTA',
+  columnaCategoria: 'CATEGORÍA',
+  columnaVotosUtiles: 'VOTOS ÚTILES',
+  /** [PROPIO] Acciones de fila de las FAQ. */
+  accionEditarFaq: 'Editar pregunta',
+  accionHabilitarFaq: 'Habilitar pregunta',
+  accionDeshabilitarFaq: 'Deshabilitar pregunta',
+  dialogoAltaFaqTitulo: 'Nueva pregunta',
+  dialogoEdicionFaqTitulo: 'Editar pregunta',
+  /** [PROPIO] Placeholder del enunciado. */
+  placeholderPregunta: '¿Cómo hago…?',
+  /** [PROPIO] Placeholder de la respuesta. */
+  placeholderRespuesta: 'Escribí la respuesta que verá el usuario.',
+
+  // --- Filtros ---
+  filtroRol: 'Rol',
+  filtroCategoria: 'Categoría',
+  filtroEstado: 'Estado',
+  todos: 'Todos',
+  habilitados: 'Habilitados',
+  deshabilitados: 'Deshabilitados',
+
+  /** [PROPIO] Estado vacío sin filtros aplicados. */
+  vacioManualSinFiltros: 'Todavía no cargaste capítulos del manual.',
+  /** [PROPIO] Estado vacío con filtros aplicados. */
+  vacioManualConFiltros: 'No hay capítulos que coincidan con los filtros.',
+  /** [PROPIO] Estado vacío sin filtros aplicados. */
+  vacioFaqSinFiltros: 'Todavía no cargaste preguntas frecuentes.',
+  /** [PROPIO] Estado vacío con filtros aplicados. */
+  vacioFaqConFiltros: 'No hay preguntas que coincidan con los filtros.',
+  limpiarFiltros: 'Limpiar filtros',
+
+  // --- Editor enriquecido ---
+  /** [PROPIO] Acción que abre el selector de archivo para insertar una imagen. */
+  insertarImagen: 'Insertar imagen',
+  /** [PROPIO] Estado del botón mientras la imagen se sube a Storage. */
+  subiendoImagen: 'Subiendo imagen…',
+  /** [PROPIO] Error al subir la imagen ilustrativa. */
+  errorImagen:
+    'No pudimos subir la imagen. Revisá tu conexión e intentá de nuevo.',
+  /** [PROPIO] Etiqueta accesible del editor de contenido. */
+  etiquetaContenido: 'Contenido',
+} as const;
+
 /** PAN-ADM-04 · Parámetros generales del sistema — US-CFG-03. */
 export const TEXTOS_PARAMETROS = {
   /** LITERAL - US-CFG-03: "presiono sobre 'Configuración general'". */
@@ -511,4 +597,66 @@ export const TEXTOS_PROXIMAMENTE = {
   pantalla: 'Pantalla',
   modulo: 'Módulo',
   historias: 'Historias de usuario',
+} as const;
+
+/** PAN-ADM-02 · Bandeja de moderación de reseñas — US-RES-06, RF086. */
+export const TEXTOS_MODERACION = {
+  titulo: 'Moderación de contenido',
+
+  /** [PROPIO] Contador del encabezado. */
+  resumen: (cantidad: number) =>
+    cantidad === 1
+      ? '1 reseña reportada pendiente'
+      : `${String(cantidad)} reseñas reportadas pendientes`,
+
+  /** [PROPIO] Rótulos de la ficha de cada reporte. */
+  cantidadReportes: (cantidad: number) =>
+    cantidad === 1 ? '1 reporte' : `${String(cantidad)} reportes`,
+  sinPendientes: 'No hay reportes pendientes de revisión.',
+  motivos: 'Motivos',
+  detalles: 'Detalles aportados',
+  sinDetalles: 'Sin detalles adicionales.',
+  sinComentario: 'La reseña no tiene comentario.',
+  plato: 'Plato',
+  cocinero: 'Cocinero',
+  /**
+   * [PROPIO] Qué se reseñó. La cola de moderación recibe los tres tipos desde
+   * que comparten tabla, y el administrador necesita distinguirlos: no es lo
+   * mismo ocultar una opinión sobre un plato que una sobre una persona.
+   */
+  tipoDeResena: {
+    PLATO: 'Reseña de un plato',
+    COCINERO: 'Reseña a un cocinero',
+    CLIENTE: 'Reseña a un cliente',
+  },
+
+  autor: 'Autor de la reseña',
+  primerReporte: 'Primer reporte',
+
+  /**
+   * [PROPIO] Las dos acciones de RF086. El requisito describe las ramas
+   * ("aprobación del reporte", "rechazo del reporte") pero no rotula los
+   * botones. Se nombran por lo que le pasa a la RESEÑA y no al reporte:
+   * "aprobar" es ambiguo cuando lo que se aprueba es una denuncia.
+   */
+  ocultar: 'Ocultar reseña',
+  mantener: 'Dejarla visible',
+
+  /** [PROPIO] Confirmación previa: las dos ramas son difíciles de deshacer. */
+  confirmarOcultarTitulo: '¿Ocultar esta reseña?',
+  confirmarOcultar:
+    'La reseña deja de verse en el perfil del cocinero y en el detalle del plato, y sale de los dos promedios.',
+  confirmarMantenerTitulo: '¿Dejar la reseña visible?',
+  confirmarMantener:
+    'La reseña se mantiene publicada y los reportes quedan resueltos. No va a volver a aparecer en esta bandeja.',
+  confirmar: 'Confirmar',
+  cancelar: 'Cancelar',
+
+  /**
+   * [PROPIO] Las notificaciones de las dos ramas que exige RF086 no se envían
+   * todavía: el módulo de Notificaciones no existe. Se avisa en pantalla para
+   * que el administrador no dé por hecho que el autor se enteró.
+   */
+  avisoSinNotificaciones:
+    'Las notificaciones al autor y a quienes reportaron todavía no se envían: el módulo de Notificaciones está pendiente.',
 } as const;

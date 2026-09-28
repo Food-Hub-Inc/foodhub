@@ -124,12 +124,12 @@ antes de tocar la base.
 
 ---
 
-## RES · Reseñas y calificaciones (6 historias)
+## RES · Reseñas y calificaciones (7 historias)
 
-Reputación **bidireccional**: el cliente reseña los platos que pidió y el
-cocinero califica al cliente.
+Reputación **bidireccional**: el cliente reseña los platos que pidió y al
+cocinero que lo atendió, y el cocinero reseña al cliente.
 
-| Historia  | Quién califica a quién / qué hace                            |
+| Historia  | Quién reseña a quién / qué hace                              |
 | --------- | ------------------------------------------------------------ |
 | US-RES-01 | cliente → **un plato** de un pedido completado (PAN-RES-01)   |
 | US-RES-02 | cocinero → cliente, tras un pedido que llegó a aceptado       |
@@ -137,25 +137,46 @@ cocinero califica al cliente.
 | US-RES-04 | reaccionar a una reseña (me gusta / no me gusta)            |
 | US-RES-05 | el cocinero responde una reseña                             |
 | US-RES-06 | reportar una reseña inapropiada                             |
+| US-RES-07 | cliente → **el cocinero**, tras un pedido completado (RF087, PAN-RES-03) |
+
+**La regla que ordena todo el módulo:**
+
+> Una reseña se identifica por **(autor, objeto reseñado)**, y el objeto es un
+> **plato, un cocinero o un cliente**. Hay una sola por autor y objeto. El pedido
+> **solo valida el derecho** a reseñar; no es la clave de negocio y no aparece en
+> ninguna tabla del módulo.
 
 Reglas:
 
 - Calificación de **1 a 5** (CHECK en la base).
-- **La reseña es por plato, no por pedido.** Una por cliente y publicación
-  (`resena_cliente_publicacion_uq`); si el cliente vuelve a pedir el mismo plato,
-  edita la que ya tiene. Ninguna de las dos tablas referencia `pedido`.
-- Solo se reseña un plato que el cliente pidió en un pedido **completado**, y solo
-  se califica a un cliente que hizo un pedido que llegó a **aceptado**. Las dos
-  condiciones se validan por consulta contra `pedido`/`item_pedido`.
-- Una calificación por par cocinero-cliente (`calificacion_cocinero_uq`),
-  editable.
-- Solo las reseñas `VISIBLE` promedian en el perfil público. La moderación las
-  pasa a `OCULTA_MODERACION`; el autor puede pasarlas a `ELIMINADA_AUTOR`.
+- Los tres tipos viven en una tabla con discriminador `tipo_resena`; ver el
+  capítulo 02.
+- **Qué hito habilita cada una:** un pedido `COMPLETADO` para reseñar un plato o
+  un cocinero, y uno que llegó a `ACEPTADO` para reseñar a un cliente —US-RES-02
+  quiere que el cocinero pueda dejar constancia del que no apareció a retirar, y
+  ese pedido nunca se completa—. Se valida contra `historial_estado_pedido`, no
+  contra el estado actual.
+- **Solo la reseña de PLATO tiene ventana de edición** (48 h, que se reabre con
+  cada pedido nuevo del mismo plato). Las de una persona son la opinión vigente y
+  se editan siempre.
+- **Dónde se ve cada listado:** las reseñas de un plato, en el detalle del plato
+  (RF019); las que le dejaron a un cocinero, en su perfil público; las de sus
+  platos, en "Mis reseñas"; las de un cliente, en su perfil, **solo para
+  cocineros**.
+- **El promedio público del cocinero sale de las reseñas de tipo COCINERO** en
+  todo el sistema —feed, mapa, tarjetas, favoritos, carrito y perfil—.
+- Solo las reseñas `VISIBLE` promedian. La moderación las pasa a
+  `OCULTA_MODERACION`; el autor puede pasarlas a `ELIMINADA_AUTOR`.
 - **Una reacción por usuario y reseña**: cambiar de opinión es un UPDATE, no una
   fila nueva.
-- La respuesta del cocinero tiene **ventana de edición** (`fecha_edicion_limite`):
-  pasada, se congela, para que no se altere después de que el cliente la leyó.
+- La respuesta del cocinero tiene **ventana de edición** de 24 h: pasada, se
+  congela, para que no se altere después de que el cliente la leyó.
 - Un usuario no puede reportar dos veces la misma reseña.
+
+> El módulo se corrigió el **2026-09-04**: la reseña al cocinero estaba anclada
+> al pedido. Los desvíos deliberados respecto de la especificación —ese anclaje,
+> el ícono de US-RES-06 y dónde vive el listado de reseñas de plato— están en la
+> sección 17 de `PENDIENTE_RESENAS.md`.
 
 ---
 

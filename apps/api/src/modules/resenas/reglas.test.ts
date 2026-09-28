@@ -174,6 +174,7 @@ describe('contieneTerminoModerado', () => {
 function filaDeEjemplo(cambios: Partial<FilaResena> = {}): FilaResena {
   return {
     id: 'a1b2c3d4-0000-4000-8000-000000000001',
+    tipoResena: 'PLATO',
     publicacionId: 'a1b2c3d4-0000-4000-8000-000000000002',
     calificacion: 5,
     comentario: 'Excelente',
@@ -226,8 +227,12 @@ describe('aResenaPublica', () => {
   it('muestra el nombre del plato y habilita el enlace si la publicación está activa', () => {
     const publica = aResenaPublica(filaDeEjemplo());
 
-    expect(publica.nombrePlato).toBe('Milanesa napolitana');
-    expect(publica.enlaceAlPlatoHabilitado).toBe(true);
+    expect(publica.tipo).toBe('PLATO');
+    expect(publica.plato).toEqual({
+      publicacionId: 'a1b2c3d4-0000-4000-8000-000000000002',
+      nombre: 'Milanesa napolitana',
+      enlaceHabilitado: true,
+    });
   });
 
   /**
@@ -238,11 +243,79 @@ describe('aResenaPublica', () => {
   it('sustituye el nombre y deshabilita el enlace si la publicación fue dada de baja', () => {
     const publica = aResenaPublica(filaDeEjemplo({ publicacionActiva: false }));
 
-    expect(publica.nombrePlato).toBe(MENSAJES_RESENA.platoNoDisponible);
-    expect(publica.enlaceAlPlatoHabilitado).toBe(false);
+    expect(publica.plato?.nombre).toBe(MENSAJES_RESENA.platoNoDisponible);
+    expect(publica.plato?.enlaceHabilitado).toBe(false);
   });
 
   it('normaliza los tags ausentes a una lista vacía', () => {
     expect(aResenaPublica(filaDeEjemplo({ tags: null })).tags).toEqual([]);
   });
+
+  /**
+   * Las tres resenas comparten tabla desde la migracion 0015, asi que el mapeo
+   * es lo unico que impide que una opinion sobre un cocinero salga al contrato
+   * con un plato pegado.
+   */
+  it('no adjunta plato a una reseña que no es de un plato', () => {
+    const publica = aResenaPublica(
+      filaDeEjemplo({
+        tipoResena: 'COCINERO',
+        publicacionId: null,
+        nombrePlato: null,
+        publicacionActiva: null,
+      }),
+    );
+
+    expect(publica.tipo).toBe('COCINERO');
+    expect(publica.plato).toBeNull();
+  });
+
+  /**
+   * US-RES-02: la resena a un cliente no es visible para el cliente ni para
+   * otros clientes, asi que no hay conversacion publica sobre ella. `social`
+   * en `null` es lo que le dice a la tarjeta que no dibuje reacciones, ni
+   * respuesta, ni el boton de reportar.
+   */
+  it('no expone reacciones ni reporte en una reseña a un cliente', () => {
+    const publica = aResenaPublica(
+      filaDeEjemplo({
+        tipoResena: 'CLIENTE',
+        publicacionId: null,
+        nombrePlato: null,
+        publicacionActiva: null,
+      }),
+    );
+
+    expect(publica.social).toBeNull();
+    expect(publica.plato).toBeNull();
+  });
+
+  /** En cambio las de plato y las de cocinero si la tienen. */
+  it('expone la conversación pública en las reseñas de plato y de cocinero', () => {
+    expect(aResenaPublica(filaDeEjemplo()).social).not.toBeNull();
+    expect(
+      aResenaPublica(
+        filaDeEjemplo({
+          tipoResena: 'COCINERO',
+          publicacionId: null,
+          nombrePlato: null,
+          publicacionActiva: null,
+        }),
+      ).social,
+    ).not.toBeNull();
+  });
 });
+
+/**
+ * US-RES-07 - La resena al cocinero NO TIENE VENTANA DE EDICION.
+ *
+ * Aca habia un `describe` de `ventanaDeCalificacionAbierta`, que comprobaba
+ * que la calificacion al cocinero se congelaba a las 48 horas y no se reabria.
+ * Esa regla se cayo con el modelo: la ventana se justificaba en que la
+ * calificacion referia a la experiencia de UN PEDIDO, y al pasar a ser una por
+ * cocinero es la opinion vigente del cliente sobre esa persona. Congelarla
+ * obligaria a arrastrar para siempre una opinion que ya cambio.
+ *
+ * La ventana de la resena DE PLATO sigue viva y se prueba mas arriba: esa si
+ * describe un producto que se consumio una vez.
+ */

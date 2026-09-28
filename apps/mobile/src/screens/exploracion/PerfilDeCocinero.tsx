@@ -2,15 +2,22 @@ import { useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { router } from 'expo-router';
-import { MENSAJES_EXPLORACION, type CocineroPublico } from '@foodhub/shared';
+import {
+  MENSAJES_EXPLORACION,
+  MENSAJES_RESENA,
+  type CocineroPublico,
+} from '@foodhub/shared';
 import { IconoCocinero } from '../../components/iconos';
 import { SafeAreaView } from '../../components/SafeAreaView';
+import { Aviso } from '../../components/ui/Aviso';
+import { Boton } from '../../components/ui/Boton';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
 import { EstadoVacio } from '../../components/ui/EstadoVacio';
 import { useCocineroPublico } from '../../hooks/useExploracion';
 import { useAlternarCocineroFavorito } from '../../hooks/useFavoritos';
+import { useMiResenaDeCocinero } from '../../hooks/useResenas';
 import { useUbicacionActual } from '../../hooks/useUbicacionActual';
 import { mensajeDeError } from '../../lib/api';
 import { formatearPrecio } from '../../lib/formato';
@@ -117,8 +124,36 @@ function Contenido({
     </>
   );
 
+  /**
+   * US-RES-03 — la solapa muestra LO QUE LE DIJERON AL COCINERO, no las reseñas
+   * de sus platos.
+   *
+   * Las de los platos se movieron al detalle de cada plato (RF019), que es
+   * donde sirven para decidir si pedirlo. Acá abajo eran un listado sobre
+   * comida colgando de un perfil sobre una persona, y encima con su propio
+   * promedio al lado del de la ficha: dos números para el mismo cocinero, a
+   * dos centímetros de distancia.
+   *
+   * El promedio de arriba y el del resumen de este listado salen ahora de la
+   * misma consulta, así que no pueden discrepar.
+   */
   if (solapa === 'RESENAS') {
-    return <ListaDeResenas cocineroId={cocinero.id} encabezado={cabecera} />;
+    return (
+      <ListaDeResenas
+        encabezado={
+          <>
+            {cabecera}
+            <BotonDeResenarAlCocinero cocineroId={cocinero.id} />
+          </>
+        }
+        origen={{ tipo: 'COCINERO', cocineroId: cocinero.id }}
+        textosVacio={{
+          titulo: MENSAJES_RESENA.cocineroSinResenasTitulo,
+          subtitulo: MENSAJES_RESENA.cocineroSinResenasSubtitulo,
+        }}
+        titulo={TEXTOS_RESENA.tituloOpinionesDelCocinero}
+      />
+    );
   }
 
   return (
@@ -143,6 +178,66 @@ function Contenido({
         />
       )}
     />
+  );
+}
+
+/**
+ * Botón para reseñar al cocinero — US-RES-03.
+ *
+ * SIEMPRE VISIBLE, y no solo dentro del estado vacío como estaba antes. Un
+ * botón que aparece únicamente cuando el cocinero no tiene ninguna reseña es
+ * un botón que casi nadie ve: en cuanto tiene la primera, el cliente que le
+ * compró se queda sin forma de opinar desde el perfil.
+ *
+ * TRES ESTADOS, y el tercero es el que faltaba:
+ *
+ *   ya reseñó            "Editar mi calificación" — no hay ventana que vencer
+ *   puede reseñar        "Calificar al cocinero"
+ *   no tiene derecho     deshabilitado, y DEBAJO el motivo
+ *
+ * El motivo escrito es la mitad importante: el criterio dice cuándo mostrar el
+ * botón pero no qué decir cuando no corresponde, y un botón apagado sin
+ * explicación se lee como que la app está rota. El derecho lo resuelve el
+ * servidor —hace falta un pedido COMPLETADO con este cocinero— porque depende
+ * del historial de pedidos, que la pantalla no conoce.
+ *
+ * Mientras la consulta viaja no se dibuja nada: un botón que aparece
+ * habilitado y se apaga medio segundo después es peor que uno que llega tarde.
+ */
+function BotonDeResenarAlCocinero({ cocineroId }: { cocineroId: string }) {
+  const estado = useMiResenaDeCocinero(cocineroId);
+
+  if (estado.data === undefined) return null;
+
+  const { puedeResenar, mia } = estado.data;
+
+  if (!puedeResenar && mia === null) {
+    return (
+      <View className="gap-2">
+        <Boton deshabilitado onPress={() => undefined}>
+          {MENSAJES_RESENA.calificarAlCocinero}
+        </Boton>
+        <Aviso
+          mensaje={TEXTOS_RESENA.botonSinDerechoAResenar}
+          tono="informativo"
+        />
+      </View>
+    );
+  }
+
+  return (
+    <Boton
+      onPress={() => {
+        router.push({
+          pathname: '/resenas/calificar-cocinero',
+          params: { cocineroId },
+        });
+      }}
+    >
+      {mia === null
+        ? MENSAJES_RESENA.calificarAlCocinero
+        : MENSAJES_RESENA.editarMiCalificacion}
+    </Boton>
   );
 }
 

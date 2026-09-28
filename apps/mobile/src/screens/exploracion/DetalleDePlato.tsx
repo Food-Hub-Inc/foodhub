@@ -1,8 +1,12 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { MENSAJES_EXPLORACION, type PublicacionPublica } from '@foodhub/shared';
+import {
+  MENSAJES_EXPLORACION,
+  MENSAJES_RESENA,
+  type PublicacionPublica,
+} from '@foodhub/shared';
 import { IconoAlerta, IconoCocinero } from '../../components/iconos';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { Aviso } from '../../components/ui/Aviso';
@@ -17,7 +21,8 @@ import { usePublicacionPublica } from '../../hooks/useExploracion';
 import { useAlternarPublicacionFavorita } from '../../hooks/useFavoritos';
 import { esErrorApi, mensajeDeError } from '../../lib/api';
 import { formatearPrecio } from '../../lib/formato';
-import { TEXTOS_EXPLORACION } from '../../lib/textos';
+import { TEXTOS_EXPLORACION, TEXTOS_RESENA } from '../../lib/textos';
+import { ListaDeResenas } from '../resenas/ListaDeResenas';
 import { BotonFlotanteDelCarrito } from './BotonFlotanteDelCarrito';
 import {
   AvatarDeCocinero,
@@ -33,6 +38,11 @@ import {
  * descripción completa, precio, categoría, tiempo estimado de preparación, estado
  * de disponibilidad con color diferenciado, nombre del cocinero con enlace a su
  * perfil y valoración promedio del plato".
+ *
+ * DEBAJO VA EL LISTADO DE RESEÑAS DEL PLATO (RF019). Vivían en el perfil del
+ * cocinero, que era el lugar equivocado: ahí opinaban sobre comida colgando de
+ * un perfil sobre una persona, y con su propio promedio al lado del de la
+ * ficha. Acá son lo que un cliente lee justo antes de decidir si lo pide.
  *
  * Esta es la pantalla donde el módulo se cruza con el carrito, y donde vive la
  * parte más delicada: el cuarto criterio exige preguntar antes de reemplazar un
@@ -102,43 +112,66 @@ function Detalle({
 }) {
   const noDisponible = plato.estadoPublicacion === 'NO_DISPONIBLE';
 
+  /**
+   * TODO EL DETALLE VIAJA COMO ENCABEZADO DE LA LISTA, y no al revés.
+   *
+   * El listado de reseñas es un `FlatList` y esta pantalla era un `ScrollView`:
+   * meter uno dentro del otro anida dos scrolls verticales, rompe la
+   * virtualización y la guía lo prohíbe. La salida es la misma que ya usa el
+   * perfil del cocinero —la lista manda y el contenido fijo es su cabecera— y
+   * de paso el `pb-24` deja de hacer falta: lo pone la lista.
+   */
+  const detalle = (
+    <>
+      <FotoDelPlato
+        imagenUrl={plato.imagenUrl ?? plato.categoria.imagenPredeterminadaUrl}
+      />
+
+      <EncabezadoDelPlato plato={plato} />
+
+      <SeccionDeCocinero plato={plato} />
+
+      <View className="mt-3 bg-surface px-4 py-4">
+        <Text className="mb-1.5 text-label font-semibold text-text-primary">
+          {TEXTOS_EXPLORACION.descripcion}
+        </Text>
+        <Text className="text-body text-text-secondary">
+          {plato.descripcion}
+        </Text>
+
+        {plato.tiempoEstimadoPreparacion !== null ? (
+          <>
+            <Text className="mb-1.5 mt-4 text-label font-semibold text-text-primary">
+              {TEXTOS_EXPLORACION.tiempoEstimado}
+            </Text>
+            <Text className="text-body text-text-secondary">
+              {TEXTOS_EXPLORACION.tiempoEstimadoMinutos(
+                plato.tiempoEstimadoPreparacion,
+              )}
+            </Text>
+          </>
+        ) : null}
+      </View>
+    </>
+  );
+
   return (
     <>
-      {/* `pb-24` y no `pb-6`: es el colchón que ya usan el feed, favoritos y el
-          perfil del cocinero para que el botón flotante del carrito no tape la
-          última línea del contenido al llegar al final del scroll. */}
-      <ScrollView contentContainerClassName="pb-24">
-        <FotoDelPlato
-          imagenUrl={plato.imagenUrl ?? plato.categoria.imagenPredeterminadaUrl}
-        />
+      {/* RF019 — las reseñas de ESTE plato, con sus filtros, su galería y su
+          paginación de a diez. */}
+      <ListaDeResenas
+        encabezado={detalle}
+        origen={{ tipo: 'PLATO', publicacionId: plato.id }}
+        textosVacio={{
+          titulo: MENSAJES_RESENA.platoSinResenasTitulo,
+          subtitulo: MENSAJES_RESENA.platoSinResenasSubtitulo,
+        }}
+        titulo={TEXTOS_RESENA.tituloResenasDelPlato}
+      />
 
-        <EncabezadoDelPlato plato={plato} />
-
-        <SeccionDeCocinero plato={plato} />
-
-        <View className="mt-3 bg-surface px-4 py-4">
-          <Text className="mb-1.5 text-label font-semibold text-text-primary">
-            {TEXTOS_EXPLORACION.descripcion}
-          </Text>
-          <Text className="text-body text-text-secondary">
-            {plato.descripcion}
-          </Text>
-
-          {plato.tiempoEstimadoPreparacion !== null ? (
-            <>
-              <Text className="mb-1.5 mt-4 text-label font-semibold text-text-primary">
-                {TEXTOS_EXPLORACION.tiempoEstimado}
-              </Text>
-              <Text className="text-body text-text-secondary">
-                {TEXTOS_EXPLORACION.tiempoEstimadoMinutos(
-                  plato.tiempoEstimadoPreparacion,
-                )}
-              </Text>
-            </>
-          ) : null}
-        </View>
-      </ScrollView>
-
+      {/* FUERA DE LA LISTA, y no se mueve de acá: mide su propio alto para que
+          el botón flotante del carrito no le coma el toque, y es el camino más
+          delicado de la app. */}
       <PieDeAccion
         noDisponible={noDisponible}
         onAlto={onAltoDelPie}

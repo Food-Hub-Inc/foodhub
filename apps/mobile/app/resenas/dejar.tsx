@@ -8,10 +8,15 @@ import { TEXTOS_RESENA } from '../../src/lib/textos';
 /**
  * PAN-RES-01 · Dejar reseña — US-RES-01.
  *
- * RECIBE LA PUBLICACIÓN, NO EL PEDIDO. La reseña es por plato (decisión del
- * 2026-08-18), así que la pantalla se abre una vez por cada ítem del pedido que
- * el cliente quiera calificar. El pedido no viaja: su único papel era habilitar
- * el derecho a opinar, y eso lo verifica el servidor por su cuenta.
+ * LO QUE SE RESEÑA ES LA PUBLICACIÓN, NO EL PEDIDO. La reseña es por plato
+ * (decisión del 2026-08-18), así que la pantalla se abre una vez por cada ítem
+ * del pedido que el cliente quiera calificar, y el derecho a opinar lo verifica
+ * el servidor por su cuenta contra el historial.
+ *
+ * `cocineroId` viaja igual, pero NO para reseñar: es lo que permite encadenar con
+ * la calificación al cocinero cuando la reseña se publica, que es el criterio
+ * de US-RES-01 "ofrezca a continuación la calificación al cocinero de ese
+ * pedido". Es opcional: sin él la pantalla funciona y solo no encadena.
  *
  * El parámetro va por query string y no como segmento dinámico de la ruta
  * (`/resenas/[publicacionId]`) para no romper los dos lugares que ya navegan
@@ -19,7 +24,10 @@ import { TEXTOS_RESENA } from '../../src/lib/textos';
  * pantallas, que declara esta ruta sin parámetros.
  */
 export default function DejarResenaRuta() {
-  const { publicacionId } = useLocalSearchParams<{ publicacionId?: string }>();
+  const { publicacionId, cocineroId } = useLocalSearchParams<{
+    publicacionId?: string;
+    cocineroId?: string;
+  }>();
 
   /**
    * Sin publicación no hay nada que reseñar. Pasa si alguien abre la ruta a
@@ -49,5 +57,10 @@ export default function DejarResenaRuta() {
     );
   }
 
-  return <DejarResena publicacionId={publicacionId} />;
+  return (
+    <DejarResena
+      cocineroId={cocineroId ?? null}
+      publicacionId={publicacionId}
+    />
+  );
 }

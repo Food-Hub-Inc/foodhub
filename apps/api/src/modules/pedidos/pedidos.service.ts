@@ -18,6 +18,7 @@ import {
   type EventoPedido,
   type FiltrosPedidoCliente,
   type FiltrosPedidoCocinero,
+  type FiltrosPedidosConCliente,
   type PaginaPedidos,
   type PedidoDetalle,
   type TipoUsuario,
@@ -323,6 +324,61 @@ export async function listarPedidosDelCocinero(
     pagina: filtros.pagina,
     porPagina: filtros.porPagina,
     contadores: await contarPorEstado(pedidosDelCocinero(cocineroId)),
+  });
+}
+
+/**
+ * US-DASH-03 - Historial de un cliente con el cocinero de la sesion.
+ *
+ * ES LA SOLAPA "SUS PEDIDOS" DEL PERFIL DEL CLIENTE. El cuarto criterio pide
+ * "el historial de pedidos realizados a ese cocinero", asi que el filtro son
+ * las dos partes a la vez: sin `pedidosDelCocinero` un cocinero veria lo que
+ * ese cliente le pidio a la competencia.
+ *
+ * SIN PESTANA Y CON TODOS LOS ESTADOS, a diferencia de la bandeja: aca no se
+ * esta despachando sino reconstruyendo una relacion, y un pedido rechazado o
+ * cancelado dice tanto de un cliente como uno completado.
+ *
+ * `clienteIdParaResenas` va en `null` porque quien mira es el cocinero: la
+ * marca de "ya resenado" es del cliente sobre sus platos y no aplica.
+ */
+export async function listarPedidosConCliente(entrada: {
+  cocineroId: string;
+  clienteId: string;
+  filtros: FiltrosPedidosConCliente;
+}): Promise<PaginaPedidos> {
+  const { cocineroId, clienteId, filtros } = entrada;
+  const valoracion = subconsultaValoracionPorCliente();
+
+  const delPar = todas([
+    pedidosDelCocinero(cocineroId),
+    eq(pedido.clientePedidoId, clienteId),
+  ]);
+
+  const filas = await db
+    .select({
+      ...columnasPedido,
+      ...columnasParticipante,
+      participanteValoracion: valoracion.promedio,
+      puedeCalificar: sql<boolean>`(
+        ${pedido.estadoPedidoActual} = 'COMPLETADO'
+        and ${cocineroNoCalificoAlCliente}
+      )`,
+    })
+    .from(pedido)
+    .innerJoin(usuario, eq(usuario.id, pedido.clientePedidoId))
+    .leftJoin(valoracion.tabla, eq(valoracion.tabla.clienteId, usuario.id))
+    .where(delPar)
+    .orderBy(desc(pedido.fechaCreacion))
+    .limit(filtros.porPagina + 1)
+    .offset((filtros.pagina - 1) * filtros.porPagina);
+
+  return armarPagina({
+    filas,
+    clienteIdParaResenas: null,
+    pagina: filtros.pagina,
+    porPagina: filtros.porPagina,
+    contadores: await contarPorEstado(delPar),
   });
 }
 

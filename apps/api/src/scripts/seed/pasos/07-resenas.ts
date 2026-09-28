@@ -1,4 +1,4 @@
-import { calificacionCocinero, resena, respuestaCocinero } from '@foodhub/db';
+import { resena, respuestaCocinero } from '@foodhub/db';
 import type { EstadoResena } from '@foodhub/shared';
 import { db } from '../../../lib/db.js';
 import {
@@ -6,6 +6,7 @@ import {
   COMENTARIOS_RESENA,
   RESPUESTAS_COCINERO,
   TAGS_CALIFICACION_CLIENTE,
+  TAGS_CALIFICACION_COCINERO,
   TAGS_RESENA_NEGATIVAS,
   TAGS_RESENA_POSITIVAS,
 } from '../datos/textos.js';
@@ -123,9 +124,11 @@ function filaDeResena(contexto: ContextoSeed, par: ParResenable) {
     : 'VISIBLE';
 
   return {
+    tipoResena: 'PLATO' as const,
     publicacionId: par.publicacion.id,
-    clienteResId: par.clienteId,
+    autorId: par.clienteId,
     cocineroResId: par.publicacion.cocineroId,
+    clienteDestinoId: null,
     calificacion: estrellas,
     comentario: azar.probabilidad(0.85)
       ? azar.elegir(COMENTARIOS_RESENA[estrellas])
@@ -157,7 +160,7 @@ async function sembrarResenas(contexto: ContextoSeed): Promise<void> {
       .returning({
         id: resena.id,
         publicacionId: resena.publicacionId,
-        clienteResId: resena.clienteResId,
+        autorId: resena.autorId,
         cocineroResId: resena.cocineroResId,
         calificacion: resena.calificacion,
         fechaPublicacion: resena.fechaPublicacion,
@@ -165,11 +168,15 @@ async function sembrarResenas(contexto: ContextoSeed): Promise<void> {
       });
 
     for (const fila of insertadas) {
+      // Las tres columnas son anulables en el schema porque cada tipo puebla
+      // las suyas; en estas filas, que se acaban de insertar como PLATO, no
+      // pueden serlo. El `??` es la conversion del tipo del schema al del
+      // contexto del seed, no un caso que pueda ocurrir.
       contexto.resenas.push({
         id: fila.id,
-        publicacionId: fila.publicacionId,
-        clienteId: fila.clienteResId,
-        cocineroId: fila.cocineroResId,
+        publicacionId: fila.publicacionId ?? '',
+        clienteId: fila.autorId,
+        cocineroId: fila.cocineroResId ?? '',
         calificacion: fila.calificacion,
         fechaPublicacion: fila.fechaPublicacion,
         visible: fila.estadoResena === 'VISIBLE',
@@ -250,8 +257,11 @@ async function sembrarCalificacionesDeCliente(
         azar.pesado({ '5': 58, '4': 25, '3': 11, '2': 5, '1': 1 }),
       ) as Estrellas;
       return {
-        cocineroEvaluadorId: par.cocineroId,
-        clienteEvaluadoId: par.clienteId,
+        tipoResena: 'CLIENTE' as const,
+        autorId: par.cocineroId,
+        publicacionId: null,
+        cocineroResId: null,
+        clienteDestinoId: par.clienteId,
         calificacion: estrellas,
         comentario: azar.probabilidad(0.7)
           ? azar.elegir(COMENTARIOS_CALIFICACION_CLIENTE[estrellas])
@@ -262,11 +272,71 @@ async function sembrarCalificacionesDeCliente(
     });
 
   if (filas.length === 0) return;
-  await db.insert(calificacionCocinero).values(filas);
+  await db.insert(resena).values(filas);
+}
+
+/**
+ * Resena del cliente hacia el cocinero (US-RES-07, RF087).
+ *
+ * ES LA QUE CONSTRUYE LA REPUTACION PUBLICA DEL COCINERO, asi que sin estas
+ * filas el feed, el mapa y el perfil muestran "Sin calificaciones aun" para
+ * todos y no hay nada que verificar en la solapa de resenas.
+ *
+ * UNA POR PAR cliente-cocinero, igual que la anterior y por el mismo motivo:
+ * se resena a la persona y no al pedido. Se deduplica por par quedandose con
+ * el pedido mas reciente, que es lo que hace el indice `resena_cocinero_uq`
+ * del lado de la base.
+ */
+async function sembrarResenasDeCocinero(contexto: ContextoSeed): Promise<void> {
+  const { azar } = contexto;
+  const pares = new Map<
+    string,
+    { cocineroId: string; clienteId: string; fecha: Date }
+  >();
+
+  for (const ped of contexto.pedidos) {
+    if (ped.desenlace !== 'COMPLETADO') continue;
+    const clave = `${ped.clienteId}|${ped.cocineroId}`;
+    const previo = pares.get(clave);
+    if (previo && previo.fecha >= ped.fechaUltimaTransicion) continue;
+    pares.set(clave, {
+      cocineroId: ped.cocineroId,
+      clienteId: ped.clienteId,
+      fecha: ped.fechaUltimaTransicion,
+    });
+  }
+
+  const filas = [...pares.values()]
+    .filter(() => azar.probabilidad(0.64))
+    .map((par) => {
+      // La opinion sobre el servicio sigue la tendencia del cocinero, igual
+      // que la de sus platos: un cocinero descuidado no atiende mejor de lo
+      // que cocina.
+      const estrellas = Number(
+        azar.pesado({ '5': 52, '4': 27, '3': 13, '2': 6, '1': 2 }),
+      ) as Estrellas;
+      return {
+        tipoResena: 'COCINERO' as const,
+        autorId: par.clienteId,
+        publicacionId: null,
+        cocineroResId: par.cocineroId,
+        clienteDestinoId: null,
+        calificacion: estrellas,
+        comentario: azar.probabilidad(0.75)
+          ? azar.elegir(COMENTARIOS_RESENA[estrellas])
+          : null,
+        tags: azar.elegirVarios(TAGS_CALIFICACION_COCINERO, azar.entero(1, 2)),
+        fechaPublicacion: sumarDias(par.fecha, azar.entero(1, 4)),
+      };
+    });
+
+  if (filas.length === 0) return;
+  await db.insert(resena).values(filas);
 }
 
 export async function sembrarReputacion(contexto: ContextoSeed): Promise<void> {
   await sembrarResenas(contexto);
   await sembrarRespuestas(contexto);
   await sembrarCalificacionesDeCliente(contexto);
+  await sembrarResenasDeCocinero(contexto);
 }

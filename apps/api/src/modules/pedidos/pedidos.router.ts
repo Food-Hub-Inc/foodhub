@@ -6,6 +6,7 @@ import {
   confirmarPedidoSchema,
   filtrosPedidoClienteSchema,
   filtrosPedidoCocineroSchema,
+  filtrosPedidosConClienteSchema,
   rechazarPedidoSchema,
 } from '@foodhub/shared';
 import { sesionDe } from '../../lib/request.js';
@@ -89,6 +90,28 @@ pedidosRouter.get('/recibidos', requiereRol('COCINERO'), async (req, res) => {
   );
   res.json(pagina);
 });
+
+/**
+ * US-DASH-03 - Los pedidos que un cliente le hizo a este cocinero.
+ *
+ * Va antes que `/:id` por el mismo motivo que `/recibidos`: Express evalua en
+ * orden y "con-cliente" entraria como identificador.
+ *
+ * El cocinero sale de la sesion y no de la URL, asi que un cocinero no puede
+ * pedir el historial de otro cambiando un parametro.
+ */
+pedidosRouter.get(
+  '/con-cliente/:clienteId',
+  requiereRol('COCINERO'),
+  async (req, res) => {
+    const pagina = await pedidosService.listarPedidosConCliente({
+      cocineroId: sesionDe(req).id,
+      clienteId: idPedidoSchema.parse(req.params.clienteId),
+      filtros: filtrosPedidosConClienteSchema.parse(req.query),
+    });
+    res.json(pagina);
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Detalle, compartido por las dos partes

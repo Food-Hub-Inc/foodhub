@@ -40,6 +40,24 @@ export function formatearFecha(iso: string): string {
   return formatoFecha.format(new Date(iso));
 }
 
+const formatoMesYAnio = new Intl.DateTimeFormat(LOCALE, {
+  month: 'long',
+  year: 'numeric',
+});
+
+/**
+ * Mes y año, para el "Miembro desde" del perfil público del cliente.
+ *
+ * SIN EL DÍA A PROPÓSITO: la fecha exacta de registro no le dice nada al
+ * cocinero y es un dato más preciso del que hace falta publicar. Lo que
+ * importa es la antigüedad, y para eso alcanza el mes.
+ *
+ * "2026-08-14T18:30:00.000Z" → "agosto de 2026".
+ */
+export function formatearMesYAnio(iso: string): string {
+  return formatoMesYAnio.format(new Date(iso));
+}
+
 /**
  * Hora sin fecha, para la línea de tiempo del pedido y el rango estimado
  * (US-PED-02 y US-PED-07: "nombre del evento, horario").

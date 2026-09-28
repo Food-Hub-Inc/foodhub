@@ -1,5 +1,5 @@
 import { Text, View } from 'react-native';
-import { MENSAJES_RESENA, type ResumenResenas } from '@foodhub/shared';
+import type { ResumenResenas } from '@foodhub/shared';
 import { IconoEstrella, IconoEstrellaRellena } from '../../components/iconos';
 import { TEXTOS_RESENA } from '../../lib/textos';
 
@@ -21,7 +21,18 @@ import { TEXTOS_RESENA } from '../../lib/textos';
  * describe a nadie. `alcanzaMinimoParaPromedio` distingue ese caso del de un
  * cocinero que directamente no tiene reseñas.
  */
-export function ResumenDeResenas({ resumen }: { resumen: ResumenResenas }) {
+export function ResumenDeResenas({
+  resumen,
+  conFotos = true,
+}: {
+  resumen: ResumenResenas;
+  /**
+   * Si el listado admite fotos. Solo las reseñas de un plato las llevan
+   * (RF080), así que en los otros dos listados "N con foto" seria siempre
+   * cero: una línea que no informa nada.
+   */
+  conFotos?: boolean;
+}) {
   return (
     <View className="rounded-md border border-border bg-surface p-4">
       <Cifra resumen={resumen} />
@@ -39,7 +50,7 @@ export function ResumenDeResenas({ resumen }: { resumen: ResumenResenas }) {
             ))}
           </View>
 
-          {resumen.conFoto > 0 ? (
+          {conFotos && resumen.conFoto > 0 ? (
             <Text className="mt-3 text-caption text-text-secondary">
               {TEXTOS_RESENA.conFoto(resumen.conFoto)}
             </Text>
@@ -57,7 +68,7 @@ function Cifra({ resumen }: { resumen: ResumenResenas }) {
       <View className="items-center">
         <Text className="text-body text-text-secondary">
           {resumen.total === 0
-            ? MENSAJES_RESENA.cocineroSinResenasTitulo
+            ? TEXTOS_RESENA.sinResenasTodavia
             : TEXTOS_RESENA.promedioInsuficiente}
         </Text>
         {resumen.total > 0 ? (
@@ -89,7 +100,7 @@ function Cifra({ resumen }: { resumen: ResumenResenas }) {
  * visual no define un ícono de media estrella y aproximarlo con recortes daría
  * un resultado distinto en cada tamaño.
  */
-function EstrellasDelPromedio({ promedio }: { promedio: number }) {
+export function EstrellasDelPromedio({ promedio }: { promedio: number }) {
   const llenas = Math.round(promedio);
 
   return (
@@ -109,7 +120,7 @@ function EstrellasDelPromedio({ promedio }: { promedio: number }) {
 }
 
 /** Una fila de la distribución: "5 ★ ▓▓▓▓▓░░ 78%". */
-function BarraDeNivel({
+export function BarraDeNivel({
   nivel,
   cantidad,
   total,

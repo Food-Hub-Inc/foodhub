@@ -63,6 +63,16 @@ export const TRANSICIONES_PEDIDO: Readonly<
 export const ORIGEN_TRANSICION = ['CLIENTE', 'COCINERO', 'SISTEMA'] as const;
 export type OrigenTransicion = (typeof ORIGEN_TRANSICION)[number];
 
+/**
+ * Que se resena. Diagrama: jerarquia Resena.
+ *
+ * Una resena se identifica por (autor, objeto resenado), y el objeto es un
+ * plato, un cocinero o un cliente. El pedido NO participa de esa identidad:
+ * solo responde "tiene derecho a resenar?" en el momento del alta.
+ */
+export const TIPO_RESENA = ['PLATO', 'COCINERO', 'CLIENTE'] as const;
+export type TipoResena = (typeof TIPO_RESENA)[number];
+
 /** Estado de moderacion de una resena. Diagrama: Resena.estadoResena. */
 export const ESTADO_RESENA = [
   'VISIBLE',

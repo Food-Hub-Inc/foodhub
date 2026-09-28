@@ -146,6 +146,22 @@ const envSchema = z.object({
    */
   STORAGE_BUCKET_TICKETS: z.string().default('tickets'),
 
+  /**
+   * US-RES-01 - Bucket de las fotos que el cliente adjunta a una resena.
+   *
+   * Separado de `publicaciones` aunque las dos sean fotos de platos publicas:
+   * en `publicaciones` escribe el COCINERO sobre su propio catalogo, y aca
+   * escribe el CLIENTE sobre contenido de un tercero. Son dos poblaciones de
+   * autores distintas, y si manana la moderacion necesita purgar fotos de
+   * resenas -RF086 oculta la resena, y la foto la acompania- no puede estar
+   * revisando la carpeta donde el cocinero guarda su catalogo.
+   *
+   * Debe crearse PUBLICO en los dos proyectos de Supabase: `resena.foto_url`
+   * guarda la URL permanente que devuelve `getPublicUrl` y la pantalla la
+   * consume directo, igual que `perfiles` y `publicaciones`.
+   */
+  STORAGE_BUCKET_RESENAS: z.string().default('resenas'),
+
   // --- Correo transaccional (US-AYU-03) -------------------------------------
   /**
    * API key de Resend, el servicio que envia el correo de acuse de recibo del

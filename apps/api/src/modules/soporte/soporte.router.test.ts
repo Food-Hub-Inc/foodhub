@@ -45,6 +45,15 @@ describe('acceso al módulo de soporte', () => {
     expect(cuerpo.error.mensaje).toBe(MENSAJES_AUTH.sesionRequerida);
   });
 
+  it('responde 401 SIN_TOKEN sin sesión en GET /manual', async () => {
+    const respuesta = await request(app).get('/api/v1/soporte/manual');
+
+    expect(respuesta.status).toBe(401);
+    const cuerpo = respuesta.body as RespuestaError;
+    expect(cuerpo.error.codigo).toBe('SIN_TOKEN');
+    expect(cuerpo.error.mensaje).toBe(MENSAJES_AUTH.sesionRequerida);
+  });
+
   /**
    * El rechazo por sesion ocurre ANTES de mirar el cuerpo. Si fuera al
    * reves, un anonimo podria sondear la forma de los errores de

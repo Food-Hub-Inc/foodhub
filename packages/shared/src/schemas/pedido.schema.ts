@@ -294,6 +294,19 @@ export const filtrosPedidoCocineroSchema = z.object({
   porPagina: z.coerce.number().int().min(1).max(50).default(PEDIDOS_POR_PAGINA),
 });
 
+/**
+ * US-DASH-03 - Los pedidos que un cliente le hizo al cocinero de la sesion.
+ *
+ * SIN PESTANA, a diferencia de los otros dos: la solapa del perfil del cliente
+ * muestra el historial completo con esa persona, y separarlo por estado ahi
+ * seria pedirle al cocinero que adivine en cual mirar para reconstruir la
+ * relacion. Los contadores por estado viajan igual en la respuesta.
+ */
+export const filtrosPedidosConClienteSchema = z.object({
+  pagina: z.coerce.number().int().min(1).default(1),
+  porPagina: z.coerce.number().int().min(1).max(50).default(PEDIDOS_POR_PAGINA),
+});
+
 // ---------------------------------------------------------------------------
 // Piezas compartidas de las respuestas
 // ---------------------------------------------------------------------------
@@ -469,6 +482,9 @@ export type RechazarPedidoInput = z.infer<typeof rechazarPedidoSchema>;
 export type CancelarPedidoInput = z.infer<typeof cancelarPedidoSchema>;
 export type FiltrosPedidoCliente = z.infer<typeof filtrosPedidoClienteSchema>;
 export type FiltrosPedidoCocinero = z.infer<typeof filtrosPedidoCocineroSchema>;
+export type FiltrosPedidosConCliente = z.infer<
+  typeof filtrosPedidosConClienteSchema
+>;
 export type ParticipantePedido = z.infer<typeof participantePedidoSchema>;
 export type ItemPedido = z.infer<typeof itemPedidoSchema>;
 export type EventoPedido = z.infer<typeof eventoPedidoSchema>;
