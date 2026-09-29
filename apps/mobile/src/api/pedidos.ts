@@ -44,11 +44,15 @@ export function listarMisPedidos(entrada: {
 export function listarPedidosRecibidos(entrada: {
   pestana: PestanaPedidosCocinero;
   pagina: number;
+  porPagina?: number;
 }): Promise<PaginaPedidos> {
   const parametros = new URLSearchParams({
     pestana: entrada.pestana,
     pagina: String(entrada.pagina),
   });
+  if (entrada.porPagina !== undefined) {
+    parametros.set('porPagina', String(entrada.porPagina));
+  }
   return api.obtener<PaginaPedidos>(
     `/pedidos/recibidos?${parametros.toString()}`,
   );

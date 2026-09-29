@@ -19,6 +19,9 @@ export function useOpcionesDeTabs() {
   const inactivo = useResolveClassNames('text-text-secondary');
   const superficie = useResolveClassNames('bg-surface');
   const borde = useResolveClassNames('border-border');
+  // Las insignias de no leídos y pedidos nuevos usan el rojo de la guía, igual
+  // que el contador de la campana (`BotonDeNotificaciones`).
+  const insignia = useResolveClassNames('bg-error');
   const colorActivo = comoColor(activo.color);
   const colorInactivo = comoColor(inactivo.color);
   const colorIconoActivo =
@@ -28,6 +31,8 @@ export function useOpcionesDeTabs() {
 
   return {
     backgroundColor: comoColor(superficie.backgroundColor),
+    badgeBackgroundColor: comoColor(insignia.backgroundColor),
+    badgeTextColor: comoColor(superficie.backgroundColor),
     iconColor: {
       default: colorInactivo,
       selected: colorIconoActivo,
