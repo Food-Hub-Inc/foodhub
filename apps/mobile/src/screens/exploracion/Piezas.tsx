@@ -192,9 +192,12 @@ export function MiniaturaDePlato({
 export function AvatarDeCocinero({
   fotoPerfilUrl,
   tamano = 'h-10 w-10',
+  onCargado,
 }: {
   fotoPerfilUrl: string | null;
   tamano?: string;
+  /** Avisa cuando la foto terminó de cargar (o falló): lo necesita el mapa. */
+  onCargado?: () => void;
 }) {
   return (
     <View
@@ -203,6 +206,8 @@ export function AvatarDeCocinero({
       {fotoPerfilUrl ? (
         <Image
           contentFit="cover"
+          onError={onCargado}
+          onLoad={onCargado}
           source={{ uri: fotoPerfilUrl }}
           style={{ width: '100%', height: '100%' }}
         />

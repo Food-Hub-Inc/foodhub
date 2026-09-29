@@ -2,6 +2,7 @@ import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useOpcionesDeTabs } from '../../src/components/navegacion/opcionesDeTabs';
 import { TEXTOS_NAVEGACION } from '../../src/lib/textos';
 import { useAcuseDeEntrega } from '../../src/hooks/useAcuseDeEntrega';
+import { useInsigniaDeMensajes } from '../../src/hooks/useInsigniasDeTabs';
 
 /**
  * Barra de navegación del cliente.
@@ -30,6 +31,8 @@ export default function LayoutCliente() {
   useAcuseDeEntrega();
 
   const opciones = useOpcionesDeTabs();
+  // Sin texto la insignia no se dibuja: con cero no aparece nada.
+  const insigniaDeMensajes = useInsigniaDeMensajes();
 
   return (
     <NativeTabs {...opciones}>
@@ -65,6 +68,9 @@ export default function LayoutCliente() {
         <NativeTabs.Trigger.Label>
           {TEXTOS_NAVEGACION.mensajes}
         </NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Badge>
+          {insigniaDeMensajes}
+        </NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="perfil">
         <NativeTabs.Trigger.Icon

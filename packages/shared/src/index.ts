@@ -20,6 +20,8 @@ export * from './schemas/configuracionSistema.schema.js';
 export * from './schemas/dashboard.schema.js';
 export * from './schemas/exploracion.schema.js';
 export * from './schemas/mensajeria.schema.js';
+export * from './schemas/metricasAdmin.schema.js';
+export * from './schemas/moderacionPublicacion.schema.js';
 export * from './schemas/motivoCancelacion.schema.js';
 export * from './schemas/pedido.schema.js';
 export * from './schemas/preferenciaNotificacion.schema.js';

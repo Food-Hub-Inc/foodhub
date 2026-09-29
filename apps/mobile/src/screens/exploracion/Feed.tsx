@@ -213,15 +213,21 @@ function ChipsActivos({
   onLimpiarTodo: () => void;
 }) {
   return (
+    // `grow-0`: un FlatList horizontal hereda `flexGrow: 1` y, dentro de la
+    // columna de la pantalla, se repartía la altura con los resultados; los
+    // chips se estiraban hasta ocupar media pantalla.
     <FlatList
-      contentContainerClassName="gap-2 px-4 pt-3"
+      className="grow-0"
+      contentContainerClassName="items-center gap-2 px-4 py-2"
       data={chips}
       horizontal
       keyExtractor={(chip) => chip.clave}
       ListFooterComponent={
         <Pressable
           onPress={onLimpiarTodo}
-          className="min-h-9 justify-center rounded-full px-3"
+          className="h-8 justify-center rounded-full px-2"
+          // 32 px de alto + 6 arriba y abajo = los 44 de área táctil mínima.
+          hitSlop={6}
           accessibilityRole="button"
           accessibilityLabel={MENSAJES_EXPLORACION.limpiarFiltros}
         >
@@ -235,11 +241,15 @@ function ChipsActivos({
           onPress={() => {
             onQuitar(item.quitar());
           }}
-          className="min-h-9 flex-row items-center gap-1.5 rounded-full bg-primary px-3"
+          className="h-8 flex-row items-center gap-1.5 self-center rounded-full bg-primary px-3"
+          hitSlop={6}
           accessibilityRole="button"
           accessibilityLabel={TEXTOS_EXPLORACION.quitarFiltro(item.etiqueta)}
         >
-          <Text className="text-caption font-semibold text-surface">
+          <Text
+            className="text-caption font-semibold text-surface"
+            numberOfLines={1}
+          >
             {item.etiqueta}
           </Text>
           {/* El ícono de tilde girado 45° es la "x" del sistema: la guía visual
