@@ -225,6 +225,15 @@ export const TEXTOS_AYUDA = {
   manualPendiente:
     'El manual reúne instrucciones paso a paso para usar FoodHub según tu rol.',
 
+  /** [PROPIO] PAN-AYU-01 - Búsqueda y estados del manual de usuario (US-AYU-01). */
+  buscarManual: 'Buscar en el manual',
+  buscarManualPlaceholder: 'Buscar temas, capítulos o palabras clave',
+  sinCapitulosTitulo: 'Todavía no hay contenido en el manual',
+  sinCapitulosSubtitulo:
+    'Estamos preparando las guías paso a paso para tu rol.',
+  capituloNoEncontrado:
+    'El capítulo solicitado no existe o no se encuentra disponible.',
+
   /**
    * PAN-AYU-03 - Formulario de "Contactar al soporte" (US-AYU-03). Los
    * mensajes literales del criterio (confirmaciones, errores, success)
@@ -772,16 +781,10 @@ export const PANTALLAS_PENDIENTES = {
     descripcion:
       'El historial de avisos de la aplicación: cambios de estado de tus pedidos, mensajes nuevos y reseñas recibidas.',
   },
-  manualAyuda: {
-    codigo: 'PAN-AYU-01',
-    modulo: 'Ayuda y soporte',
-    titulo: 'Manual de usuario',
-    descripcion: TEXTOS_AYUDA.manualPendiente,
-  },
   /**
-   * PAN-AYU-03 (US-AYU-03) ya esta implementada; el placeholder se reemplazo
-   * por la pantalla real en `src/screens/ayuda/Contacto.tsx`. La entrada
-   * queda eliminada para que `PANTALLAS_PENDIENTES` no la liste.
+   * PAN-AYU-01 (US-AYU-01) y PAN-AYU-03 (US-AYU-03) ya están implementadas;
+   * los placeholders se reemplazaron por las pantallas reales en
+   * `src/screens/ayuda/ManualDeUsuario.tsx` y `src/screens/ayuda/Contacto.tsx`.
    */
 } as const;
 
