@@ -142,12 +142,14 @@ export async function listarManualPorRol(rol: RolFaq): Promise<ManualPublico> {
   const ids = filas.map((fila) => fila.capitulo.id);
   const secciones = ids.length
     ? await db
-        .select()
+        .select({ seccion: seccionAyuda })
         .from(seccionAyuda)
+        .innerJoin(rolDestino, eq(rolDestino.id, seccionAyuda.rolDestinoId))
         .where(
           and(
             inArray(seccionAyuda.capituloId, ids),
             eq(seccionAyuda.habilitado, true),
+            inArray(rolDestino.nombre, [rol, ROL_DESTINO_AMBOS]),
           ),
         )
         .orderBy(asc(seccionAyuda.orden), asc(seccionAyuda.titulo))
@@ -155,9 +157,9 @@ export async function listarManualPorRol(rol: RolFaq): Promise<ManualPublico> {
 
   const porCapitulo = new Map<string, SeccionManualPublica[]>();
   for (const fila of secciones) {
-    const lista = porCapitulo.get(fila.capituloId) ?? [];
-    lista.push(aSeccionManualPublica(fila));
-    porCapitulo.set(fila.capituloId, lista);
+    const lista = porCapitulo.get(fila.seccion.capituloId) ?? [];
+    lista.push(aSeccionManualPublica(fila.seccion));
+    porCapitulo.set(fila.seccion.capituloId, lista);
   }
 
   return filas.map((fila): CapituloManualPublico => ({

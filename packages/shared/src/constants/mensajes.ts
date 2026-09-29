@@ -332,6 +332,31 @@ export const MENSAJES_AYUDA = {
   contactarSoporte: 'Contactar al soporte',
 
   /**
+   * US-AYU-01 - Manual de usuario.
+   *
+   * Literales de los criterios de aceptación (búsqueda sin resultados,
+   * aviso de versión offline y botón de regreso al índice).
+   */
+  manual: {
+    /**
+     * LITERAL - US-AYU-01, búsqueda sin coincidencias.
+     */
+    sinResultados:
+      'No se encontraron resultados para tu búsqueda. Prueba con otras palabras clave o consulta el índice completo.',
+
+    /**
+     * LITERAL - US-AYU-01, aviso de catálogo offline sin conexión.
+     */
+    versionSinConexion:
+      'Estás viendo la versión sin conexión. Algunas imágenes pueden no estar disponibles.',
+
+    /**
+     * LITERAL - US-AYU-01, acción de retorno al índice desde el detalle.
+     */
+    volverAlIndice: 'Volver al índice',
+  },
+
+  /**
    * US-AYU-04 - Informacion legal y datos de contacto (PAN-AYU-04).
    *
    * No todos los textos son literales de la tabla de criterios: la
