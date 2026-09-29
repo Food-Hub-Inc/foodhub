@@ -1508,6 +1508,21 @@ export const MENSAJES_RESENA = {
 } as const;
 
 /**
+ * Métricas generales del panel (US-ADM-05, PAN-ADM-03). La historia no fija
+ * textos literales: todos son PROPIOS.
+ */
+export const MENSAJES_METRICAS = {
+  /** PROPIO - tercer criterio: "Desde" posterior a "Hasta". */
+  rangoInvertido: 'La fecha "Desde" no puede ser posterior a "Hasta".',
+
+  /** PROPIO - tercer criterio: "Hasta" posterior a hoy. */
+  hastaFutura: 'La fecha "Hasta" no puede superar la fecha actual.',
+
+  /** PROPIO - cuarto criterio: período sin datos. */
+  sinPedidos: 'No hay pedidos en el período seleccionado.',
+} as const;
+
+/**
  * Modulo de Dashboard del cocinero (US-DASH-01 a US-DASH-05, RF042 a RF046).
  *
  * Una sola pantalla -PAN-DASH-01, "Mi actividad"- con cuatro secciones y un
