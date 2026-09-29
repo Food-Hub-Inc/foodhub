@@ -32,10 +32,12 @@ import { Usuarios } from './pages/usuarios/Usuarios.js';
  *   /usuarios        PAN-ADM-01 · gestión de cuentas              implementada
  *   /auditoria       PAN-AUD-01 · auditoría y seguridad           implementada
  *   /                inicio del panel                             por codificar
- *   /moderacion      PAN-ADM-02 · moderación de contenido         por codificar
+ *   /moderacion      PAN-ADM-02 · moderación de contenido         implementada
+ *                    (publicaciones US-ADM-04 y reseñas RF086)
  *   /metricas        PAN-ADM-03 · métricas generales              por codificar
- *   /configuracion   PAN-ADM-04 · configuración del sistema       US-CFG-01 implementada;
- *                    (categorías, motivos, parámetros, términos)  02 a 04 por codificar
+ *   /ayuda           US-AYU-05 · gestión del manual y las FAQ     implementada
+ *   /configuracion   PAN-ADM-04 · configuración del sistema       implementada
+ *                    (categorías, motivos, parámetros, términos)
  */
 export function App() {
   return (

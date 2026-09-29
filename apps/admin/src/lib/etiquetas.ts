@@ -1,5 +1,6 @@
 import type {
   EstadoCuenta,
+  EstadoPublicacion,
   OperacionAuditoria,
   TipoEventoSeguridad,
   TipoUsuario,
@@ -88,4 +89,14 @@ export const ETIQUETA_DATO_ADICIONAL: Record<string, string> = {
   motivoSuspension: 'Motivo de la suspensión',
   origen: 'Origen',
   camposModificados: 'Campos modificados',
+};
+
+/**
+ * Estado de disponibilidad de una publicación (US-ADM-04). Mismos textos que
+ * ve el cliente en la app: "Disponible", "Últimas unidades", "No disponible".
+ */
+export const ETIQUETA_ESTADO_PUBLICACION: Record<EstadoPublicacion, string> = {
+  DISPONIBLE: 'Disponible',
+  ULTIMAS_UNIDADES: 'Últimas unidades',
+  NO_DISPONIBLE: 'No disponible',
 };

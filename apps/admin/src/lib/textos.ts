@@ -660,3 +660,54 @@ export const TEXTOS_MODERACION = {
   avisoSinNotificaciones:
     'Las notificaciones al autor y a quienes reportaron todavía no se envían: el módulo de Notificaciones está pendiente.',
 } as const;
+
+/**
+ * Pestañas de PAN-ADM-02 y moderación de publicaciones (US-ADM-04). Todos
+ * PROPIOS: la historia no fija textos de interfaz.
+ */
+export const TEXTOS_MODERACION_PUBLICACIONES = {
+  pestanaPublicaciones: 'Publicaciones',
+  pestanaResenas: 'Reseñas reportadas',
+  subtitulo: 'Publicaciones de los cocineros y reseñas denunciadas',
+
+  resumen: (cantidad: number) =>
+    cantidad === 1
+      ? '1 publicación activa'
+      : `${cantidad.toLocaleString('es-AR')} publicaciones activas`,
+
+  buscar: 'Buscar por plato o cocinero…',
+  buscarEtiqueta: 'Buscar publicaciones',
+  filtroCategoria: 'Categoría',
+  filtroEstado: 'Estado',
+  todas: 'Todas',
+  todos: 'Todos',
+  limpiarFiltros: 'Limpiar filtros',
+  vacioSinFiltros: 'No hay publicaciones activas en la plataforma.',
+
+  columnaPlato: 'Plato',
+  columnaCocinero: 'Cocinero',
+  columnaCategoria: 'Categoría',
+  columnaPrecio: 'Precio',
+  columnaEstado: 'Estado',
+  columnaCreacion: 'Creación',
+  columnaAcciones: 'Acciones',
+
+  verDetalle: 'Ver detalle',
+  verDetalleDe: (plato: string) => `Ver el detalle de ${plato}`,
+  eliminarDe: (plato: string) => `Eliminar ${plato}`,
+
+  detalleTitulo: 'Detalle de la publicación',
+  descripcion: 'Descripción',
+  sinDescripcion: 'Sin descripción.',
+  sinImagen: 'Sin imagen',
+  cerrar: 'Cerrar',
+  eliminar: 'Eliminar publicación',
+
+  dialogoEliminarTitulo: '¿Eliminar esta publicación?',
+  dialogoEliminarAviso:
+    'Deja de mostrarse a los clientes. Los pedidos ya confirmados con este plato siguen su curso.',
+  motivo: 'Motivo de la eliminación',
+  motivoPlaceholder: 'Explicá qué política infringe la publicación',
+  caracteres: (usados: number, maximo: number) =>
+    `${String(usados)}/${String(maximo)}`,
+} as const;
