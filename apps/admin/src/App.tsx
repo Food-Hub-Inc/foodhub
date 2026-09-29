@@ -8,8 +8,9 @@ import { PaginaDeCapitulo } from './pages/ayuda/manual/PaginaDeCapitulo.js';
 import { Configuracion } from './pages/configuracion/Configuracion.js';
 import { Login } from './pages/Login.js';
 import { NuevaPassword } from './pages/NuevaPassword.js';
+import { Inicio } from './pages/Inicio.js';
+import { Metricas } from './pages/metricas/Metricas.js';
 import { Moderacion } from './pages/moderacion/Moderacion.js';
-import { Proximamente } from './pages/Proximamente.js';
 import { Recuperar } from './pages/Recuperar.js';
 import { Usuarios } from './pages/usuarios/Usuarios.js';
 
@@ -31,10 +32,10 @@ import { Usuarios } from './pages/usuarios/Usuarios.js';
  *                    y recuperación)
  *   /usuarios        PAN-ADM-01 · gestión de cuentas              implementada
  *   /auditoria       PAN-AUD-01 · auditoría y seguridad           implementada
- *   /                inicio del panel                             por codificar
+ *   /                inicio del panel (sin código PAN)            implementada
  *   /moderacion      PAN-ADM-02 · moderación de contenido         implementada
  *                    (publicaciones US-ADM-04 y reseñas RF086)
- *   /metricas        PAN-ADM-03 · métricas generales              por codificar
+ *   /metricas        PAN-ADM-03 · métricas generales + REP-02     implementada
  *   /ayuda           US-AYU-05 · gestión del manual y las FAQ     implementada
  *   /configuracion   PAN-ADM-04 · configuración del sistema       implementada
  *                    (categorías, motivos, parámetros, términos)
@@ -71,34 +72,5 @@ export function App() {
           panel, que es de donde el administrador puede seguir trabajando. */}
       <Route element={<Navigate replace to={RUTAS.inicio} />} path="*" />
     </Routes>
-  );
-}
-
-/**
- * El inicio del panel no tiene código de pantalla propio en el inventario de la
- * Etapa 5: las cuatro pantallas del administrador son PAN-ADM-01 a PAN-ADM-04
- * más PAN-AUD-01. Su contenido previsto —el resumen de la operación— es el de
- * PAN-ADM-03 (REP-02), así que se declara sin código y se remite a esa
- * pantalla.
- */
-function Inicio() {
-  return (
-    <Proximamente
-      historias="US-ADM-05"
-      modulo="ADM · Panel de administración"
-      pantalla={null}
-      titulo="Inicio"
-    />
-  );
-}
-
-function Metricas() {
-  return (
-    <Proximamente
-      historias="US-ADM-05 · REP-02"
-      modulo="ADM · Panel de administración"
-      pantalla="PAN-ADM-03"
-      titulo="Métricas generales"
-    />
   );
 }

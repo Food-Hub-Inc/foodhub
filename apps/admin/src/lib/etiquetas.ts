@@ -1,5 +1,6 @@
 import type {
   EstadoCuenta,
+  EstadoPedido,
   EstadoPublicacion,
   OperacionAuditoria,
   TipoEventoSeguridad,
@@ -99,4 +100,13 @@ export const ETIQUETA_ESTADO_PUBLICACION: Record<EstadoPublicacion, string> = {
   DISPONIBLE: 'Disponible',
   ULTIMAS_UNIDADES: 'Últimas unidades',
   NO_DISPONIBLE: 'No disponible',
+};
+
+/** Estado de un pedido en el bloque "Pedidos por estado" de PAN-ADM-03. */
+export const ETIQUETA_ESTADO_PEDIDO: Record<EstadoPedido, string> = {
+  CREADO: 'Creado',
+  ACEPTADO: 'Aceptado',
+  LISTO: 'Listo',
+  COMPLETADO: 'Completado',
+  RECHAZADO: 'Rechazado',
 };

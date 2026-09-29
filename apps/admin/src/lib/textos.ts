@@ -711,3 +711,93 @@ export const TEXTOS_MODERACION_PUBLICACIONES = {
   caracteres: (usados: number, maximo: number) =>
     `${String(usados)}/${String(maximo)}`,
 } as const;
+
+/**
+ * PAN-ADM-03 · Métricas del sistema (US-ADM-05). Rótulos del mockup
+ * `ADM-03.jpg`; el resto es PROPIO (la historia no fija textos de interfaz).
+ */
+export const TEXTOS_METRICAS = {
+  titulo: 'Métricas del sistema',
+  actualizado: (hace: string) => `Última actualización: ${hace}`,
+  recienActualizado: 'recién',
+  haceMinutos: (minutos: number) =>
+    minutos === 1 ? 'hace 1 min' : `hace ${String(minutos)} min`,
+
+  periodo: 'Período',
+  periodoSemana: 'Semana',
+  periodoMes: 'Mes',
+  periodoAnio: 'Año',
+  periodoPersonalizado: 'Personalizado',
+  desde: 'Desde',
+  hasta: 'Hasta',
+  exportarPdf: 'Exportar PDF',
+
+  usuariosActivos: 'Usuarios activos',
+  cocinerosActivos: 'Cocineros activos',
+  pedidosCompletados: 'Pedidos completados',
+  publicacionesActivas: 'Publicaciones activas',
+  variacion: (valor: number) =>
+    `${valor > 0 ? '+' : ''}${valor.toLocaleString('es-AR')}%`,
+  variacionContra: 'respecto del período anterior',
+
+  graficoPedidos: 'Pedidos por período',
+  subtituloSerie: {
+    SEMANA: 'Por día',
+    MES: 'Por semana',
+    ANIO: 'Por mes',
+    PERSONALIZADO: 'Período personalizado',
+  },
+  seriePedidos: 'Pedidos',
+  serieCompletados: 'Completados',
+
+  usuariosPorRol: 'Usuarios por rol',
+  total: 'Total',
+  rol: {
+    CLIENTE: 'Clientes',
+    COCINERO: 'Cocineros',
+    ADMINISTRADOR: 'Admin',
+  },
+
+  pedidosPorEstado: 'Pedidos por estado',
+  pedidosRealizados: 'Pedidos realizados',
+
+  actividadReciente: 'Actividad reciente',
+  verHistorial: 'Ver historial completo →',
+  columnaAccion: 'Acción',
+  columnaUsuario: 'Usuario',
+  columnaDetalle: 'Detalle',
+  columnaFecha: 'Fecha y hora',
+  sistema: 'Sistema',
+  sinActividad: 'Todavía no hay actividad registrada.',
+
+  reporteTitulo: 'Reporte de métricas · REP-02',
+  reportePeriodo: (desde: string, hasta: string) =>
+    `Período: ${desde} al ${hasta}`,
+  reporteEmitido: (fecha: string) => `Emitido el ${fecha}`,
+} as const;
+
+/**
+ * Inicio del panel. Sin código PAN: la maquetación no lo define (decisión del
+ * equipo, pantalla libre). Textos PROPIOS.
+ */
+export const TEXTOS_INICIO = {
+  saludo: (nombre: string) => `Hola, ${nombre}`,
+  resumenDelMes: 'Resumen del mes',
+  verMetricas: 'Ver métricas',
+  pendientes: 'Para revisar',
+  resenasReportadas: (cantidad: number) =>
+    cantidad === 1
+      ? '1 reseña reportada sin resolver'
+      : `${String(cantidad)} reseñas reportadas sin resolver`,
+  sinResenasReportadas: 'No hay reseñas reportadas pendientes',
+  revisarModeracion: 'Ir a Moderación',
+  accesosRapidos: 'Accesos rápidos',
+  descripcion: {
+    '/usuarios': 'Cuentas, roles, suspensiones y bajas.',
+    '/moderacion': 'Publicaciones y reseñas reportadas.',
+    '/metricas': 'Indicadores de uso y reporte REP-02.',
+    '/auditoria': 'Operaciones y eventos de seguridad.',
+    '/ayuda': 'Manual de usuario y preguntas frecuentes.',
+    '/configuracion': 'Categorías, motivos, parámetros y términos.',
+  } as Readonly<Record<string, string>>,
+} as const;

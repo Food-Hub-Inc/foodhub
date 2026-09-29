@@ -1,5 +1,6 @@
 import type {
   EstadoCuenta,
+  EstadoPedido,
   EstadoPublicacion,
   OperacionAuditoria,
   TipoEventoSeguridad,
@@ -7,6 +8,7 @@ import type {
 } from '@foodhub/shared';
 import {
   ETIQUETA_ESTADO_CUENTA,
+  ETIQUETA_ESTADO_PEDIDO,
   ETIQUETA_ESTADO_PUBLICACION,
   ETIQUETA_EVENTO_SEGURIDAD,
   ETIQUETA_OPERACION,
@@ -150,6 +152,26 @@ export function InsigniaEstadoPublicacion({
   return (
     <Insignia tono={TONO_POR_ESTADO_PUBLICACION[estado]}>
       {ETIQUETA_ESTADO_PUBLICACION[estado]}
+    </Insignia>
+  );
+}
+
+/**
+ * ESTADO DE PEDIDO — mismos tonos que la app (`screens/pedidos/estados.ts`):
+ * creado gris, aceptado ámbar, listo y completado verde, rechazado rojo.
+ */
+const TONO_POR_ESTADO_PEDIDO: Record<EstadoPedido, TonoInsignia> = {
+  CREADO: 'gris',
+  ACEPTADO: 'ambar',
+  LISTO: 'verde',
+  COMPLETADO: 'verde',
+  RECHAZADO: 'rojo',
+};
+
+export function InsigniaEstadoPedido({ estado }: { estado: EstadoPedido }) {
+  return (
+    <Insignia tono={TONO_POR_ESTADO_PEDIDO[estado]}>
+      {ETIQUETA_ESTADO_PEDIDO[estado]}
     </Insignia>
   );
 }

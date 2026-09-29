@@ -317,3 +317,36 @@
   margin-bottom: 1.5rem;
 }
 
+/*
+   --------------------------------------------------------------------------
+   Impresión — REP-02 (reporte de métricas, PAN-ADM-03)
+   --------------------------------------------------------------------------
+   "Exportar PDF" usa el diálogo de impresión del navegador. Acá se deja solo
+   el contenido: fuera la barra lateral, los controles del encabezado y todo lo
+   marcado `data-no-imprimir`; adentro la cabecera del reporte
+   (`data-solo-impresion`). El layout del panel fija la altura a la ventana
+   con scroll interno, y eso cortaría el reporte en la primera hoja.
+*/
+@media print {
+  aside,
+  header button,
+  [data-no-imprimir] {
+    display: none !important;
+  }
+
+  [data-solo-impresion] {
+    display: flex !important;
+  }
+
+  body,
+  .h-screen,
+  main {
+    height: auto !important;
+    overflow: visible !important;
+    background: var(--color-surface) !important;
+  }
+
+  .aparece {
+    animation: none !important;
+  }
+}
