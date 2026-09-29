@@ -164,7 +164,7 @@ function TarjetaCapitulo({
           router.push({
             pathname: '/ayuda/manual/[id]',
             params: { id: capitulo.id },
-          } as unknown as Parameters<typeof router.push>[0]);
+          });
         }}
       >
         <View className="flex-1 pr-2">
