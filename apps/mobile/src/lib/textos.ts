@@ -225,7 +225,7 @@ export const TEXTOS_AYUDA = {
   manualPendiente:
     'El manual reúne instrucciones paso a paso para usar FoodHub según tu rol.',
 
-  /** [PROPIO] PAN-AYU-01 - Búsqueda y estados del manual de usuario (US-AYU-01). */
+  /** [PROPIO] Búsqueda y estados del manual de usuario (US-AYU-01). */
   buscarManual: 'Buscar en el manual',
   buscarManualPlaceholder: 'Buscar temas, capítulos o palabras clave',
   sinCapitulosTitulo: 'Todavía no hay contenido en el manual',
@@ -782,7 +782,7 @@ export const PANTALLAS_PENDIENTES = {
       'El historial de avisos de la aplicación: cambios de estado de tus pedidos, mensajes nuevos y reseñas recibidas.',
   },
   /**
-   * PAN-AYU-01 (US-AYU-01) y PAN-AYU-03 (US-AYU-03) ya están implementadas;
+   * Las pantallas de ayuda (US-AYU-01 y US-AYU-03) ya están implementadas;
    * los placeholders se reemplazaron por las pantallas reales en
    * `src/screens/ayuda/ManualDeUsuario.tsx` y `src/screens/ayuda/Contacto.tsx`.
    */

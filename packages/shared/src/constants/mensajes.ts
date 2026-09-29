@@ -332,7 +332,7 @@ export const MENSAJES_AYUDA = {
   contactarSoporte: 'Contactar al soporte',
 
   /**
-   * US-AYU-01 - Manual de usuario (PAN-AYU-01).
+   * US-AYU-01 - Manual de usuario.
    *
    * Literales de los criterios de aceptación (búsqueda sin resultados,
    * aviso de versión offline y botón de regreso al índice).
