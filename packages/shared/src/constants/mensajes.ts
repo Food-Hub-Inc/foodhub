@@ -197,6 +197,28 @@ export const MENSAJES_AUDITORIA = {
 } as const;
 
 /**
+ * Moderación de publicaciones del panel (US-ADM-04, PAN-ADM-02).
+ *
+ * La historia no fija ningún texto literal: todos son PROPIOS. El de la
+ * notificación al cocinero (US-NOT-03) no va acá sino en el módulo de
+ * Notificaciones, que es quien lo emite.
+ */
+export const MENSAJES_MODERACION = {
+  /** PROPIO - cuarto criterio: el motivo de la baja es obligatorio. */
+  motivoEliminacionObligatorio: 'Indicá el motivo de la eliminación.',
+
+  /** PROPIO - mismo tope de 500 caracteres que el motivo de suspensión. */
+  motivoEliminacionLargo: 'El motivo no puede superar los 500 caracteres.',
+
+  /** PROPIO - estado vacío del listado filtrado. */
+  sinPublicaciones:
+    'No se encontraron publicaciones para los filtros seleccionados.',
+
+  /** PROPIO - éxito de la baja. */
+  publicacionEliminada: 'Publicación eliminada.',
+} as const;
+
+/**
  * Modulo de Publicaciones (US-PUB-01 a US-PUB-05).
  *
  * Los textos de validacion de imagen y de precio, los cinco modales de
