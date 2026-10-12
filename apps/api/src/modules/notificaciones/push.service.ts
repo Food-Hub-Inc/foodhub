@@ -100,6 +100,14 @@ async function enviarLote(mensajes: MensajePush[]): Promise<ResultadoPush[]> {
 
   const json = (await respuesta.json()) as { data?: TicketExpo[] };
   const tickets = json.data ?? [];
+  tickets.forEach((ticket, i) => {
+    if (ticket.status === 'error') {
+      logger.warn(
+        { ticket, mensaje: mensajes[i] },
+        'Expo Push API devolvio un ticket con error',
+      );
+    }
+  });
   return mensajes.map((_, i) => aResultado(tickets[i]));
 }
 

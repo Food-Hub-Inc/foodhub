@@ -65,7 +65,9 @@ async function obtenerExpoPushToken(): Promise<string | null> {
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync(CANAL_ANDROID, {
         name: 'FoodHub',
-        importance: Notifications.AndroidImportance.DEFAULT,
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#EC6829',
       });
     }
 
@@ -73,7 +75,12 @@ async function obtenerExpoPushToken(): Promise<string | null> {
     const concedido =
       permiso.granted ||
       (await Notifications.requestPermissionsAsync()).granted;
-    if (!concedido) return null;
+    if (!concedido) {
+      console.warn(
+        '[Push] Permiso de notificaciones denegado en el dispositivo',
+      );
+      return null;
+    }
 
     const extra = Constants.expoConfig?.extra as
       { eas?: { projectId?: string } } | undefined;
@@ -82,8 +89,9 @@ async function obtenerExpoPushToken(): Promise<string | null> {
       projectId ? { projectId } : undefined,
     );
     return data;
-  } catch {
+  } catch (error) {
     // Sin FCM (Expo Go, build sin google-services.json) o permiso denegado.
+    console.warn('[Push] Error al obtener Expo Push Token:', error);
     return null;
   }
 }
@@ -105,14 +113,21 @@ export function useNotificacionesPush(): void {
           expoPushToken: token,
           plataforma: Platform.OS === 'ios' ? 'ios' : 'android',
           dispositivoInfo: `${Platform.OS} ${String(Platform.Version)}`,
-        }).catch(() => undefined);
+        }).catch((error: unknown) => {
+          console.error(
+            '[Push] Error al registrar dispositivo en la API:',
+            error,
+          );
+        });
       });
     } else if (tokenRegistrado.current) {
       // Cerró sesión: se da de baja el token para no seguir pusheando a un
       // dispositivo que ya no tiene a nadie.
       const token = tokenRegistrado.current;
       tokenRegistrado.current = null;
-      void darDeBajaDispositivo(token).catch(() => undefined);
+      void darDeBajaDispositivo(token).catch((error: unknown) => {
+        console.warn('[Push] Error al dar de baja el dispositivo:', error);
+      });
     }
 
     return () => {
