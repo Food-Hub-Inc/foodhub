@@ -37,7 +37,7 @@ export function EstadoDeError({
         variante="secundario"
         tamano="sm"
         onPress={onReintentar}
-        className="mt-5"
+        className="mt-5 flex-row items-center justify-center gap-2"
       >
         {TEXTOS_PERFIL.reintentar}
       </Boton>

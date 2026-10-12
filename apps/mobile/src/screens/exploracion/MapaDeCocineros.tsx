@@ -13,7 +13,7 @@ import {
   type ZonaVisible,
 } from '@foodhub/shared';
 import { IconoUbicacion } from '../../components/iconos';
-import { SafeAreaView } from '../../components/SafeAreaView';
+import { PantallaDeTab } from '../../components/PantallaDeTab';
 import { Boton } from '../../components/ui/Boton';
 import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoVacio } from '../../components/ui/EstadoVacio';
@@ -151,9 +151,9 @@ export function MapaDeCocineros() {
 
   if (ubicacion.estado === 'pidiendo') {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <PantallaDeTab>
         <Esqueleto className="flex-1" />
-      </SafeAreaView>
+      </PantallaDeTab>
     );
   }
 
@@ -162,7 +162,7 @@ export function MapaDeCocineros() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <PantallaDeTab>
       <View
         accessible
         accessibilityLabel={TEXTOS_EXPLORACION.etiquetaMapa}
@@ -175,8 +175,12 @@ export function MapaDeCocineros() {
             latitudeDelta: AMPLITUD_INICIAL,
             longitudeDelta: AMPLITUD_INICIAL,
           }}
-          // Tocar el mapa fuera de un marcador cierra la tarjeta emergente.
-          onPress={() => {
+          // Tocar el mapa fuera de un marcador cierra la tarjeta emergente. En
+          // Android el toque sobre un marcador TAMBIÉN llega acá, con la acción
+          // 'marker-press': sin este filtro la tarjeta se abría y se cerraba en
+          // el mismo toque, y solo quedaba a la vista el globo nativo.
+          onPress={(evento) => {
+            if (evento.nativeEvent.action === 'marker-press') return;
             setSeleccionado(null);
           }}
           onRegionChangeComplete={setRegion}
@@ -220,7 +224,7 @@ export function MapaDeCocineros() {
           seleccionado ? altoDeLaTarjeta + SEPARACION_DE_LA_TARJETA : 0
         }
       />
-    </SafeAreaView>
+    </PantallaDeTab>
   );
 }
 
@@ -298,17 +302,65 @@ function Marcadores({
 
         const { cocinero } = agrupacion.properties;
         return (
-          <Marker
-            coordinate={{ latitude: punto.lat, longitude: punto.lng }}
+          <MarcadorDeCocinero
+            cocinero={cocinero}
             key={cocinero.id}
+            lat={punto.lat}
+            lng={punto.lng}
             onPress={() => {
               onSeleccionar(cocinero);
             }}
-            title={`${cocinero.nombre} ${cocinero.apellido}`}
           />
         );
       })}
     </>
+  );
+}
+
+/**
+ * Marcador de un cocinero suelto: su foto de perfil en chico.
+ *
+ * Sin `title`: con título, react-native-maps abre el globo nativo encima de la
+ * tarjeta emergente, que es la que pide el segundo criterio.
+ *
+ * `tracksViewChanges` arranca prendido y se apaga cuando la foto terminó de
+ * cargar. En Android el marcador con vista propia es una captura: si se apaga
+ * antes, queda congelado el círculo vacío; si nunca se apaga, el mapa redibuja
+ * cada marcador en todos los frames.
+ */
+function MarcadorDeCocinero({
+  cocinero,
+  lat,
+  lng,
+  onPress,
+}: {
+  cocinero: CocineroMapa;
+  lat: number;
+  lng: number;
+  onPress: () => void;
+}) {
+  // Sin foto no hay nada que esperar: el ícono de respaldo se dibuja de una.
+  const [siguiendoCambios, setSiguiendoCambios] = useState(
+    cocinero.fotoPerfilUrl !== null,
+  );
+
+  return (
+    <Marker
+      accessibilityLabel={`${cocinero.nombre} ${cocinero.apellido}`}
+      coordinate={{ latitude: lat, longitude: lng }}
+      onPress={onPress}
+      tracksViewChanges={siguiendoCambios}
+    >
+      <View className="rounded-full border-2 border-surface bg-surface">
+        <AvatarDeCocinero
+          fotoPerfilUrl={cocinero.fotoPerfilUrl}
+          onCargado={() => {
+            setSiguiendoCambios(false);
+          }}
+          tamano="h-9 w-9"
+        />
+      </View>
+    </Marker>
   );
 }
 
@@ -323,7 +375,7 @@ function Marcadores({
  */
 function SinPermiso({ onReintentar }: { onReintentar: () => void }) {
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <PantallaDeTab>
       <EstadoVacio
         accion={
           <View className="gap-2">
@@ -334,7 +386,11 @@ function SinPermiso({ onReintentar }: { onReintentar: () => void }) {
             >
               {TEXTOS_EXPLORACION.abrirConfiguracion}
             </Boton>
-            <Boton onPress={onReintentar} variante="secundario">
+            <Boton
+              className="mt-4 flex-row items-center justify-center gap-2"
+              onPress={onReintentar}
+              variante="secundario"
+            >
               {TEXTOS_UBICACION.reintentar}
             </Boton>
           </View>
@@ -342,7 +398,7 @@ function SinPermiso({ onReintentar }: { onReintentar: () => void }) {
         icono={<IconoUbicacion className="text-text-disabled" size={28} />}
         titulo={MENSAJES_EXPLORACION.sinPermisoUbicacion}
       />
-    </SafeAreaView>
+    </PantallaDeTab>
   );
 }
 

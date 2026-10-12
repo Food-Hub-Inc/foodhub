@@ -199,6 +199,28 @@ export const MENSAJES_AUDITORIA = {
 } as const;
 
 /**
+ * Moderación de publicaciones del panel (US-ADM-04, PAN-ADM-02).
+ *
+ * La historia no fija ningún texto literal: todos son PROPIOS. El de la
+ * notificación al cocinero (US-NOT-03) no va acá sino en el módulo de
+ * Notificaciones, que es quien lo emite.
+ */
+export const MENSAJES_MODERACION = {
+  /** PROPIO - cuarto criterio: el motivo de la baja es obligatorio. */
+  motivoEliminacionObligatorio: 'Indicá el motivo de la eliminación.',
+
+  /** PROPIO - mismo tope de 500 caracteres que el motivo de suspensión. */
+  motivoEliminacionLargo: 'El motivo no puede superar los 500 caracteres.',
+
+  /** PROPIO - estado vacío del listado filtrado. */
+  sinPublicaciones:
+    'No se encontraron publicaciones para los filtros seleccionados.',
+
+  /** PROPIO - éxito de la baja. */
+  publicacionEliminada: 'Publicación eliminada.',
+} as const;
+
+/**
  * Modulo de Publicaciones (US-PUB-01 a US-PUB-05).
  *
  * Los textos de validacion de imagen y de precio, los cinco modales de
@@ -332,6 +354,31 @@ export const MENSAJES_AYUDA = {
   graciasPorTuOpinion: 'Gracias por tu opinión',
   sinResultados: 'No encontramos preguntas que coincidan con tu búsqueda.',
   contactarSoporte: 'Contactar al soporte',
+
+  /**
+   * US-AYU-01 - Manual de usuario.
+   *
+   * Literales de los criterios de aceptación (búsqueda sin resultados,
+   * aviso de versión offline y botón de regreso al índice).
+   */
+  manual: {
+    /**
+     * LITERAL - US-AYU-01, búsqueda sin coincidencias.
+     */
+    sinResultados:
+      'No se encontraron resultados para tu búsqueda. Prueba con otras palabras clave o consulta el índice completo.',
+
+    /**
+     * LITERAL - US-AYU-01, aviso de catálogo offline sin conexión.
+     */
+    versionSinConexion:
+      'Estás viendo la versión sin conexión. Algunas imágenes pueden no estar disponibles.',
+
+    /**
+     * LITERAL - US-AYU-01, acción de retorno al índice desde el detalle.
+     */
+    volverAlIndice: 'Volver al índice',
+  },
 
   /**
    * US-AYU-04 - Informacion legal y datos de contacto (PAN-AYU-04).
@@ -1485,6 +1532,21 @@ export const MENSAJES_RESENA = {
 
   /** PROPIO - la bandeja de moderacion no encontro reportes pendientes. */
   sinReportesPendientes: 'No hay reportes pendientes de revisión.',
+} as const;
+
+/**
+ * Métricas generales del panel (US-ADM-05, PAN-ADM-03). La historia no fija
+ * textos literales: todos son PROPIOS.
+ */
+export const MENSAJES_METRICAS = {
+  /** PROPIO - tercer criterio: "Desde" posterior a "Hasta". */
+  rangoInvertido: 'La fecha "Desde" no puede ser posterior a "Hasta".',
+
+  /** PROPIO - tercer criterio: "Hasta" posterior a hoy. */
+  hastaFutura: 'La fecha "Hasta" no puede superar la fecha actual.',
+
+  /** PROPIO - cuarto criterio: período sin datos. */
+  sinPedidos: 'No hay pedidos en el período seleccionado.',
 } as const;
 
 /**

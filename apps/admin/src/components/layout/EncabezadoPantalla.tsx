@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Button } from '@heroui/react';
 import { TEXTOS_PANEL } from '../../lib/textos.js';
-import { IconoCampana, IconoConfiguracion } from '../iconos/index.js';
+import { IconoCampana } from '../iconos/index.js';
+// import { IconoConfiguracion } from '../iconos/index.js';
 
 /**
  * Encabezado común a todas las pantallas del panel.
@@ -59,14 +60,18 @@ export function EncabezadoPantalla({
           ) : null}
         </Button>
 
-        <Button
-          aria-label={TEXTOS_PANEL.ajustes}
-          className="size-10"
-          isIconOnly
-          variant="tertiary"
-        >
-          <IconoConfiguracion className="size-5" />
-        </Button>
+        {/*
+          Se saca del encabezado: no navegaba a ningún lado y la configuración
+          ya es accesible desde el sidebar.
+          <Button
+            aria-label={TEXTOS_PANEL.ajustes}
+            className="size-10"
+            isIconOnly
+            variant="tertiary"
+          >
+            <IconoConfiguracion className="size-5" />
+          </Button>
+        */}
       </div>
     </header>
   );

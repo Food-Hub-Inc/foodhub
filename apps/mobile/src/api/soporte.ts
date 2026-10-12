@@ -1,11 +1,17 @@
 import type {
   EnviarConsultaInput,
   Faq,
+  ManualPublico,
   SolicitarUrlCargaAdjuntoTicketInput,
   UrlDeCarga,
   VotoFaqInput,
 } from '@foodhub/shared';
 import { api } from '../lib/api';
+
+/** US-AYU-01 · Manual de usuario según el rol autenticado. */
+export function listarManual(): Promise<ManualPublico> {
+  return api.obtener<ManualPublico>('/soporte/manual');
+}
 
 /** US-AYU-02 · FAQs activas del rol autenticado. */
 export function listarFaqs(): Promise<Faq[]> {

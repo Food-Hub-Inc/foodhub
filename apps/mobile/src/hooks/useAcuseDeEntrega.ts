@@ -48,6 +48,7 @@ export function useAcuseDeEntrega(): void {
 
   const porAcusar = useRef<string[]>([]);
   const envioPendiente = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bajaDelCanal = useRef<Promise<unknown>>(Promise.resolve());
 
   useEffect(() => {
     if (!miId) return;
@@ -81,6 +82,8 @@ export function useAcuseDeEntrega(): void {
       if (cancelado || !token) return;
       await supabase.realtime.setAuth(token);
       if (cancelado) return;
+      await bajaDelCanal.current;
+      if (cancelado) return;
 
       const topic = `mensajes-entrantes-${miId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
@@ -101,13 +104,13 @@ export function useAcuseDeEntrega(): void {
       canal.subscribe();
     };
 
-    void suscribir();
+    void suscribir().catch(() => undefined);
 
     return () => {
       cancelado = true;
       if (envioPendiente.current) clearTimeout(envioPendiente.current);
       envioPendiente.current = null;
-      if (canal) void supabase.removeChannel(canal);
+      if (canal) bajaDelCanal.current = supabase.removeChannel(canal);
     };
   }, [cliente, miId]);
 }

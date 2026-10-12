@@ -55,13 +55,13 @@ export function Casilla({
         onPress={() => {
           onChange(!marcada);
         }}
-        className="min-h-11 flex-row items-start gap-3 py-1"
+        className="min-h-11 flex-row items-center gap-3 py-1"
         accessibilityRole="checkbox"
         accessibilityState={{ checked: marcada }}
         accessibilityLabel={etiquetaAccesible}
       >
         <View
-          className={`mt-0.5 h-6 w-6 items-center justify-center rounded-xs border-2 ${borde} ${fondo}`}
+          className={`h-6 w-6 items-center justify-center rounded-xs border-2 ${borde} ${fondo}`}
         >
           <Animated.View style={estiloTilde}>
             <IconoTilde size={16} className="text-surface" />

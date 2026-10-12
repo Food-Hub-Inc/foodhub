@@ -59,7 +59,7 @@ export function CabeceraDeChat({
 
   return (
     <>
-      <View className="h-16 flex-row items-center border-b border-border bg-surface px-2">
+      <View className="h-16 flex-row items-center border-b border-border bg-surface pl-2 pr-1">
         <Pressable
           accessibilityLabel={TEXTOS_NAVEGACION.volver}
           accessibilityRole="button"
@@ -74,7 +74,7 @@ export function CabeceraDeChat({
         <Pressable
           accessibilityLabel={TEXTOS_MENSAJERIA.opcionesDeLaConversacion}
           accessibilityRole="button"
-          className="min-h-11 flex-1 flex-row items-center gap-3"
+          className="min-h-11 min-w-0 flex-1 flex-row items-center gap-3"
           onPress={onAbrirMenu}
         >
           <AvatarDeParticipante
@@ -82,7 +82,7 @@ export function CabeceraDeChat({
             tamano="h-10 w-10"
           />
 
-          <View className="flex-1">
+          <View className="min-w-0 flex-1">
             <Text
               className="text-body font-bold text-text-primary"
               numberOfLines={1}
@@ -94,11 +94,7 @@ export function CabeceraDeChat({
           </View>
         </Pressable>
 
-        {puedeVerPerfil ? (
-          <Boton onPress={irAlPerfil} tamano="sm" variante="ghost">
-            {MENSAJES_MENSAJERIA.verPerfil}
-          </Boton>
-        ) : null}
+        {puedeVerPerfil ? <BotonVerPerfil onPress={irAlPerfil} /> : null}
       </View>
 
       <HojaDeOpciones
@@ -109,6 +105,28 @@ export function CabeceraDeChat({
         onVerPerfil={irAlPerfil}
       />
     </>
+  );
+}
+
+/**
+ * "Ver perfil" de la cabecera.
+ *
+ * Botón de texto y no `Boton`: el `sm` trae `px-4` y un contenedor `w-full` que
+ * en esta fila le disputaba el ancho al nombre y lo cortaba aunque sobrara
+ * lugar. `shrink-0` + padding mínimo lo deja pegado al borde derecho sin perder
+ * el área táctil de 44 px.
+ */
+function BotonVerPerfil({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      className="min-h-11 shrink-0 justify-center px-2"
+      onPress={onPress}
+    >
+      <Text className="text-body font-semibold text-primary">
+        {MENSAJES_MENSAJERIA.verPerfil}
+      </Text>
+    </Pressable>
   );
 }
 

@@ -42,6 +42,23 @@ export function formatearFechaHora(iso: string | null): string {
   return fecha ? formatoFechaHora.format(fecha) : '—';
 }
 
+/**
+ * Precio en pesos. Llega como string (`numeric` de la base) y se muestra sin
+ * decimales cuando no los tiene: `"2500.00"` → `$ 2.500`, `"2500.50"` →
+ * `$ 2.500,50`.
+ */
+const formatoPrecio = new Intl.NumberFormat(LOCALE, {
+  style: 'currency',
+  currency: 'ARS',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+
+export function formatearPrecio(precio: string): string {
+  const valor = Number(precio);
+  return Number.isFinite(valor) ? formatoPrecio.format(valor) : '—';
+}
+
 /** `824` → `824`; `1500` → `1.500`. */
 export function formatearNumero(valor: number): string {
   return formatoNumero.format(valor);

@@ -128,13 +128,18 @@ export function GateDeSesion({ children }: { children: ReactNode }) {
   if (sesion !== null && perfil.isError) {
     return (
       <View className="flex-1 bg-background">
-        <EstadoDeError
-          mensaje={MENSAJES_USUARIO.perfilNoDisponible}
-          onReintentar={() => {
-            void perfil.refetch();
-          }}
-        />
-        <View className="items-center pb-8">
+        {/* Absoluto y no un hermano en flujo: si compitiera por alto con el
+            "Cerrar sesión" de abajo, el bloque de error se centraría contra el
+            espacio que le queda y no contra la pantalla entera. */}
+        <View className="absolute inset-0">
+          <EstadoDeError
+            mensaje={MENSAJES_USUARIO.perfilNoDisponible}
+            onReintentar={() => {
+              void perfil.refetch();
+            }}
+          />
+        </View>
+        <View className="absolute inset-x-0 bottom-8 items-center">
           <BotonDeTexto
             onPress={() => {
               void cerrarSesion();

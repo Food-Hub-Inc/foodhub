@@ -28,6 +28,8 @@ import { categoriasRouter } from './modules/configuracion/categorias.router.js';
 import { motivosCancelacionRouter } from './modules/configuracion/motivosCancelacion.router.js';
 import { parametrosSistemaRouter } from './modules/configuracion/parametrosSistema.router.js';
 import { terminosRouter } from './modules/configuracion/terminos.router.js';
+import { metricasRouter } from './modules/metricas/metricas.router.js';
+import { moderacionPublicacionesRouter } from './modules/publicaciones/moderacion.router.js';
 import { moderacionRouter } from './modules/resenas/moderacion.router.js';
 import { resenasRouter } from './modules/resenas/resenas.router.js';
 import { seguridadRouter } from './modules/seguridad/seguridad.router.js';
@@ -179,7 +181,16 @@ export function crearApp(): Express {
 
   // RF086 - La bandeja de moderacion va aparte: es del panel web y exclusiva
   // del administrador, mientras que todo `/resenas` es de la app.
+  // US-ADM-04 - Moderacion de publicaciones, tambien del panel. Se monta ANTES
+  // que la de resenas: las dos comparten el prefijo `/moderacion`.
+  app.use(
+    `${PREFIJO_API}/moderacion/publicaciones`,
+    moderacionPublicacionesRouter,
+  );
   app.use(`${PREFIJO_API}/moderacion`, moderacionRouter);
+
+  // US-ADM-05 - Metricas generales del panel (PAN-ADM-03). Del administrador.
+  app.use(`${PREFIJO_API}/metricas`, metricasRouter);
 
   // US-AYU-05 - Gestion del manual y las FAQ desde el panel. Tambien exclusivo
   // del administrador, por eso no cuelga de `/soporte`, que es de la app movil.

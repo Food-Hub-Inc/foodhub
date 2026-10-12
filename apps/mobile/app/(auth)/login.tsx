@@ -203,7 +203,7 @@ function Encabezado() {
  */
 function PieDeIngreso() {
   return (
-    <View className="mt-7 flex-row justify-center">
+    <View className="mt-7 flex-col items-center justify-center">
       <Text className="text-body text-text-secondary">
         {TEXTOS_LOGIN.sinCuenta}
       </Text>

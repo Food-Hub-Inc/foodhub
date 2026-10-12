@@ -15,7 +15,7 @@ import {
   IconoFiltro,
   IconoMas,
 } from '../../components/iconos';
-import { SafeAreaView } from '../../components/SafeAreaView';
+import { PantallaDeTab } from '../../components/PantallaDeTab';
 import { BarraDeBusqueda } from '../../components/ui/BarraDeBusqueda';
 import { Boton } from '../../components/ui/Boton';
 import { BotonDeNotificaciones } from '../../components/ui/BotonDeNotificaciones';
@@ -104,7 +104,7 @@ export function MisPublicaciones() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <PantallaDeTab>
       {/* US-NOT-07 · La campana del menú de inicio del cocinero (PAN-PUB-01). */}
       <EncabezadoPantalla
         titulo={TEXTOS_PUBLICACIONES.titulo}
@@ -167,7 +167,7 @@ export function MisPublicaciones() {
         }}
         valor={orden}
       />
-    </SafeAreaView>
+    </PantallaDeTab>
   );
 }
 
