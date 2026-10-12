@@ -11,6 +11,7 @@ import {
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
 import { AppError, noEncontrado } from '../../middleware/error.middleware.js';
+import { notificarTransicionPedido } from '../notificaciones/disparadores.service.js';
 import { motivoCancelacionAplicable } from '../catalogo/catalogo.service.js';
 import { obtenerMinutosDeCancelacion } from '../configuracion/parametrosSistema.service.js';
 import { obtenerDetalle } from './pedidos.service.js';
@@ -120,6 +121,18 @@ async function aplicarTransicion(
     origenTransicion: entrada.origen,
     usuarioResponsableId: entrada.usuarioResponsableId,
     motivo: entrada.motivo ?? null,
+  });
+
+  /**
+   * US-NOT-01 - Notificacion del cambio de estado, en la misma transaccion que
+   * lo escribio. `notificarTransicionPedido` decide destinatario y texto segun
+   * `destino` y `origen`; la expiracion automatica (origen SISTEMA) no pasa por
+   * aca -corre en PostgreSQL- y la resuelve el planificador de notificaciones.
+   */
+  await notificarTransicionPedido(tx, {
+    pedidoId: entrada.pedidoId,
+    destino: entrada.destino,
+    origen: entrada.origen,
   });
 }
 

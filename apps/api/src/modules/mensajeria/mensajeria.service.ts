@@ -23,6 +23,7 @@ import {
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
 import { AppError, noEncontrado } from '../../middleware/error.middleware.js';
+import { notificarMensajeNuevo } from '../notificaciones/disparadores.service.js';
 import {
   aInterlocutor,
   aMensaje,
@@ -451,9 +452,26 @@ export async function enviarMensaje(
     const actualizada = await leerConversacion(usuarioId, conversacionId, tx);
     if (!actualizada) throw noEncontrado('la conversación');
 
+    const detalleActualizado = aDetalle(actualizada);
+
+    /**
+     * US-NOT-02 - Notificacion al destinatario, dentro de la misma
+     * transaccion: la fila de `notificacion` es atomica con el mensaje. Si el
+     * destinatario tiene el chat abierto, `notificarMensajeNuevo` escribe la
+     * fila igual pero saltea el push (el mensaje ya le llega por Realtime).
+     */
+    await notificarMensajeNuevo(tx, {
+      conversacionId,
+      remitenteId: usuarioId,
+      destinatarioId: detalleActualizado.interlocutor.id,
+      tipo: datos.tipo,
+      contenido: datos.tipo === 'TEXTO' ? datos.contenido : null,
+      pieDeImagen: datos.tipo === 'IMAGEN' ? (datos.pieDeImagen ?? null) : null,
+    });
+
     return {
       mensaje: aMensaje(creado),
-      conversacion: aDetalle(actualizada),
+      conversacion: detalleActualizado,
     };
   });
 }

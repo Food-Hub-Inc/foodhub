@@ -6,21 +6,22 @@ import { type TipoNotificacion, type TipoUsuario } from '../constants/enums.js';
  *
  * La tabla `preferencia_notificacion` guarda una fila por (usuario,
  * tipo_notificacion), pero la pantalla no muestra un switch por cada uno de
- * los 9 valores de `TIPO_NOTIFICACION`: agrupa varios bajo una sola etiqueta
+ * los valores de `TIPO_NOTIFICACION`: agrupa varios bajo una sola etiqueta
  * ("Cambios de estado de mis pedidos" cubre PEDIDO_ACEPTADO, PEDIDO_LISTO,
  * PEDIDO_RECHAZADO y PEDIDO_COMPLETADO a la vez). `GRUPO_PREFERENCIA_NOTIFICACION`
  * es esa unidad de UI; se togglea entera y actualiza todas sus filas juntas.
  *
- * "Publicaciones nuevas de cocineros favoritos" (RF059, switch del cliente)
- * queda deliberadamente afuera: no existe un `TIPO_NOTIFICACION` para ese
- * evento todavía (es US-NOT-06, que no está implementada). Ver
- * `PENDIENTE_NOTIFICACIONES_COCINEROS_FAVORITOS.md` en la raíz del repo.
+ * "Publicaciones nuevas de cocineros favoritos" (RF059 / US-NOT-06, switch del
+ * cliente) YA está: se sumó el tipo `PUBLICACION_COCINERO_FAVORITO` al enum al
+ * implementar el módulo de Notificaciones. Antes quedaba afuera porque no
+ * existía el tipo ni quién emitiera esa notificación.
  */
 export const GRUPO_PREFERENCIA_NOTIFICACION = [
   'PEDIDO_CREADO',
   'CAMBIO_ESTADO_PEDIDO',
   'MENSAJE_NUEVO',
   'RESENA_RECIBIDA',
+  'PUBLICACION_COCINERO_FAVORITO',
   'PUBLICACION_ELIMINADA_ADMIN',
   'AVISO_SISTEMA',
 ] as const;
@@ -41,6 +42,7 @@ export const TIPOS_POR_GRUPO_PREFERENCIA: Record<
   ],
   MENSAJE_NUEVO: ['MENSAJE_NUEVO'],
   RESENA_RECIBIDA: ['RESENA_RECIBIDA'],
+  PUBLICACION_COCINERO_FAVORITO: ['PUBLICACION_COCINERO_FAVORITO'],
   PUBLICACION_ELIMINADA_ADMIN: ['PUBLICACION_ELIMINADA_ADMIN'],
   AVISO_SISTEMA: ['AVISO_SISTEMA'],
 };
@@ -54,7 +56,12 @@ export const GRUPOS_PREFERENCIA_POR_ROL: Record<
   TipoUsuario,
   readonly GrupoPreferenciaNotificacion[]
 > = {
-  CLIENTE: ['CAMBIO_ESTADO_PEDIDO', 'MENSAJE_NUEVO', 'AVISO_SISTEMA'],
+  CLIENTE: [
+    'CAMBIO_ESTADO_PEDIDO',
+    'MENSAJE_NUEVO',
+    'PUBLICACION_COCINERO_FAVORITO',
+    'AVISO_SISTEMA',
+  ],
   COCINERO: [
     'PEDIDO_CREADO',
     'CAMBIO_ESTADO_PEDIDO',

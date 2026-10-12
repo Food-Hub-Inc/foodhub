@@ -629,9 +629,8 @@ export const TEXTOS_ACEPTAR_TERMINOS = {
  * de tipos de notificación (`CAMBIO_ESTADO_PEDIDO`); por eso hay dos objetos
  * de etiquetas y no uno solo indexado por grupo.
  *
- * "Publicaciones nuevas de cocineros favoritos" queda deliberadamente afuera:
- * no hay un `TIPO_NOTIFICACION` para ese evento todavía. Ver
- * `PENDIENTE_NOTIFICACIONES_COCINEROS_FAVORITOS.md` en la raíz del repo.
+ * "Nuevas publicaciones de cocineros favoritos" (US-NOT-08, visible solo para
+ * el cliente): la etiqueta es literal del criterio de aceptación de US-NOT-08.
  */
 export const TEXTOS_PREFERENCIAS_NOTIFICACION = {
   /** [PROPIO] */
@@ -639,6 +638,8 @@ export const TEXTOS_PREFERENCIAS_NOTIFICACION = {
   etiquetasCliente: {
     CAMBIO_ESTADO_PEDIDO: 'Cambios de estado de mis pedidos',
     MENSAJE_NUEVO: 'Mensajes nuevos en el chat',
+    PUBLICACION_COCINERO_FAVORITO:
+      'Nuevas publicaciones de cocineros favoritos',
     AVISO_SISTEMA: 'Avisos generales del sistema',
   },
   etiquetasCocinero: {
@@ -650,6 +651,33 @@ export const TEXTOS_PREFERENCIAS_NOTIFICACION = {
       'Eliminación de publicaciones por parte del administrador',
     AVISO_SISTEMA: 'Avisos generales del sistema',
   },
+} as const;
+
+/**
+ * PAN-NOT-01 · Historial de notificaciones (US-NOT-07).
+ *
+ * El único texto LITERAL del criterio es el estado vacío, que vive en
+ * `MENSAJES_NOTIFICACION.historialVacio` (`@foodhub/shared`) y se importa de
+ * ahí. Lo de acá es la copia [PROPIO] de la pantalla: título, la acción de la
+ * cabecera y los encabezados de los grupos por día, que la maquetación dibuja
+ * pero ningún criterio fija.
+ */
+export const TEXTOS_NOTIFICACIONES = {
+  /** [PROPIO] Título de la pantalla (la maquetación lo escribe "Notificaciones"). */
+  titulo: 'Notificaciones',
+  /** [PROPIO] Acción de la cabecera del mockup. */
+  marcarTodas: 'Marcar todas',
+  /** [PROPIO] Etiqueta accesible del engranaje (US-NOT-07: lleva a PAN-NOT-02). */
+  configurar: 'Configurar notificaciones',
+  /**
+   * [PROPIO] Encabezados de los grupos por día: los arma
+   * `encabezadoDeDiaNotificacion` en `lib/formato.ts` ("Hoy", "Ayer" o la
+   * fecha), igual criterio que el resto de las marcas de tiempo del módulo.
+   */
+  /** [PROPIO] Etiqueta accesible de una tarjeta no leída. */
+  noLeida: 'No leída',
+  /** [PROPIO] Se muestra al pie mientras entra la página siguiente. */
+  cargandoMas: 'Cargando más…',
 } as const;
 
 /**
@@ -774,13 +802,11 @@ export const PANTALLAS_PENDIENTES = {
     descripcion:
       'La información básica del cliente y el historial de pedidos que te hizo.',
   },
-  notificaciones: {
-    codigo: 'PAN-NOT-01',
-    modulo: 'Notificaciones y alertas',
-    titulo: 'Notificaciones',
-    descripcion:
-      'El historial de avisos de la aplicación: cambios de estado de tus pedidos, mensajes nuevos y reseñas recibidas.',
-  },
+  /**
+   * PAN-NOT-01 (US-NOT-07) ya está implementada: el placeholder se reemplazó
+   * por la pantalla real en `src/screens/notificaciones/`. La entrada queda
+   * eliminada para que `PANTALLAS_PENDIENTES` no la liste.
+   */
   /**
    * Las pantallas de ayuda (US-AYU-01 y US-AYU-03) ya están implementadas;
    * los placeholders se reemplazaron por las pantallas reales en

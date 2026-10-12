@@ -17,6 +17,7 @@ import {
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
 import { AppError, noEncontrado } from '../../middleware/error.middleware.js';
+import { notificarResenaRecibida } from '../notificaciones/disparadores.service.js';
 import { obtenerParametrosDeResenas } from '../configuracion/parametrosSistema.service.js';
 import {
   aResenaPublica,
@@ -275,6 +276,21 @@ export async function crearResena(entrada: {
   }
 
   const filaNueva = await insertarResena(autorId, destino, datos);
+
+  // US-NOT-05 - Aviso al cocinero cuando la reseña es sobre él (PLATO o
+  // COCINERO). `void` + try/catch propio en el disparador: un fallo de la
+  // notificación no puede tocar la reseña ya publicada. Las de tipo CLIENTE
+  // no disparan este aviso: ahí el destinatario es un cliente, no un cocinero.
+  if (destino.cocineroResId) {
+    void notificarResenaRecibida({
+      resenaId: filaNueva.id,
+      cocineroId: destino.cocineroResId,
+      clienteId: autorId,
+      calificacion: datos.calificacion,
+      comentario: datos.comentario ?? null,
+    });
+  }
+
   return leerResenaPublica(filaNueva.id, autorId);
 }
 

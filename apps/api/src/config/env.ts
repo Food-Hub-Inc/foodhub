@@ -180,6 +180,30 @@ const envSchema = z.object({
    * `"FoodHub <soporte@foodhub.com>"`. Tambien opcional en dev.
    */
   RESEND_REMITENTE: z.string().default('FoodHub <soporte@foodhub.com>'),
+
+  // --- Notificaciones push (US-NOT-01 a US-NOT-06, punto 1.3.1.11) ---------
+  /**
+   * Access token del proyecto de Expo. Solo hace falta si el proyecto tiene
+   * activada "Enhanced Security for Push Notifications" en el panel de Expo;
+   * sin eso, la Expo Push API acepta los envios sin autenticacion. Opcional
+   * para no bloquear a quien levanta la API sin configurar Expo: si falta, el
+   * despachador manda igual y, si el proyecto exige el token, Expo responde con
+   * un error que queda logueado (no rompe ninguna operacion de negocio).
+   */
+  EXPO_ACCESS_TOKEN: z.string().optional(),
+  /**
+   * Cada cuantos milisegundos el despachador de push barre `notificacion` en
+   * busca de filas `push_estado = 'PENDIENTE'`. Es la latencia maxima entre que
+   * se registra la notificacion y sale el push (el emisor ademas programa un
+   * barrido inmediato tras cada alta, asi que el caso tipico es < 1 s). El
+   * barrido de la funcion SQL de expiracion de pedidos depende solo de este
+   * intervalo.
+   */
+  NOTIFICACIONES_DESPACHO_INTERVALO_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(10_000),
 });
 
 const parsed = envSchema.safeParse(process.env);

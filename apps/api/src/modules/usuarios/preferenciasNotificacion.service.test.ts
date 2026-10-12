@@ -7,19 +7,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  * reglas de rechazo de `actualizarPreferencia`: grupo que no le corresponde
  * al rol, y grupo no modificable (notificación esencial).
  */
-const { aplicarSelectWhere, aplicarUpdateWhere } = vi.hoisted(() => ({
-  aplicarSelectWhere: vi.fn(),
-  aplicarUpdateWhere: vi.fn(),
-}));
+const { aplicarSelectWhere, insertValues, onConflictDoUpdate } = vi.hoisted(
+  () => ({
+    aplicarSelectWhere: vi.fn(),
+    insertValues: vi.fn(),
+    onConflictDoUpdate: vi.fn(),
+  }),
+);
 
 vi.mock('../../lib/db.js', () => ({
   db: {
     select: vi.fn(() => ({
       from: vi.fn(() => ({ where: aplicarSelectWhere })),
     })),
-    update: vi.fn(() => ({
-      set: vi.fn(() => ({ where: aplicarUpdateWhere })),
-    })),
+    // `actualizarPreferencia` hace UPSERT: insert().values().onConflictDoUpdate().
+    insert: vi.fn(() => ({ values: insertValues })),
   },
 }));
 
@@ -48,6 +50,11 @@ describe('obtenerPreferencias', () => {
         modificable: true,
       },
       { tipoNotificacion: 'MENSAJE_NUEVO', activa: true, modificable: true },
+      {
+        tipoNotificacion: 'PUBLICACION_COCINERO_FAVORITO',
+        activa: true,
+        modificable: true,
+      },
       { tipoNotificacion: 'AVISO_SISTEMA', activa: true, modificable: false },
     ]);
 
@@ -59,6 +66,11 @@ describe('obtenerPreferencias', () => {
     expect(preferencias).toEqual([
       { grupo: 'CAMBIO_ESTADO_PEDIDO', activa: false, modificable: true },
       { grupo: 'MENSAJE_NUEVO', activa: true, modificable: true },
+      {
+        grupo: 'PUBLICACION_COCINERO_FAVORITO',
+        activa: true,
+        modificable: true,
+      },
       { grupo: 'AVISO_SISTEMA', activa: true, modificable: false },
     ]);
   });
@@ -93,13 +105,14 @@ describe('obtenerPreferencias', () => {
 describe('actualizarPreferencia', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    insertValues.mockReturnValue({ onConflictDoUpdate });
+    onConflictDoUpdate.mockResolvedValue(undefined);
   });
 
-  it('persiste el cambio y devuelve el grupo actualizado', async () => {
+  it('persiste el cambio (upsert) y devuelve el grupo actualizado', async () => {
     aplicarSelectWhere.mockResolvedValue([
       { tipoNotificacion: 'PEDIDO_CREADO', modificable: true },
     ]);
-    aplicarUpdateWhere.mockResolvedValue(undefined);
 
     const resultado = await actualizarPreferencia({
       usuarioId: USUARIO_ID,
@@ -113,7 +126,38 @@ describe('actualizarPreferencia', () => {
       activa: false,
       modificable: true,
     });
-    expect(aplicarUpdateWhere).toHaveBeenCalledTimes(1);
+    expect(insertValues).toHaveBeenCalledTimes(1);
+    expect(onConflictDoUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('crea la fila con upsert cuando el cliente todavía no la tenía (US-NOT-06)', async () => {
+    aplicarSelectWhere.mockResolvedValue([]); // sin fila previa
+
+    const resultado = await actualizarPreferencia({
+      usuarioId: USUARIO_ID,
+      tipoUsuario: 'CLIENTE',
+      grupo: 'PUBLICACION_COCINERO_FAVORITO',
+      activa: false,
+    });
+
+    expect(resultado).toEqual({
+      grupo: 'PUBLICACION_COCINERO_FAVORITO',
+      activa: false,
+      modificable: true,
+    });
+    const filas = insertValues.mock.calls[0]![0] as {
+      tipoNotificacion: string;
+      activa: boolean;
+      modificable: boolean;
+    }[];
+    expect(filas).toEqual([
+      {
+        usuarioId: USUARIO_ID,
+        tipoNotificacion: 'PUBLICACION_COCINERO_FAVORITO',
+        activa: false,
+        modificable: true,
+      },
+    ]);
   });
 
   it('rechaza un grupo que no le corresponde al rol', async () => {
@@ -126,7 +170,7 @@ describe('actualizarPreferencia', () => {
       }),
     ).rejects.toMatchObject({ status: 404 });
 
-    expect(aplicarUpdateWhere).not.toHaveBeenCalled();
+    expect(insertValues).not.toHaveBeenCalled();
   });
 
   it('rechaza apagar una notificación esencial', async () => {
@@ -143,6 +187,6 @@ describe('actualizarPreferencia', () => {
       }),
     ).rejects.toMatchObject({ status: 403 });
 
-    expect(aplicarUpdateWhere).not.toHaveBeenCalled();
+    expect(insertValues).not.toHaveBeenCalled();
   });
 });

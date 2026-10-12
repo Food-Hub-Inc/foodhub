@@ -33,6 +33,7 @@ import {
 } from '../../lib/valoraciones.js';
 import { AppError, noEncontrado } from '../../middleware/error.middleware.js';
 import { limpiarFotoDePlatoAnterior } from '../almacenamiento/almacenamiento.service.js';
+import { notificarPublicacionDeFavoritos } from '../notificaciones/disparadores.service.js';
 
 /**
  * Modulo de Publicaciones (US-PUB-01 a US-PUB-05).
@@ -351,10 +352,10 @@ export function valoresDeAltaPublicacion(
  * Sin validacion extra de categoria: la FK `publicacion.categoria_id` ya
  * restringe contra una categoria inexistente o dada de baja a nivel de base.
  *
- * Sin notificacion push a los clientes favoritos: el modulo de Notificaciones
- * (US-NOT-06) no existe todavia en la API -sin FCM, sin endpoint, sin el valor
- * de enum correspondiente-, asi que queda totalmente fuera de alcance de este
- * modulo.
+ * US-NOT-06 - Al crear (no al editar) se notifica a los clientes que tienen a
+ * este cocinero como favorito. `notificarPublicacionDeFavoritos` corre con
+ * `void` y con su propio try/catch: el abanico de notificaciones nunca puede
+ * hacer fallar el alta del plato, que a esta altura ya quedo confirmada.
  */
 export async function crearPublicacion(entrada: {
   cocineroId: string;
@@ -370,7 +371,16 @@ export async function crearPublicacion(entrada: {
   // algo exploto antes de llegar a esta linea.
   if (!creada) throw new Error('No se pudo crear la publicación.');
 
-  return obtenerPublicacionPropia(entrada.cocineroId, creada.id);
+  const detalle = await obtenerPublicacionPropia(entrada.cocineroId, creada.id);
+
+  void notificarPublicacionDeFavoritos({
+    cocineroId: entrada.cocineroId,
+    publicacionId: creada.id,
+    nombrePlato: detalle.nombre,
+    precio: detalle.precio,
+  });
+
+  return detalle;
 }
 
 // ---------------------------------------------------------------------------
@@ -496,9 +506,10 @@ export function limpiezaDeImagenTrasEditar(entrada: {
  * Sin `registrarOperacion`: el modulo de Publicaciones no audita sus cambios,
  * mismo criterio que ya aplica `crearPublicacion` y `cambiarDisponibilidad`.
  *
- * Sin notificacion push: US-NOT-06 no existe todavia en la API (ver el
- * comentario de `crearPublicacion`), y el propio criterio de aceptacion de
- * esta historia aclara que la edicion NO genera push a diferencia del alta.
+ * Sin notificacion push: US-NOT-06 solo se dispara al CREAR una publicacion,
+ * no al editarla. Es explicito en el criterio de aceptacion de esa historia
+ * ("no envie notificacion push. Solo se notifica cuando es una publicacion
+ * nueva, no una edicion de una ya existente").
  */
 export async function editarPublicacion(entrada: {
   cocineroId: string;
@@ -591,9 +602,11 @@ const ESTADOS_PEDIDO_ACTIVO: EstadoPedido[] = ['CREADO', 'ACEPTADO', 'LISTO'];
  * ultimo criterio de aceptacion de la historia (conservar las resenas del
  * cocinero tras la baja).
  *
- * Sin notificacion push ni `registrarOperacion`: mismo alcance que el resto
- * del modulo (ver el comentario de `crearPublicacion` sobre US-NOT-06, y el
- * de `cambiarDisponibilidad` sobre la auditoria).
+ * Sin notificacion push ni `registrarOperacion`: esta es la baja que hace el
+ * PROPIO cocinero (US-PUB-03), que no dispara ninguna notificacion. La que si
+ * notifica es la eliminacion por el ADMINISTRADOR (US-NOT-03 / US-ADM-04), que
+ * todavia no esta implementada -ver `PENDIENTE_NOTIFICACIONES_*`-. El criterio
+ * de auditoria es el mismo que `cambiarDisponibilidad`.
  */
 export async function eliminarPublicacion(entrada: {
   cocineroId: string;

@@ -1,24 +1,28 @@
 import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import { useNoLeidas } from '../../hooks/useNotificaciones';
 import { TEXTOS_NAVEGACION } from '../../lib/textos';
 import { IconoCampana } from '../iconos';
 
 /**
- * Campana con contador, en el header (PAN-EXP-01).
+ * Campana con contador, en el header del menú de inicio (PAN-EXP-01 para el
+ * cliente, PAN-PUB-01 para el cocinero). Abre PAN-NOT-01 (US-NOT-07).
  *
  * POR QUÉ NO ES UNA SOLAPA DE LA BARRA INFERIOR
  * ---------------------------------------------------------------------------
- * Así lo resuelve la maquetación del feed, y tiene sentido: la barra inferior
- * es para los lugares donde el usuario trabaja, y las notificaciones son un
- * aviso al que se entra y del que se vuelve. Ponerlas ahí gastaría una de las
- * cinco posiciones que ya están ocupadas.
+ * Así lo resuelve la maquetación, y tiene sentido: la barra inferior es para
+ * los lugares donde el usuario trabaja, y las notificaciones son un aviso al
+ * que se entra y del que se vuelve. Ponerlas ahí gastaría una de las cinco
+ * posiciones.
  *
- * El contador viene por prop y no de una consulta propia: el módulo de
- * notificaciones (PAN-NOT-01) todavía no tiene endpoint en
- * `docs/API-TRANSVERSALES.md`, así que hoy siempre llega en cero y el globo no
- * se dibuja. Cuando exista, el dato entra por acá sin tocar el componente.
+ * El contador sale de `useNoLeidas` (GET /notificaciones/no-leidas), no de una
+ * prop: la campana aparece en dos pantallas distintas y ninguna debería tener
+ * que pasarle el dato. Al abrir PAN-NOT-01 el contador vuelve a 0 (US-NOT-07,
+ * segundo criterio).
  */
-export function BotonDeNotificaciones({ cantidad = 0 }: { cantidad?: number }) {
+export function BotonDeNotificaciones() {
+  const { data: cantidad = 0 } = useNoLeidas();
+
   const etiqueta =
     cantidad > 0
       ? `${TEXTOS_NAVEGACION.notificaciones}, ${String(cantidad)} sin leer`

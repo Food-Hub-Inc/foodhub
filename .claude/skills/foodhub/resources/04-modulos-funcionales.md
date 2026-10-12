@@ -221,15 +221,25 @@ Reglas:
 | US-NOT-07 | historial de notificaciones en la app (PAN-NOT-01)    |
 | US-NOT-08 | habilitar o deshabilitar cada tipo                    |
 
-Reglas:
+Reglas (implementación en `docs/API-NOTIFICACIONES.md`):
 
-- **La fila en `notificacion` se escribe siempre**, aunque el push falle o el
-  usuario tenga las notificaciones apagadas en el sistema operativo. El envío
-  push es un efecto adicional, no la notificación en sí.
+- **Regla de escritura de la fila** (documento del módulo, rev. 01/09/2026):
+  para un tipo **configurable** con la preferencia en `activa = false`, **no se
+  escribe fila ni se manda push**. Para los tipos **esenciales**
+  (`AVISO_SISTEMA`, `PUBLICACION_ELIMINADA_ADMIN`) la fila se escribe siempre.
+  El push es un efecto adicional que puede fallar sin tocar la fila.
+  _(Esto corrige la regla anterior "la fila se escribe siempre".)_
+- Los tres rechazos de un pedido —cocinero, cliente (cancela), sistema
+  (expira)— son el **único** tipo `PEDIDO_RECHAZADO`; el texto y el
+  destinatario los elige `pedido.origen_rechazo`.
 - `preferencia_notificacion.modificable = false` marca las críticas que no se
-  pueden apagar (US-NOT-07 lo especifica para al menos una). La interfaz las
-  muestra **deshabilitadas**, no ocultas: así queda claro que existen.
+  pueden apagar. La interfaz las muestra **deshabilitadas**, no ocultas.
 - Un usuario puede tener **varios dispositivos** (`dispositivo_push`), y el
   token se renueva ante reinstalación o rotación del sistema operativo.
-- El envío por FCM tarda menos de 200 ms, así que se resuelve de forma síncrona
-  dentro del handler: el MVP **no** incorpora cola de mensajes (punto 1.3.1.12).
+- El push **no** es síncrono: `emision.service.ts` solo escribe la fila; un
+  **planificador** (`server.ts`) barre lo pendiente cada ~10 s y lo manda por
+  la **Expo Push API** (no FCM directo). El MVP **no** incorpora cola de
+  mensajes (punto 1.3.1.12). La expiración automática, que corre en pg_cron,
+  la notifica ese mismo planificador.
+- **Alcance implementado**: US-NOT-01, 02, 05, 06, 07, 08. US-NOT-03 y US-NOT-04
+  quedan como enganches hasta que exista la moderación del panel (US-ADM-04).

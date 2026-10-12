@@ -2,6 +2,7 @@ import { cerrarConexion } from '@foodhub/db';
 import { crearApp } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
+import { iniciarPlanificadorDeNotificaciones } from './modules/notificaciones/planificador.js';
 
 /**
  * Punto de entrada del proceso: levanta el servidor HTTP y gestiona su ciclo
@@ -18,6 +19,15 @@ const servidor = app.listen(env.PORT, () => {
 });
 
 /**
+ * Planificador de notificaciones (US-NOT-01 a US-NOT-06): notifica las
+ * expiraciones de pedidos que resolvio PostgreSQL y despacha el push
+ * pendiente. Vive aca y no en `crearApp` a proposito: es un proceso periodico,
+ * no un middleware, y las pruebas de integracion levantan `crearApp` con
+ * supertest sin que un timer se quede corriendo entre casos.
+ */
+const detenerNotificaciones = iniciarPlanificadorDeNotificaciones();
+
+/**
  * Apagado ordenado.
  *
  * Al desplegar una version nueva, Railway envia SIGTERM y espera. Sin este
@@ -28,6 +38,8 @@ const servidor = app.listen(env.PORT, () => {
  */
 function apagar(senal: NodeJS.Signals): void {
   logger.info({ senal }, 'apagando el servidor');
+
+  detenerNotificaciones();
 
   servidor.close(() => {
     void cerrarConexion().then(() => {

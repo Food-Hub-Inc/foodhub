@@ -105,3 +105,51 @@ export function tiempoTranscurrido(
   const dias = Math.floor(horas / 24);
   return `hace ${String(dias)} ${dias === 1 ? 'día' : 'días'}`;
 }
+
+/**
+ * PAN-NOT-01 (US-NOT-07) - Marca de tiempo de una tarjeta del historial.
+ *
+ * El criterio da el formato como ejemplo ("Hace 5 min", "Ayer a las 18:30"); el
+ * mockup lo muestra sin el "a las". Se sigue el mockup: hoy siempre relativo,
+ * ayer y antes con la hora. Funciones PURAS salvo por el reloj, inyectable.
+ */
+function diasDeDistancia(fecha: Date, ahora: Date): number {
+  const aMedianoche = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  return Math.round((aMedianoche(ahora) - aMedianoche(fecha)) / 86_400_000);
+}
+
+const formatoDiaLargo = new Intl.DateTimeFormat(LOCALE, {
+  day: 'numeric',
+  month: 'long',
+});
+
+export function marcaDeTiempoNotificacion(
+  iso: string,
+  ahora: Date = new Date(),
+): string {
+  const fecha = new Date(iso);
+  const dias = diasDeDistancia(fecha, ahora);
+
+  if (dias === 0) return tiempoRelativoDeHoy(fecha, ahora);
+  if (dias === 1) return `Ayer ${formatearHora(fecha)}`;
+  return `${formatoDiaLargo.format(fecha)} ${formatearHora(fecha)}`;
+}
+
+function tiempoRelativoDeHoy(fecha: Date, ahora: Date): string {
+  const minutos = Math.floor((ahora.getTime() - fecha.getTime()) / 60_000);
+  if (minutos < 1) return 'Recién';
+  if (minutos < 60) return `Hace ${String(minutos)} min`;
+  return `Hace ${String(Math.floor(minutos / 60))} h`;
+}
+
+/** PAN-NOT-01 - Encabezado del grupo de un día ("Hoy", "Ayer", "12 de agosto"). */
+export function encabezadoDeDiaNotificacion(
+  iso: string,
+  ahora: Date = new Date(),
+): string {
+  const dias = diasDeDistancia(new Date(iso), ahora);
+  if (dias === 0) return 'Hoy';
+  if (dias === 1) return 'Ayer';
+  return formatoDiaLargo.format(new Date(iso));
+}
