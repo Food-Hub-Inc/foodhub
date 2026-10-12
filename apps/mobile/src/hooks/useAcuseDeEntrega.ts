@@ -82,8 +82,10 @@ export function useAcuseDeEntrega(): void {
       await supabase.realtime.setAuth(token);
       if (cancelado) return;
 
+      const topic = `mensajes-entrantes-${miId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
       canal = supabase
-        .channel('mensajes-entrantes')
+        .channel(topic)
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'mensaje' },
