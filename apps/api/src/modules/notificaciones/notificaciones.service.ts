@@ -6,6 +6,7 @@ import type {
   PaginaNotificaciones,
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
+import { noEncontrado } from '../../middleware/error.middleware.js';
 
 /**
  * Historial in-app de notificaciones (US-NOT-07, PAN-NOT-01).
@@ -72,6 +73,39 @@ export async function listarHistorial(
 }
 
 /** US-NOT-07 - Contador del globo de la campana (encabezado del feed). */
+/**
+ * PAN-NOT-03 - Detalle de una notificación (el aviso del administrador de
+ * US-NOT-04 y los avisos de RF086). Acotada al destinatario: el id de otra
+ * persona responde 404, igual que uno inexistente, para no confirmar que
+ * existe.
+ */
+export async function obtenerNotificacion(
+  usuarioId: string,
+  notificacionId: string,
+): Promise<Notificacion> {
+  const [fila] = await db
+    .select({
+      id: notificacion.id,
+      tipoNotificacion: notificacion.tipoNotificacion,
+      titulo: notificacion.titulo,
+      cuerpo: notificacion.cuerpo,
+      objetoAfectadoId: notificacion.objetoAfectadoId,
+      leida: notificacion.leida,
+      fechaCreacion: notificacion.fechaCreacion,
+    })
+    .from(notificacion)
+    .where(
+      and(
+        eq(notificacion.id, notificacionId),
+        eq(notificacion.usuarioDestinoId, usuarioId),
+      ),
+    )
+    .limit(1);
+
+  if (!fila) throw noEncontrado('la notificación');
+  return aNotificacion(fila);
+}
+
 export async function contarNoLeidas(usuarioId: string): Promise<number> {
   const [fila] = await db
     .select({ total: count() })

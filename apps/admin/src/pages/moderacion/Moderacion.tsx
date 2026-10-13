@@ -24,7 +24,6 @@ export function Moderacion() {
   return (
     <>
       <EncabezadoPantalla
-        notificacionesPendientes={null}
         subtitulo={TEXTOS_MODERACION_PUBLICACIONES.subtitulo}
         titulo={TEXTOS_MODERACION.titulo}
       />

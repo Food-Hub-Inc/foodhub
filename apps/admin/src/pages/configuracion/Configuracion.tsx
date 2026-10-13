@@ -24,7 +24,6 @@ export function Configuracion() {
   return (
     <>
       <EncabezadoPantalla
-        notificacionesPendientes={null}
         subtitulo={TEXTOS_CONFIGURACION.subtitulo}
         titulo={TEXTOS_CONFIGURACION.titulo}
       />

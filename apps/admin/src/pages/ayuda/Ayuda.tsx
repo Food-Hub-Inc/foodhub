@@ -21,7 +21,6 @@ export function Ayuda() {
   return (
     <>
       <EncabezadoPantalla
-        notificacionesPendientes={null}
         subtitulo={TEXTOS_GESTION_AYUDA.subtitulo}
         titulo={MENSAJES_AYUDA.admin.titulo}
       />

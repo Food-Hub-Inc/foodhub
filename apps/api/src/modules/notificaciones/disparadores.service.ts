@@ -22,7 +22,9 @@ import {
 import { estaViendoConversacion } from './presencia.service.js';
 
 /**
- * Disparadores de notificaciones (US-NOT-01, US-NOT-02, US-NOT-06).
+ * Disparadores de notificaciones (US-NOT-01, 02, 03, 05, 06 y RF086). Los
+ * avisos generales (US-NOT-04) no son un disparador: los emite el
+ * administrador desde `avisos.service.ts`.
  *
  * Cada funcion la llama el modulo que origina el evento -pedidos, mensajeria,
  * publicaciones- y aca se resuelve TODO lo propio de la notificacion: a quien
@@ -476,6 +478,98 @@ export async function notificarResenaRecibida(datos: {
     logger.error(
       { err: error, resenaId: datos.resenaId },
       'no se pudo notificar la reseña recibida',
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// US-NOT-03 - Eliminación de una publicación por el administrador
+// ---------------------------------------------------------------------------
+
+/**
+ * US-NOT-03 - El administrador eliminó una publicación -> al COCINERO dueño.
+ * Se llama después de la baja (que ya quedó confirmada), con `void`.
+ *
+ * Es ESENCIAL: `emitirNotificacion` la escribe aunque el cocinero tenga
+ * preferencias guardadas. `objetoAfectadoId` es la publicación, aunque el
+ * deep link no la abre: el criterio lleva al listado de publicaciones propias,
+ * "donde la publicación eliminada ya no aparece".
+ */
+export async function notificarPublicacionEliminadaPorAdmin(datos: {
+  publicacionId: string;
+  cocineroId: string;
+  nombrePlato: string;
+  motivo: string;
+}): Promise<void> {
+  try {
+    const { titulo, cuerpo } =
+      MENSAJES_NOTIFICACION.publicacionEliminadaPorAdmin(
+        datos.nombrePlato,
+        datos.motivo,
+      );
+
+    await emitirNotificacion({
+      usuarioDestinoId: datos.cocineroId,
+      tipo: 'PUBLICACION_ELIMINADA_ADMIN',
+      titulo,
+      cuerpo,
+      objetoAfectadoId: datos.publicacionId,
+    });
+  } catch (error) {
+    logger.error(
+      { err: error, publicacionId: datos.publicacionId },
+      'no se pudo notificar la eliminación de la publicación',
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// RF086 - Resolución de una reseña reportada
+// ---------------------------------------------------------------------------
+
+/**
+ * RF086 - El administrador resolvió los reportes de una reseña:
+ *
+ *   aprobó   -> al AUTOR de la reseña, que quedó oculta.
+ *   rechazó  -> a QUIENES REPORTARON, con el texto literal del RF.
+ *
+ * Van como `AVISO_SISTEMA` (decisión del equipo del 13/10/2026): el enum no
+ * tiene un tipo propio para la moderación y este es el que no se puede
+ * desactivar, igual que el resto de los avisos de la plataforma. Sin
+ * `objetoAfectadoId`: tocarla abre el detalle del aviso (PAN-NOT-03), que es
+ * donde se lee el texto completo.
+ */
+export async function notificarResolucionDeReporte(datos: {
+  resenaId: string;
+  aprobado: boolean;
+  autorId: string;
+  reportantesIds: string[];
+}): Promise<void> {
+  try {
+    if (datos.aprobado) {
+      const { titulo, cuerpo } = MENSAJES_NOTIFICACION.resenaRemovida;
+      await emitirNotificacion({
+        usuarioDestinoId: datos.autorId,
+        tipo: 'AVISO_SISTEMA',
+        titulo,
+        cuerpo,
+        objetoAfectadoId: null,
+      });
+      return;
+    }
+
+    const { titulo, cuerpo } = MENSAJES_NOTIFICACION.reporteRevisado;
+    await emitirNotificacionEnLote({
+      usuarioDestinoIds: datos.reportantesIds,
+      tipo: 'AVISO_SISTEMA',
+      titulo,
+      cuerpo,
+      objetoAfectadoId: null,
+    });
+  } catch (error) {
+    logger.error(
+      { err: error, resenaId: datos.resenaId },
+      'no se pudo notificar la resolución del reporte',
     );
   }
 }

@@ -3,6 +3,7 @@ import { RutaProtegida } from './components/RutaProtegida.js';
 import { LayoutPanel } from './components/layout/LayoutPanel.js';
 import { RUTAS } from './lib/rutas.js';
 import { Auditoria } from './pages/auditoria/Auditoria.js';
+import { Avisos } from './pages/avisos/Avisos.js';
 import { Ayuda } from './pages/ayuda/Ayuda.js';
 import { PaginaDeCapitulo } from './pages/ayuda/manual/PaginaDeCapitulo.js';
 import { Configuracion } from './pages/configuracion/Configuracion.js';
@@ -35,6 +36,7 @@ import { Usuarios } from './pages/usuarios/Usuarios.js';
  *   /                inicio del panel (sin código PAN)            implementada
  *   /moderacion      PAN-ADM-02 · moderación de contenido         implementada
  *                    (publicaciones US-ADM-04 y reseñas RF086)
+ *   /avisos          US-NOT-04 · avisos generales (sin código PAN) implementada
  *   /metricas        PAN-ADM-03 · métricas generales + REP-02     implementada
  *   /ayuda           US-AYU-05 · gestión del manual y las FAQ     implementada
  *   /configuracion   PAN-ADM-04 · configuración del sistema       implementada
@@ -57,6 +59,7 @@ export function App() {
         <Route element={<Inicio />} index />
         <Route element={<Usuarios />} path="usuarios" />
         <Route element={<Moderacion />} path="moderacion" />
+        <Route element={<Avisos />} path="avisos" />
         <Route element={<Metricas />} path="metricas" />
         <Route element={<Auditoria />} path="auditoria" />
         <Route element={<Ayuda />} path="ayuda" />

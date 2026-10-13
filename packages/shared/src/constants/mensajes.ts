@@ -202,8 +202,9 @@ export const MENSAJES_AUDITORIA = {
  * Moderación de publicaciones del panel (US-ADM-04, PAN-ADM-02).
  *
  * La historia no fija ningún texto literal: todos son PROPIOS. El de la
- * notificación al cocinero (US-NOT-03) no va acá sino en el módulo de
- * Notificaciones, que es quien lo emite.
+ * notificación al cocinero (US-NOT-03) no va acá sino en
+ * `MENSAJES_NOTIFICACION.publicacionEliminadaPorAdmin`, con el resto de los
+ * textos que verifica el módulo de Notificaciones.
  */
 export const MENSAJES_MODERACION = {
   /** PROPIO - cuarto criterio: el motivo de la baja es obligatorio. */
@@ -218,6 +219,29 @@ export const MENSAJES_MODERACION = {
 
   /** PROPIO - éxito de la baja. */
   publicacionEliminada: 'Publicación eliminada.',
+} as const;
+
+/**
+ * Avisos generales del panel (US-NOT-04, RF037).
+ *
+ * La historia fija el efecto (push con "el título y el cuerpo del mensaje
+ * definidos por el administrador", a todos, solo clientes o solo cocineros)
+ * pero no el formulario que lo emite: no hay pantalla PAN para él. Todos los
+ * textos son PROPIOS. Los topes salen de las columnas `notificacion.titulo`
+ * (120) y `notificacion.cuerpo` (500), que es donde termina cada aviso.
+ */
+export const MENSAJES_AVISO = {
+  /** PROPIO - el título es obligatorio. */
+  tituloObligatorio: 'Ingresá el título del aviso.',
+
+  /** PROPIO - tope de `notificacion.titulo`. */
+  tituloLargo: 'El título no puede superar los 120 caracteres.',
+
+  /** PROPIO - el mensaje es obligatorio. */
+  mensajeObligatorio: 'Ingresá el mensaje del aviso.',
+
+  /** PROPIO - tope de `notificacion.cuerpo`. */
+  mensajeLargo: 'El mensaje no puede superar los 500 caracteres.',
 } as const;
 
 /**
@@ -2014,6 +2038,61 @@ export const MENSAJES_NOTIFICACION = {
       ? `${nombreCliente} dejó una reseña sobre tu pedido: ${truncarTexto(comentario, 80)}. Calificación: ${String(calificacion)} estrellas.`
       : `${nombreCliente} dejó una reseña sobre tu pedido. Calificación: ${String(calificacion)} estrellas.`,
   }),
+
+  // --- US-NOT-03 · Eliminación de publicación por el administrador (RF036) -
+
+  /**
+   * LITERAL (cuerpo) - US-NOT-03, al COCINERO cuando el administrador le
+   * elimina una publicación: "Tu publicación '[Nombre del plato]' fue
+   * eliminada por el administrador. [Motivo ingresado por el administrador]."
+   *
+   * El punto final lo pone el criterio: si el administrador ya cerró el motivo
+   * con uno, se quita para no mostrar "..". El motivo admite 500 caracteres y
+   * la columna `notificacion.cuerpo` también, así que el cuerpo completo se
+   * recorta a 500 con `truncarTexto`; con un motivo normal no se toca.
+   */
+  publicacionEliminadaPorAdmin: (nombrePlato: string, motivo: string) => ({
+    titulo: 'Publicación eliminada',
+    cuerpo: truncarTexto(
+      `Tu publicación '${nombrePlato}' fue eliminada por el administrador. ${motivo.trim().replace(/\.+$/, '')}.`,
+      500,
+    ),
+  }),
+
+  // --- US-NOT-04 · Aviso general del administrador (RF037) -----------------
+
+  /**
+   * US-NOT-04 - "con el título y el cuerpo del mensaje definidos por el
+   * administrador": los dos pasan sin agregados. Existe para que también este
+   * texto salga de `MENSAJES_NOTIFICACION`, como todos los demás.
+   */
+  avisoGeneral: (titulo: string, mensaje: string) => ({
+    titulo,
+    cuerpo: mensaje,
+  }),
+
+  // --- RF086 · Resolución de una reseña reportada --------------------------
+
+  /**
+   * PROPIO (texto aprobado por el equipo el 13/10/2026) - RF086, al AUTOR de
+   * la reseña cuando el administrador aprueba el reporte y la oculta. El RF
+   * pide notificarlo "informando que fue removida por incumplir las normas de
+   * comunidad" sin fijar el literal; el texto usa esas mismas palabras.
+   */
+  resenaRemovida: {
+    titulo: 'Reseña removida',
+    cuerpo: 'Tu reseña fue removida por incumplir las normas de comunidad.',
+  },
+
+  /**
+   * LITERAL (cuerpo) - RF086, a QUIENES REPORTARON cuando el administrador
+   * rechaza el reporte y la reseña sigue visible. El título es PROPIO.
+   */
+  reporteRevisado: {
+    titulo: 'Reporte revisado',
+    cuerpo:
+      'Revisamos tu reporte sobre una reseña y consideramos que cumple con nuestras normas de comunidad. La reseña se mantiene visible. Gracias por tu colaboración.',
+  },
 } as const;
 
 /**

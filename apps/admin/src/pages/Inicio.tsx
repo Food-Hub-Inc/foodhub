@@ -38,7 +38,6 @@ export function Inicio() {
   return (
     <>
       <EncabezadoPantalla
-        notificacionesPendientes={null}
         subtitulo={fecha.charAt(0).toUpperCase() + fecha.slice(1)}
         titulo={
           perfil ? TEXTOS_INICIO.saludo(perfil.nombre) : TEXTOS_ESTADO.cargando

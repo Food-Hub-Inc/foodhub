@@ -4,12 +4,22 @@ Superficie HTTP y funcionamiento interno del módulo NOT (US-NOT-01 a US-NOT-08,
 RF034 a RF041). Prefijo: `/api/v1`. Los schemas viven en `@foodhub/shared`
 (`notificacion.schema.ts`, `preferenciaNotificacion.schema.ts`).
 
-Alcance implementado: **US-NOT-01, 02, 05, 06, 07, 08**. US-NOT-03 (el admin
-elimina una publicación) y US-NOT-04 (aviso general del admin) quedan
-pendientes hasta que exista la moderación del panel (US-ADM-04): cuando ese
-módulo emita su evento, solo tiene que llamar a `emitirNotificacion` con el
-tipo y el texto de `MENSAJES_NOTIFICACION`, como hacen hoy pedidos, mensajería,
-publicaciones y reseñas (`disparadores.service.ts`).
+Alcance implementado: **US-NOT-01 a US-NOT-08** y las notificaciones de
+**RF086** (moderación de reseñas). Decisiones del equipo del 13/10/2026:
+
+- **US-NOT-03**: la baja desde el panel (`publicaciones/moderacion.service.ts`)
+  llama a `notificarPublicacionEliminadaPorAdmin`. El cuerpo se recorta a 500
+  caracteres (`notificacion.cuerpo`) porque el motivo admite otros 500.
+- **US-NOT-04**: `POST /avisos` (solo administrador) escribe un
+  `AVISO_SISTEMA` por cuenta **activa** del segmento elegido y lo audita como
+  `ALTA` de `notificacion`. Tocarlo abre PAN-NOT-03 (detalle del aviso), que no
+  está en la maquetación.
+- **RF086**: aprobar un reporte avisa al autor ("Tu reseña fue removida por
+  incumplir las normas de comunidad.", texto aprobado por el equipo);
+  rechazarlo avisa a quienes reportaron con el literal del RF. Las dos ramas
+  van como `AVISO_SISTEMA`: el enum no tiene un tipo propio para la moderación.
+- El **administrador no recibe notificaciones**: ningún requisito lo hace
+  destinatario, así que el panel no tiene campana.
 
 ---
 
@@ -42,8 +52,12 @@ transición de pedido, un mensaje): es atómica con él. El push nunca es síncr
 ## Envío push
 
 La API **no habla con FCM directo**. Le manda los mensajes a la Expo Push API
-(`https://exp.host/--/api/v2/push/send`) y Expo los reenvía a FCM con el
-`google-services.json` de la build (secreto de EAS, ver `apps/mobile/EAS.md`).
+(`https://exp.host/--/api/v2/push/send`) y Expo los reenvía a FCM con la
+**clave de cuenta de servicio FCM V1** cargada en las credenciales del
+proyecto de EAS. El `google-services.json` (secreto de EAS, ver
+`apps/mobile/EAS.md`) es la otra mitad: lo usa la app para obtener su token de
+FCM. Sin la clave V1, Expo acepta el envío (ticket `ok`) pero el recibo vuelve
+con error; `push_estado = 'ENVIADO'` solo significa que Expo aceptó el ticket.
 No hay dependencia nueva: `push.service.ts` son dos `fetch`.
 
 ### El planificador
@@ -125,13 +139,15 @@ columna de reclamo con reaper por tiempo.
 
 Todos requieren sesión y rol `CLIENTE` o `COCINERO` (el administrador opera
 desde el panel web y no recibe push). Toda lectura y escritura se acota a
-`usuario_destino_id = <sesión>`. La **emisión no tiene ruta**: la disparan
-pedidos, mensajería y publicaciones al ocurrir el evento.
+`usuario_destino_id = <sesión>`. La **emisión no tiene ruta acá**: la disparan
+pedidos, mensajería, publicaciones y moderación al ocurrir el evento, y los
+avisos generales van por `POST /avisos` (ver más abajo).
 
 | Método   | Ruta                            | US        | Body / query → respuesta                                                                           |
 | -------- | ------------------------------- | --------- | -------------------------------------------------------------------------------------------------- |
 | `GET`    | `/notificaciones`               | US-NOT-07 | query `?pagina=N` → `paginaNotificacionesSchema` (`{ datos, total, pagina, porPagina, noLeidas }`) |
 | `GET`    | `/notificaciones/no-leidas`     | US-NOT-07 | → `{ noLeidas }`                                                                                   |
+| `GET`    | `/notificaciones/:id`           | US-NOT-04 | → `notificacionSchema` (PAN-NOT-03). Una ajena responde `404`, igual que una inexistente           |
 | `POST`   | `/notificaciones/marcar-leidas` | US-NOT-07 | `{ ids? }` (sin `ids` = todas) → `204`                                                             |
 | `POST`   | `/notificaciones/dispositivos`  | 1.3.1.11  | `registrarDispositivoSchema` → `204`. Idempotente (upsert por token)                               |
 | `DELETE` | `/notificaciones/dispositivos`  | —         | `{ expoPushToken }` → `204`. Acotado al dueño                                                      |
@@ -139,6 +155,17 @@ pedidos, mensajería y publicaciones al ocurrir el evento.
 
 Las preferencias (US-NOT-08 / RF041, consolidado con RF059) viven en el módulo
 de usuarios: `GET|PATCH /usuarios/yo/preferencias-notificacion[/:grupo]`.
+
+## Endpoint · `/avisos` (panel)
+
+Solo `ADMINISTRADOR` (`soloAdministrador` en la raíz del router).
+
+| Método | Ruta      | US        | Body → respuesta                                                                                 |
+| ------ | --------- | --------- | ------------------------------------------------------------------------------------------------ |
+| `POST` | `/avisos` | US-NOT-04 | `avisoGeneralSchema` (`{ titulo ≤ 120, mensaje ≤ 500, destinatario }`) → `201 { destinatarios }` |
+
+`destinatario` es `TODOS`, `CLIENTE` o `COCINERO`; solo se escribe a cuentas en
+estado `ACTIVA`.
 
 ### Contrato del push (payload Expo → app)
 
@@ -151,6 +178,8 @@ La app mapea `tipo` + `objetoAfectadoId` a una ruta (`deepLinkDeNotificacion`):
 | `MENSAJE_NUEVO`                 | `/mensajes/{objetoAfectadoId}` (id de la **conversación**)                                  |
 | `PUBLICACION_COCINERO_FAVORITO` | `/platos/{objetoAfectadoId}`                                                                |
 | `RESENA_RECIBIDA`               | `/resenas/mis-resenas` (PAN-RES-02; `objetoAfectadoId` = id de la reseña, sin usar todavía) |
+| `PUBLICACION_ELIMINADA_ADMIN`   | `/(cocinero)/platos` (Mis publicaciones, donde la eliminada ya no aparece)                  |
+| `AVISO_SISTEMA`                 | `/notificaciones/{notificacionId}` (PAN-NOT-03, detalle del aviso)                          |
 
 El push incluye `channelId: 'default'`; la app crea ese canal Android al
 registrar el token.
@@ -164,16 +193,19 @@ registrar el token.
 | `EXPO_ACCESS_TOKEN`                    | no                 | Solo si el proyecto de Expo tiene "Enhanced Security for Push Notifications". Sin ella, `exp.host` acepta los envíos sin autenticar |
 | `NOTIFICACIONES_DESPACHO_INTERVALO_MS` | no (default 10000) | Cada cuánto barre el planificador                                                                                                   |
 
-**FCM**: se configura en la build de EAS, no en la API. El
-`google-services.json` es un secreto de EAS (`apps/mobile/EAS.md`).
+**FCM**: se configura en EAS, no en la API: la clave de cuenta de servicio FCM
+V1 en las credenciales del proyecto y el `google-services.json` como secreto
+de la build (`apps/mobile/EAS.md`). Verificado el 13/10/2026 en `foodhub-dev`:
+un push de prueba volvió con recibo `ok` y llegó al dispositivo.
 
 ---
 
 ## Qué falta verificar en dispositivo
 
-El envío push está **probado con mocks** (`push.service.test.ts`,
-`emision.service.test.ts`). La prueba de punta a punta —que un push realmente
-llegue a un teléfono y que tocarlo abra la pantalla correcta— necesita:
+El envío push está probado con mocks (`push.service.test.ts`,
+`emision.service.test.ts`) y, desde el 13/10/2026, con un push real en un
+dispositivo (recibo `ok`, aviso de pedido expirado recibido en segundo plano).
+Para repetir la prueba de punta a punta hace falta:
 
 1. una build de EAS con `google-services.json` (perfil `development` alcanza);
 2. iniciar sesión en la app (registra el Expo Push Token);

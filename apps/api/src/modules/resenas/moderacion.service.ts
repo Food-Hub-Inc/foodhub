@@ -8,6 +8,7 @@ import {
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
 import { noEncontrado } from '../../middleware/error.middleware.js';
+import { notificarResolucionDeReporte } from '../notificaciones/disparadores.service.js';
 import { todas } from './consultas.js';
 
 /**
@@ -188,8 +189,10 @@ async function contenidoDeResenas(
  * fecha, que es lo que impide que la misma denuncia vuelva a aparecer en la
  * bandeja mañana.
  *
- * LAS NOTIFICACIONES DE LAS DOS RAMAS NO SE ENVÍAN: el módulo NOT no existe
- * todavía. Es el mismo pendiente que arrastran RF038 y el resto del sistema.
+ * Las dos ramas notifican (`notificarResolucionDeReporte`), pero solo a
+ * partir de los reportes que ESTA resolución pasó de PENDIENTE a resueltos:
+ * si dos administradores resuelven la misma reseña a la vez, el segundo no
+ * actualiza ninguna fila y no vuelve a avisar.
  */
 export async function resolverReportesDeResena(entrada: {
   resenaId: string;
@@ -199,15 +202,15 @@ export async function resolverReportesDeResena(entrada: {
   const { resenaId, adminId, aprobar } = entrada;
 
   const [existe] = await db
-    .select({ id: resena.id })
+    .select({ id: resena.id, autorId: resena.autorId })
     .from(resena)
     .where(eq(resena.id, resenaId))
     .limit(1);
 
   if (!existe) throw noEncontrado('la reseña');
 
-  await db.transaction(async (tx) => {
-    await tx
+  const resueltos = await db.transaction(async (tx) => {
+    const filas = await tx
       .update(reporteResena)
       .set({
         estadoReporte: aprobar ? 'APROBADO' : 'RECHAZADO',
@@ -219,7 +222,8 @@ export async function resolverReportesDeResena(entrada: {
           eq(reporteResena.resenaId, resenaId),
           eq(reporteResena.estadoReporte, 'PENDIENTE'),
         ]),
-      );
+      )
+      .returning({ reportanteId: reporteResena.usuarioReportanteId });
 
     if (aprobar) {
       await tx
@@ -227,6 +231,17 @@ export async function resolverReportesDeResena(entrada: {
         .set({ estadoResena: 'OCULTA_MODERACION' })
         .where(eq(resena.id, resenaId));
     }
+
+    return filas;
+  });
+
+  if (resueltos.length === 0) return;
+
+  void notificarResolucionDeReporte({
+    resenaId,
+    aprobado: aprobar,
+    autorId: existe.autorId,
+    reportantesIds: resueltos.map((r) => r.reportanteId),
   });
 }
 

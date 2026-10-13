@@ -23,7 +23,6 @@ export const TEXTOS_PANEL = {
   seccionGeneral: 'GENERAL',
   insigniaAdmin: 'ADMIN',
   cerrarSesion: 'Cerrar sesión',
-  notificaciones: 'Notificaciones',
   ajustes: 'Ajustes',
   /** [PROPIO] Texto alternativo del logo, para lectores de pantalla. */
   logo: 'FoodHub',
@@ -651,14 +650,6 @@ export const TEXTOS_MODERACION = {
     'La reseña se mantiene publicada y los reportes quedan resueltos. No va a volver a aparecer en esta bandeja.',
   confirmar: 'Confirmar',
   cancelar: 'Cancelar',
-
-  /**
-   * [PROPIO] Las notificaciones de las dos ramas que exige RF086 no se envían
-   * todavía: el módulo de Notificaciones no existe. Se avisa en pantalla para
-   * que el administrador no dé por hecho que el autor se enteró.
-   */
-  avisoSinNotificaciones:
-    'Las notificaciones al autor y a quienes reportaron todavía no se envían: el módulo de Notificaciones está pendiente.',
 } as const;
 
 /**
@@ -795,9 +786,50 @@ export const TEXTOS_INICIO = {
   descripcion: {
     '/usuarios': 'Cuentas, roles, suspensiones y bajas.',
     '/moderacion': 'Publicaciones y reseñas reportadas.',
+    '/avisos': 'Notificaciones push a clientes y cocineros.',
     '/metricas': 'Indicadores de uso y reporte REP-02.',
     '/auditoria': 'Operaciones y eventos de seguridad.',
     '/ayuda': 'Manual de usuario y preguntas frecuentes.',
     '/configuracion': 'Categorías, motivos, parámetros y términos.',
   } as Readonly<Record<string, string>>,
+} as const;
+
+/**
+ * Avisos generales — US-NOT-04 / RF037. La historia no tiene pantalla PAN ni
+ * fija textos de interfaz: todos son PROPIOS (decisión del equipo del
+ * 13/10/2026). Los de validación del servidor están en `MENSAJES_AVISO`.
+ */
+export const TEXTOS_AVISOS = {
+  titulo: 'Avisos generales',
+  subtitulo: 'Enviá una notificación push a los usuarios de la aplicación.',
+
+  destinatario: 'Destinatario',
+  destinatarios: {
+    TODOS: 'Todos los usuarios',
+    CLIENTE: 'Solo clientes',
+    COCINERO: 'Solo cocineros',
+  },
+  tituloAviso: 'Título',
+  tituloPlaceholder: 'Por ejemplo: Mantenimiento programado',
+  mensaje: 'Mensaje',
+  mensajePlaceholder: 'Escribí el texto completo del aviso.',
+  caracteres: (usados: number, maximo: number) =>
+    `${String(usados)}/${String(maximo)}`,
+
+  ayuda:
+    'El aviso llega como notificación push a las cuentas activas del destinatario elegido y queda en su historial de notificaciones. No se puede desactivar ni deshacer.',
+
+  enviar: 'Enviar aviso',
+
+  confirmarTitulo: '¿Enviar este aviso?',
+  confirmarMensaje: (destinatario: string) =>
+    `Se va a enviar como notificación push a: ${destinatario}. Una vez enviado no se puede deshacer.`,
+  confirmar: 'Sí, enviar',
+  volver: 'No, volver',
+
+  enviado: (cantidad: number) =>
+    cantidad === 1
+      ? 'Aviso enviado a 1 usuario.'
+      : `Aviso enviado a ${cantidad.toLocaleString('es-AR')} usuarios.`,
+  sinDestinatarios: 'No hay cuentas activas para el destinatario elegido.',
 } as const;

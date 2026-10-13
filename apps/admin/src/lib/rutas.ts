@@ -21,6 +21,7 @@ export const RUTAS = {
   auditoria: '/auditoria',
   ayuda: '/ayuda',
   ayudaNuevoCapitulo: '/ayuda/capitulos/nuevo',
+  avisos: '/avisos',
   configuracion: '/configuracion',
 } as const;
 

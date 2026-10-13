@@ -55,6 +55,7 @@ export function HistorialDeNotificaciones() {
       deepLinkDeNotificacion(
         notificacion.tipoNotificacion,
         notificacion.objetoAfectadoId,
+        notificacion.id,
       ),
     );
   };

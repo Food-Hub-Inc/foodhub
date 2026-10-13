@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import {
   bajaDispositivoSchema,
   filtrosHistorialNotificacionesSchema,
@@ -17,8 +18,13 @@ import {
   contarNoLeidas,
   listarHistorial,
   marcarLeidas,
+  obtenerNotificacion,
 } from './notificaciones.service.js';
 import { registrarPresencia } from './presencia.service.js';
+
+const idNotificacionSchema = z.uuid(
+  'El identificador de la notificación no es válido.',
+);
 
 /**
  * Rutas del modulo de Notificaciones y Alertas (US-NOT-07, US-NOT-08 y el
@@ -31,8 +37,9 @@ import { registrarPresencia } from './presencia.service.js';
  * NINGUNA RUTA RECIBE EL ID DE QUIEN CONSULTA: sale del JWT, y toda lectura y
  * escritura se acota a `usuario_destino_id = <sesion>`.
  *
- * La EMISION de notificaciones no tiene ruta: la disparan otros modulos
- * (pedidos, mensajeria, publicaciones) al ocurrir el evento.
+ * La EMISION de notificaciones no tiene ruta aca: la disparan otros modulos
+ * (pedidos, mensajeria, publicaciones, moderacion) al ocurrir el evento, y los
+ * avisos generales del administrador (US-NOT-04) van por `avisos.router.ts`.
  */
 export const notificacionesRouter: Router = Router();
 
@@ -53,6 +60,19 @@ notificacionesRouter.get('/', async (req, res) => {
 notificacionesRouter.get('/no-leidas', async (req, res) => {
   const noLeidas = await contarNoLeidas(sesionDe(req).id);
   res.json({ noLeidas });
+});
+
+/**
+ * PAN-NOT-03 - Detalle de una notificacion propia (el aviso del
+ * administrador). Va DESPUES de `/no-leidas`: Express resuelve en orden y
+ * `/:id` se tragaria esa ruta.
+ */
+notificacionesRouter.get('/:id', async (req, res) => {
+  const detalle = await obtenerNotificacion(
+    sesionDe(req).id,
+    idNotificacionSchema.parse(req.params.id),
+  );
+  res.json(detalle);
 });
 
 /**

@@ -1,14 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import type { TipoNotificacion } from '@foodhub/shared';
-import {
-  darDeBajaDispositivo,
-  registrarDispositivo,
-} from '../api/notificaciones';
+import { registrarDispositivo } from '../api/notificaciones';
 import { deepLinkDeNotificacion } from '../lib/deepLinkNotificacion';
+import { recordarTokenDePush } from '../lib/tokenDePush';
 import { useSesion } from './useSesion';
 
 /**
@@ -16,9 +14,10 @@ import { useSesion } from './useSesion';
  *
  * Se monta UNA sola vez, en el layout raíz. Hace tres cosas:
  *
- *   1. Registra el Expo Push Token cuando hay sesión y lo da de baja al cerrar
- *      sesión (punto 1.3.1.11: "persistirse asociados al usuario, con
- *      actualización ante renovaciones o reinstalaciones").
+ *   1. Registra el Expo Push Token cuando hay sesión (punto 1.3.1.11:
+ *      "persistirse asociados al usuario, con actualización ante
+ *      renovaciones o reinstalaciones"). La baja al cerrar sesión la hace
+ *      `cerrarSesion()` antes del `signOut` (ver `lib/tokenDePush.ts`).
  *   2. Deja que un push recibido con la app en primer plano se muestre igual
  *      (banner del sistema); si el usuario ya está donde el push lo llevaría,
  *      la pantalla ya se lo mostró por Realtime y el aviso es redundante, pero
@@ -44,9 +43,11 @@ Notifications.setNotificationHandler({
 
 const CANAL_ANDROID = 'default';
 
+/** Lo que manda `despacho.service.ts` de la API en el `data` de cada push. */
 interface DatosDePush {
   tipo?: TipoNotificacion;
   objetoAfectadoId?: string;
+  notificacionId?: string;
 }
 
 function navegarDesde(
@@ -56,7 +57,11 @@ function navegarDesde(
     DatosDePush | undefined;
   if (!datos?.tipo) return;
   router.push(
-    deepLinkDeNotificacion(datos.tipo, datos.objetoAfectadoId ?? null),
+    deepLinkDeNotificacion(
+      datos.tipo,
+      datos.objetoAfectadoId ?? null,
+      datos.notificacionId ?? null,
+    ),
   );
 }
 
@@ -91,7 +96,6 @@ async function obtenerExpoPushToken(): Promise<string | null> {
 export function useNotificacionesPush(): void {
   const sesion = useSesion((estado) => estado.sesion);
   const usuarioId = sesion?.user.id ?? null;
-  const tokenRegistrado = useRef<string | null>(null);
 
   // 1. Registro / baja del token según la sesión.
   useEffect(() => {
@@ -100,19 +104,18 @@ export function useNotificacionesPush(): void {
     if (usuarioId) {
       void obtenerExpoPushToken().then((token) => {
         if (cancelado || !token) return;
-        tokenRegistrado.current = token;
+        recordarTokenDePush(token);
         void registrarDispositivo({
           expoPushToken: token,
           plataforma: Platform.OS === 'ios' ? 'ios' : 'android',
           dispositivoInfo: `${Platform.OS} ${String(Platform.Version)}`,
         }).catch(() => undefined);
       });
-    } else if (tokenRegistrado.current) {
-      // Cerró sesión: se da de baja el token para no seguir pusheando a un
-      // dispositivo que ya no tiene a nadie.
-      const token = tokenRegistrado.current;
-      tokenRegistrado.current = null;
-      void darDeBajaDispositivo(token).catch(() => undefined);
+    } else {
+      // Sin sesión. La baja del token NO va acá: con la sesión ya cerrada la
+      // API la rechaza. La hace `cerrarSesion()` antes del `signOut` (ver
+      // `lib/tokenDePush.ts`); acá solo se olvida el token.
+      recordarTokenDePush(null);
     }
 
     return () => {

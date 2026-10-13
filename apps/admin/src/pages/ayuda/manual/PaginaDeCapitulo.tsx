@@ -42,7 +42,6 @@ export function PaginaDeCapitulo() {
             {TEXTOS_GESTION_AYUDA.volver}
           </Button>
         }
-        notificacionesPendientes={null}
         subtitulo={TEXTOS_GESTION_AYUDA.subtituloFormularioCapitulo}
         titulo={
           esEdicion

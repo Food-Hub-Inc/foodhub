@@ -6,10 +6,13 @@ import { AppError } from '../../middleware/error.middleware.js';
  * US-ADM-04 - Baja por moderación: afecta solo publicaciones vigentes, deja
  * constancia en auditoría y el motivo es obligatorio.
  */
-const { aplicarUpdate, registrarOperacion } = vi.hoisted(() => ({
-  aplicarUpdate: vi.fn(),
-  registrarOperacion: vi.fn(),
-}));
+const { aplicarUpdate, registrarOperacion, notificarEliminacion } = vi.hoisted(
+  () => ({
+    aplicarUpdate: vi.fn(),
+    registrarOperacion: vi.fn(),
+    notificarEliminacion: vi.fn(),
+  }),
+);
 
 vi.mock('../../lib/db.js', () => ({
   db: {
@@ -22,6 +25,10 @@ vi.mock('../../lib/db.js', () => ({
 }));
 
 vi.mock('../auditoria/auditoria.service.js', () => ({ registrarOperacion }));
+
+vi.mock('../notificaciones/disparadores.service.js', () => ({
+  notificarPublicacionEliminadaPorAdmin: notificarEliminacion,
+}));
 
 const { eliminarPublicacion } = await import('./moderacion.service.js');
 
@@ -59,6 +66,26 @@ describe('eliminarPublicacion', () => {
     );
   });
 
+  it('US-NOT-03: avisa al cocinero dueño con el plato y el motivo', async () => {
+    aplicarUpdate.mockResolvedValue([
+      { nombre: 'Empanadas', cocineroId: COCINERO_ID },
+    ]);
+
+    await eliminarPublicacion({
+      publicacionId: PUBLICACION_ID,
+      adminId: ADMIN_ID,
+      motivo: 'Imagen engañosa',
+      ipOrigen: null,
+    });
+
+    expect(notificarEliminacion).toHaveBeenCalledWith({
+      publicacionId: PUBLICACION_ID,
+      cocineroId: COCINERO_ID,
+      nombrePlato: 'Empanadas',
+      motivo: 'Imagen engañosa',
+    });
+  });
+
   it('responde 404 si la publicación no existe o ya estaba dada de baja', async () => {
     aplicarUpdate.mockResolvedValue([]);
 
@@ -72,6 +99,7 @@ describe('eliminarPublicacion', () => {
     await expect(baja).rejects.toBeInstanceOf(AppError);
     await expect(baja).rejects.toMatchObject({ status: 404 });
     expect(registrarOperacion).not.toHaveBeenCalled();
+    expect(notificarEliminacion).not.toHaveBeenCalled();
   });
 });
 
