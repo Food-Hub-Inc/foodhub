@@ -678,6 +678,13 @@ export const TEXTOS_NOTIFICACIONES = {
   noLeida: 'No leída',
   /** [PROPIO] Se muestra al pie mientras entra la página siguiente. */
   cargandoMas: 'Cargando más…',
+  /**
+   * [PROPIO] Título de PAN-NOT-03, el detalle del aviso (US-NOT-04). La
+   * pantalla no está en la maquetación; decisión del equipo del 13/10/2026.
+   */
+  tituloAviso: 'Aviso',
+  /** [PROPIO] Lleva del detalle al historial completo. */
+  verTodas: 'Ver todas las notificaciones',
 } as const;
 
 /**

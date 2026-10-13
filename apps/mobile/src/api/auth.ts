@@ -6,6 +6,7 @@ import type {
 } from '@foodhub/shared';
 import { api } from '../lib/api';
 import { crearClienteSinSesion, supabase } from '../lib/supabase';
+import { darDeBajaTokenDePush } from '../lib/tokenDePush';
 
 /**
  * Operaciones del módulo de Autenticación y Control de Acceso (US-AUT-01 a
@@ -125,7 +126,14 @@ export async function adoptarSesion(sesion: SesionProvisoria): Promise<void> {
   if (error) throw error;
 }
 
-/** US-AUT-05 · PAN-AUT-05. Borra el token del Keystore y corta el refresh. */
+/**
+ * US-AUT-05 · PAN-AUT-05. Borra el token del Keystore y corta el refresh.
+ *
+ * Antes da de baja el Expo Push Token del dispositivo: con la sesión ya
+ * cerrada la API rechaza la baja y el celular seguiría recibiendo los push de
+ * esta cuenta.
+ */
 export async function cerrarSesion(): Promise<void> {
+  await darDeBajaTokenDePush();
   await supabase.auth.signOut();
 }

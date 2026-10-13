@@ -3,6 +3,7 @@ import type {
   ConteoNoLeidas,
   MarcarLeidasInput,
   MarcarPresenciaInput,
+  Notificacion,
   PaginaNotificaciones,
   RegistrarDispositivoInput,
 } from '@foodhub/shared';
@@ -20,6 +21,11 @@ export function obtenerNotificaciones(
   return api.obtener<PaginaNotificaciones>(
     `/notificaciones?pagina=${String(pagina)}`,
   );
+}
+
+/** PAN-NOT-03 - Una notificación propia: el detalle de un aviso (US-NOT-04). */
+export function obtenerNotificacion(id: string): Promise<Notificacion> {
+  return api.obtener<Notificacion>(`/notificaciones/${id}`);
 }
 
 /** US-NOT-07 - Contador para el globo de la campana del encabezado. */

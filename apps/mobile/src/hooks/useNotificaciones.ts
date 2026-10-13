@@ -10,6 +10,7 @@ import type { Notificacion, PaginaNotificaciones } from '@foodhub/shared';
 import {
   marcarNotificacionesLeidas,
   obtenerNoLeidas,
+  obtenerNotificacion,
   obtenerNotificaciones,
 } from '../api/notificaciones';
 import { useSesion } from './useSesion';
@@ -45,6 +46,19 @@ export function useNotificaciones(): UseInfiniteQueryResult<
         ? ultima.pagina + 1
         : undefined,
     enabled: sesion !== null,
+  });
+}
+
+/** PAN-NOT-03 · Una notificación puntual (el detalle de un aviso). */
+export function useNotificacion(
+  id: string | undefined,
+): UseQueryResult<Notificacion, Error> {
+  const sesion = useSesion((estado) => estado.sesion);
+
+  return useQuery({
+    queryKey: [...CLAVE_NOTIFICACIONES, 'detalle', id],
+    queryFn: () => obtenerNotificacion(id ?? ''),
+    enabled: sesion !== null && Boolean(id),
   });
 }
 
