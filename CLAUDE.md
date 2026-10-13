@@ -30,16 +30,19 @@ packages/config   presets de tsconfig
 la documentación del proyecto. Si un detalle no está definido, preguntá antes
 de codificar; no completes el hueco con una suposición razonable.
 
-**2. La fuente de verdad es `../Docs/`.**
+**2. La fuente de verdad es el Drive del proyecto, en su última versión.**
+Cada carpeta del Drive guarda el documento vigente y, en su subcarpeta
+`Versiones …`, el historial con fecha (`DD/MM/AAAA_VN_<nombre>`). La copia de
+`../Docs/` puede estar desactualizada: ante una diferencia, manda el Drive.
 
-| Archivo                                  | Para qué                                   |
-| ---------------------------------------- | ------------------------------------------ |
-| `FoodHub - Documentación de Proyecto.md` | historias de usuario, requisitos, alcances |
-| `FoodHub - DG12082026_V5.drawio`         | diagrama de clases **vigente** (43 clases) |
-| `FoodHub - Pantallas Mockup FoodHub.pdf` | 30+ pantallas y la guía visual del sistema |
+| Documento (Drive)                          | Para qué                                   |
+| ------------------------------------------ | ------------------------------------------ |
+| `FoodHub - Documentación de Proyecto.docx` | historias de usuario, requisitos, alcances |
+| `DG13092026_V7.drawio`                     | diagrama de clases **vigente** (43 clases) |
+| `Pantallas Mockup FoodHub.pdf`             | 30+ pantallas y la guía visual del sistema |
 
-El `DG13072026_V3` quedó **obsoleto** al adoptar Supabase Auth y el
-`DG12082026_V4` fue reemplazado por el V5. No uses ninguno de los dos.
+Los diagramas anteriores (`DG13072026_V3`, `DG12082026_V4`, `DG12082026_V5`
+y el V6) quedaron reemplazados por el V7. No uses ninguno de ellos.
 
 **3. Trazabilidad en cada cambio.** Todo trabajo se ancla a una US o CU. El
 mensaje de commit lleva el módulo; el PR lleva la US y la pantalla.
@@ -154,7 +157,8 @@ importe de pedidos ya cerrados.
 
 ## Al tocar el modelo de datos
 
-1. Actualizá primero `../Docs/FoodHub - DG*_V5.drawio`.
+1. Actualizá primero el diagrama vigente en el Drive (hoy `DG13092026_V7.drawio`),
+   siguiendo el esquema de versiones de su carpeta.
 2. Reflejá el cambio en `packages/db/src/schema/`.
 3. `pnpm db:generate` y revisá el SQL generado antes de commitearlo.
 4. Si el cambio afecta un contrato de API, actualizá también `packages/shared`.

@@ -5,9 +5,9 @@ metadata:
   proyecto: FoodHub - Proyecto Final 2026 - UTN FRM - Grupo 21
   version: '1.0.0'
   fuentes:
-    - 'FoodHub - Documentación de Proyecto.md'
-    - 'FoodHub - DG12082026_V5.drawio'
-    - 'FoodHub - Pantallas Mockup FoodHub.pdf'
+    - 'FoodHub - Documentación de Proyecto.docx (Drive, última versión)'
+    - 'DG13092026_V7.drawio (Drive)'
+    - 'Pantallas Mockup FoodHub.pdf (Drive)'
 ---
 
 # FoodHub

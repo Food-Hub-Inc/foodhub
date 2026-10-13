@@ -43,7 +43,7 @@ responder alguna, **preguntá; no supongas**.
 | ¿Qué historia de usuario cubre?          | skill `foodhub` → capítulo del módulo    |
 | ¿Cuáles son los criterios de aceptación? | la US los lista uno por uno              |
 | ¿Qué pantalla es?                        | `PAN-XXX-NN` en el PDF de maquetación    |
-| ¿Qué entidades toca?                     | diagrama `DG12082026_V5` y `packages/db` |
+| ¿Qué entidades toca?                     | diagrama `DG13092026_V7` y `packages/db` |
 
 ### Cuándo hay que preguntar y no decidir solo
 

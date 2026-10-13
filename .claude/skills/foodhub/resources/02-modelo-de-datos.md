@@ -1,9 +1,10 @@
 # Capítulo 02 · Modelo de datos
 
-Fuente: `FoodHub - DG12082026_V5.drawio` (43 clases).
+Diagrama vigente: `DG13092026_V7.drawio` (43 clases), en el Drive del proyecto.
 Implementación: `packages/db/src/schema/`.
 
-> El **V3 y el V4 quedaron obsoletos**. Usá siempre el V5.
+> Este capítulo se redactó sobre el `DG12082026_V5`. Los diagramas anteriores
+> al V7 quedaron reemplazados: ante cualquier diferencia, manda el V7.
 
 ---
 
