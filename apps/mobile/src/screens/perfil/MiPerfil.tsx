@@ -1,6 +1,5 @@
 import { View } from 'react-native';
 import { MENSAJES_USUARIO } from '@foodhub/shared';
-import { IconoEngranaje } from '../../components/iconos';
 import { PantallaDeTab } from '../../components/PantallaDeTab';
 import { BotonDeNotificaciones } from '../../components/ui/BotonDeNotificaciones';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
@@ -36,14 +35,7 @@ export function MiPerfil() {
   return (
     <PantallaDeTab>
       <EncabezadoPantalla
-        accion={
-          <View className="flex-row items-center">
-            <BotonDeNotificaciones />
-            <View className="h-11 w-11 items-center justify-center">
-              <IconoEngranaje className="text-text-primary" size={22} />
-            </View>
-          </View>
-        }
+        accion={<BotonDeNotificaciones />}
         titulo={TEXTOS_PERFIL.titulo}
       />
 

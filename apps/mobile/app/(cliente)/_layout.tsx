@@ -31,7 +31,8 @@ export default function LayoutCliente() {
   useAcuseDeEntrega();
 
   const opciones = useOpcionesDeTabs();
-  // Sin texto la insignia no se dibuja: con cero no aparece nada.
+  // Si no hay texto, se oculta con hidden={true}. Sin hidden,
+  // NativeTabs.Trigger.Badge dibuja un punto indicador (dot badge).
   const insigniaDeMensajes = useInsigniaDeMensajes();
 
   return (
@@ -68,7 +69,7 @@ export default function LayoutCliente() {
         <NativeTabs.Trigger.Label>
           {TEXTOS_NAVEGACION.mensajes}
         </NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Badge>
+        <NativeTabs.Trigger.Badge hidden={!insigniaDeMensajes}>
           {insigniaDeMensajes}
         </NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>

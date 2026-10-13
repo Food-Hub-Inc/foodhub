@@ -32,7 +32,8 @@ export default function LayoutCocinero() {
   useAcuseDeEntrega();
 
   const opciones = useOpcionesDeTabs();
-  // Sin texto la insignia no se dibuja: con cero no aparece nada.
+  // Si no hay texto, se ocultan con hidden={true}. Sin hidden,
+  // NativeTabs.Trigger.Badge dibuja un punto indicador (dot badge).
   const insigniaDeMensajes = useInsigniaDeMensajes();
   const insigniaDePedidos = useInsigniaDePedidosNuevos();
 
@@ -52,7 +53,9 @@ export default function LayoutCocinero() {
         <NativeTabs.Trigger.Label>
           {TEXTOS_NAVEGACION.pedidos}
         </NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Badge>{insigniaDePedidos}</NativeTabs.Trigger.Badge>
+        <NativeTabs.Trigger.Badge hidden={!insigniaDePedidos}>
+          {insigniaDePedidos}
+        </NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="actividad">
         <NativeTabs.Trigger.Icon
@@ -71,7 +74,7 @@ export default function LayoutCocinero() {
         <NativeTabs.Trigger.Label>
           {TEXTOS_NAVEGACION.mensajes}
         </NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Badge>
+        <NativeTabs.Trigger.Badge hidden={!insigniaDeMensajes}>
           {insigniaDeMensajes}
         </NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
