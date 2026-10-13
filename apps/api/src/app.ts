@@ -21,6 +21,7 @@ import { dashboardRouter } from './modules/dashboard/dashboard.router.js';
 import { carritoRouter } from './modules/exploracion/carrito.router.js';
 import { exploracionRouter } from './modules/exploracion/exploracion.router.js';
 import { mensajeriaRouter } from './modules/mensajeria/mensajeria.router.js';
+import { avisosRouter } from './modules/notificaciones/avisos.router.js';
 import { notificacionesRouter } from './modules/notificaciones/notificaciones.router.js';
 import { pedidosRouter } from './modules/pedidos/pedidos.router.js';
 import { publicacionesRouter } from './modules/publicaciones/publicaciones.router.js';
@@ -170,6 +171,10 @@ export function crearApp(): Express {
   // El despachador de push corre como proceso periodico y se arranca en
   // server.ts, no aca (ver `iniciarDespachadorDePush`).
   app.use(`${PREFIJO_API}/notificaciones`, notificacionesRouter);
+
+  // US-NOT-04 - Avisos generales. Los EMITE el administrador desde el panel;
+  // por eso no cuelgan de `/notificaciones`, que es de quienes los reciben.
+  app.use(`${PREFIJO_API}/avisos`, avisosRouter);
 
   // Modulo de Dashboard del cocinero (US-DASH-01 a US-DASH-05). Solo lectura y
   // solo sobre los datos del cocinero de la sesion.

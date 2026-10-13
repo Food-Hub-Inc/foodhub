@@ -9,6 +9,7 @@ import type {
 import { db } from '../../lib/db.js';
 import { noEncontrado } from '../../middleware/error.middleware.js';
 import { registrarOperacion } from '../auditoria/auditoria.service.js';
+import { notificarPublicacionEliminadaPorAdmin } from '../notificaciones/disparadores.service.js';
 
 /**
  * Moderación de publicaciones desde el panel — US-ADM-04, RF050 y RF051
@@ -194,8 +195,12 @@ export async function eliminarPublicacion(entrada: {
     },
   });
 
-  // PENDIENTE US-NOT-03: acá va la notificación al cocinero propietario
-  // (`emitirNotificacion` con PUBLICACION_ELIMINADA_ADMIN), que vive en
-  // `feature/notificaciones` y todavía no está en develop. Va DESPUÉS de la
-  // baja: si el UPDATE no afectó ninguna fila, no hay nada que avisar.
+  // US-NOT-03: va DESPUÉS de la baja; si el UPDATE no afectó ninguna fila ya
+  // salió el 404 y no hay nada que avisar.
+  void notificarPublicacionEliminadaPorAdmin({
+    publicacionId,
+    cocineroId: eliminada.cocineroId,
+    nombrePlato: eliminada.nombre,
+    motivo,
+  });
 }

@@ -141,6 +141,61 @@ describe('MENSAJES_NOTIFICACION · US-NOT-06 (publicación de favorito)', () => 
   });
 });
 
+describe('MENSAJES_NOTIFICACION · US-NOT-03 (eliminación por el administrador)', () => {
+  it('plato entre comillas simples y el motivo con punto final', () => {
+    expect(
+      MENSAJES_NOTIFICACION.publicacionEliminadaPorAdmin(
+        'Empanadas',
+        'La imagen no corresponde al plato',
+      ).cuerpo,
+    ).toBe(
+      "Tu publicación 'Empanadas' fue eliminada por el administrador. La imagen no corresponde al plato.",
+    );
+  });
+
+  it('no duplica el punto si el motivo ya termina con uno', () => {
+    expect(
+      MENSAJES_NOTIFICACION.publicacionEliminadaPorAdmin(
+        'Empanadas',
+        'Contenido duplicado.',
+      ).cuerpo,
+    ).toBe(
+      "Tu publicación 'Empanadas' fue eliminada por el administrador. Contenido duplicado.",
+    );
+  });
+
+  it('nunca supera los 500 caracteres de notificacion.cuerpo', () => {
+    const { cuerpo } = MENSAJES_NOTIFICACION.publicacionEliminadaPorAdmin(
+      'x'.repeat(80),
+      'y'.repeat(500),
+    );
+    expect(cuerpo.length).toBe(500);
+    expect(cuerpo.endsWith('…')).toBe(true);
+  });
+});
+
+describe('MENSAJES_NOTIFICACION · RF086 (moderación de reseñas)', () => {
+  it('a quienes reportaron, cuando se rechaza el reporte', () => {
+    expect(MENSAJES_NOTIFICACION.reporteRevisado.cuerpo).toBe(
+      'Revisamos tu reporte sobre una reseña y consideramos que cumple con nuestras normas de comunidad. La reseña se mantiene visible. Gracias por tu colaboración.',
+    );
+  });
+
+  it('al autor, cuando se aprueba el reporte (texto aprobado por el equipo)', () => {
+    expect(MENSAJES_NOTIFICACION.resenaRemovida.cuerpo).toBe(
+      'Tu reseña fue removida por incumplir las normas de comunidad.',
+    );
+  });
+});
+
+describe('MENSAJES_NOTIFICACION · US-NOT-04 (aviso general)', () => {
+  it('título y cuerpo pasan tal cual los escribió el administrador', () => {
+    expect(
+      MENSAJES_NOTIFICACION.avisoGeneral('Mantenimiento', 'Hoy a las 22 hs.'),
+    ).toEqual({ titulo: 'Mantenimiento', cuerpo: 'Hoy a las 22 hs.' });
+  });
+});
+
 describe('MENSAJES_NOTIFICACION · US-NOT-07', () => {
   it('estado vacío del historial (voseo)', () => {
     expect(MENSAJES_NOTIFICACION.historialVacio).toBe(

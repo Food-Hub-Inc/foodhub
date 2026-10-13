@@ -14,6 +14,7 @@ export * from './lib/formato.js';
 export * from './schemas/almacenamiento.schema.js';
 export * from './schemas/auth.schema.js';
 export * from './schemas/auditoria.schema.js';
+export * from './schemas/avisoGeneral.schema.js';
 export * from './schemas/ayudaAdmin.schema.js';
 export * from './schemas/catalogo.schema.js';
 export * from './schemas/categoria.schema.js';
