@@ -128,34 +128,31 @@ function Contenido({
 
   const pedidos = consulta.data.pages.flatMap((pagina) => pagina.datos);
 
-  if (pedidos.length === 0) {
-    return (
-      <EstadoVacio
-        icono={<IconoBolsa className="text-primary" size={34} />}
-        titulo={VACIO_DE_PESTANA[pestana]}
-        {...(pestana === 'EN_CURSO'
-          ? {
-              accion: (
-                <Boton
-                  onPress={() => {
-                    router.push('/(cliente)/inicio');
-                  }}
-                  tamano="sm"
-                >
-                  {TEXTOS_CARRITO.explorarPlatos}
-                </Boton>
-              ),
-            }
-          : {})}
-      />
-    );
-  }
-
   return (
     <FlatList
-      contentContainerClassName="px-4 py-3 gap-3"
+      contentContainerClassName="grow px-4 py-3 gap-3"
       data={pedidos}
       keyExtractor={(pedido) => pedido.id}
+      ListEmptyComponent={
+        <EstadoVacio
+          icono={<IconoBolsa className="text-primary" size={34} />}
+          titulo={VACIO_DE_PESTANA[pestana]}
+          {...(pestana === 'EN_CURSO'
+            ? {
+                accion: (
+                  <Boton
+                    onPress={() => {
+                      router.push('/(cliente)/inicio');
+                    }}
+                    tamano="sm"
+                  >
+                    {TEXTOS_CARRITO.explorarPlatos}
+                  </Boton>
+                ),
+              }
+            : {})}
+        />
+      }
       onEndReached={() => {
         if (consulta.hasNextPage && !consulta.isFetchingNextPage) {
           void consulta.fetchNextPage();
