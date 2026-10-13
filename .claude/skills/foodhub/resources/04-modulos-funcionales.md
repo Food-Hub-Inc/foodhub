@@ -241,5 +241,7 @@ Reglas (implementación en `docs/API-NOTIFICACIONES.md`):
   la **Expo Push API** (no FCM directo). El MVP **no** incorpora cola de
   mensajes (punto 1.3.1.12). La expiración automática, que corre en pg_cron,
   la notifica ese mismo planificador.
-- **Alcance implementado**: US-NOT-01, 02, 05, 06, 07, 08. US-NOT-03 y US-NOT-04
-  quedan como enganches hasta que exista la moderación del panel (US-ADM-04).
+- **Alcance implementado**: US-NOT-01 a US-NOT-08 y las notificaciones de RF086
+  (como `AVISO_SISTEMA`). Los avisos generales los emite el administrador
+  desde la sección "Avisos" del panel (`POST /avisos`) y se leen en PAN-NOT-03.
+  El administrador no recibe notificaciones (el panel no tiene campana).
