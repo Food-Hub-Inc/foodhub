@@ -3,6 +3,7 @@ import type { PropsIcono } from '../iconos/tipos.js';
 import {
   IconoAuditoria,
   IconoAyuda,
+  IconoCampana,
   IconoConfiguracion,
   IconoInicio,
   IconoMetricas,
@@ -36,6 +37,9 @@ export const ITEMS_DE_NAVEGACION: readonly ItemDeNavegacion[] = [
     Icono: IconoModeracion,
     muestraPendientes: true,
   },
+  // US-NOT-04: no está en la maquetación; va junto a Moderación por ser la
+  // otra sección desde la que el administrador se comunica con los usuarios.
+  { ruta: '/avisos', etiqueta: 'Avisos', Icono: IconoCampana },
   { ruta: '/metricas', etiqueta: 'Métricas', Icono: IconoMetricas },
   { ruta: '/auditoria', etiqueta: 'Auditoría', Icono: IconoAuditoria },
   {

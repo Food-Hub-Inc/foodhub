@@ -58,7 +58,6 @@ export function Metricas() {
             </Button>
           </div>
         }
-        notificacionesPendientes={null}
         subtitulo={
           actualizado
             ? TEXTOS_METRICAS.actualizado(actualizado)

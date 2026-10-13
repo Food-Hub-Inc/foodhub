@@ -25,7 +25,6 @@ export function Proximamente({
   return (
     <>
       <EncabezadoPantalla
-        notificacionesPendientes={null}
         subtitulo={TEXTOS_PROXIMAMENTE.etiqueta}
         titulo={titulo}
       />

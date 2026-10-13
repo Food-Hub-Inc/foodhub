@@ -48,15 +48,6 @@ export function PanelDeResenas() {
             : TEXTOS_ESTADO.cargando}
         </p>
 
-        {/*
-          RF086 exige notificar en las dos ramas y todavía no se puede. Se dice
-          en pantalla en lugar de callarlo: el administrador tiene que saber que
-          si oculta una reseña, el autor no se entera por la aplicación.
-        */}
-        <p className="rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-caption text-text-secondary">
-          {TEXTOS_MODERACION.avisoSinNotificaciones}
-        </p>
-
         <Contenido
           alResolver={resolucion.pedir}
           consulta={consulta}
