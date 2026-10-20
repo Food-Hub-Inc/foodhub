@@ -24,11 +24,16 @@ import { todas } from '../pedidos/consultas.js';
 import {
   aClienteRecurrente,
   aDistribucion,
+  aFranjasHorarias,
+  aPedidosAbiertos,
+  aPedidosPorDiaSemana,
   aPlatoMasPedido,
   aResumen,
   enElPeriodo,
   type FilaClienteRecurrente,
+  type FilaDiaSemana,
   type FilaDistribucion,
+  type FilaFranja,
   type FilaPlato,
 } from './consultas.js';
 
@@ -58,7 +63,7 @@ const pedidosDistintos = countDistinct(pedido.id);
 /**
  * Todo el dashboard de un cocinero para un periodo.
  *
- * CINCO CONSULTAS EN PARALELO Y UNA SOLA RESPUESTA. Las cuatro secciones
+ * OCHO CONSULTAS EN PARALELO Y UNA SOLA RESPUESTA. Las cuatro secciones
  * comparten el periodo y US-DASH-05 exige que se actualicen "de forma inmediata"
  * al cambiarlo: partirlas en cinco endpoints le daria a la pantalla cinco
  * estados de carga que el cocinero percibe como uno solo.
@@ -77,15 +82,25 @@ export async function obtenerActividad(
     eq(pedido.estadoPedidoActual, 'COMPLETADO'),
   ]);
 
-  const [totales, ventas, valoracion, platos, clientes, distribucion] =
-    await Promise.all([
-      contarPedidos(delPeriodo),
-      sumarVentas(completadosDelPeriodo),
-      medirValoracion(cocineroId, rango),
-      rankearPlatos(completadosDelPeriodo),
-      buscarClientesRecurrentes(completadosDelPeriodo),
-      distribuirPorEstado(delPeriodo),
-    ]);
+  const [
+    totales,
+    ventas,
+    valoracion,
+    platos,
+    clientes,
+    estadoDeLosPedidos,
+    porDiaSemana,
+    porFranja,
+  ] = await Promise.all([
+    contarPedidos(delPeriodo),
+    sumarVentas(completadosDelPeriodo),
+    medirValoracion(cocineroId, rango),
+    rankearPlatos(completadosDelPeriodo),
+    buscarClientesRecurrentes(completadosDelPeriodo),
+    distribuirPorEstado(delPeriodo),
+    contarPorDiaSemana(delPeriodo, rango.zonaHoraria),
+    contarPorFranjaHoraria(delPeriodo, rango.zonaHoraria),
+  ]);
 
   return {
     resumen: aResumen({
@@ -96,7 +111,10 @@ export async function obtenerActividad(
     }),
     platosMasPedidos: platos.map(aPlatoMasPedido),
     clientesRecurrentes: clientes.map(aClienteRecurrente),
-    distribucion,
+    distribucion: estadoDeLosPedidos.distribucion,
+    pedidosAbiertos: estadoDeLosPedidos.abiertos,
+    pedidosPorDiaSemana: aPedidosPorDiaSemana(porDiaSemana),
+    franjasHorarias: aFranjasHorarias(porFranja),
   };
 }
 
@@ -245,10 +263,17 @@ async function buscarClientesRecurrentes(
  * Se agrupa por estado Y por origen del rechazo porque los tres rotulos de
  * cierre negativo -rechazado, cancelado, expirado- son el MISMO estado interno
  * RECHAZADO abierto por `origen_rechazo`. `aDistribucion` hace la traduccion.
+ *
+ * De la misma pasada sale `pedidosAbiertos`: la pantalla lo necesita para
+ * explicar por que `resumen.pedidosTotales` puede ser mayor que el total del
+ * grafico, y una segunda consulta podria leer un instante distinto.
  */
 async function distribuirPorEstado(
   condicion: ReturnType<typeof enElPeriodo>,
-): Promise<ReturnType<typeof aDistribucion>> {
+): Promise<{
+  distribucion: ReturnType<typeof aDistribucion>;
+  abiertos: number;
+}> {
   const filas: FilaDistribucion[] = await db
     .select({
       estado: pedido.estadoPedidoActual,
@@ -259,5 +284,82 @@ async function distribuirPorEstado(
     .where(condicion)
     .groupBy(pedido.estadoPedidoActual, pedido.origenRechazo);
 
-  return aDistribucion(filas);
+  return {
+    distribucion: aDistribucion(filas),
+    abiertos: aPedidosAbiertos(filas),
+  };
+}
+
+/**
+ * Pedidos por dia de la semana, con `isodow` (1 = lunes, 7 = domingo).
+ *
+ * LA SEMANA ES LA DEL COCINERO, NO LA DEL SERVIDOR. `fecha_creacion` es
+ * `timestamptz`: agruparla sin convertir manda un pedido de las 23 h de
+ * Argentina al dia siguiente. La zona llega del dispositivo, validada por
+ * `rangoDashboardSchema`, y viaja como parametro, nunca interpolada.
+ *
+ * El `GROUP BY 1` es por posicion y no repitiendo la expresion: con una zona
+ * parametrizada, repetirla manda un placeholder nuevo y Postgres deja de
+ * reconocer la del SELECT como la misma.
+ */
+async function contarPorDiaSemana(
+  condicion: ReturnType<typeof enElPeriodo>,
+  zonaHoraria: string,
+): Promise<FilaDiaSemana[]> {
+  const dia = sql<number>`extract(isodow from (${pedido.fechaCreacion} at time zone ${zonaHoraria}))::integer`;
+
+  const filas = await db
+    .select({ diaNumero: dia, cantidad: count() })
+    .from(pedido)
+    .where(condicion)
+    .groupBy(sql`1`)
+    .orderBy(sql`1`);
+
+  return filas.map((fila) => ({
+    diaNumero: Number(fila.diaNumero),
+    cantidad: Number(fila.cantidad),
+  }));
+}
+
+/**
+ * Pedidos por franja horaria de CUATRO HORAS, en la zona del cocinero:
+ *
+ *   MANANA     07 a 10     ALMUERZO  11 a 14     TARDE  15 a 18
+ *   CENA       19 a 22     NOCHE     23 a 02     MADRUGADA  03 a 06
+ *
+ * Todas miden lo mismo a proposito. La version anterior dejaba a NOCHE con 12
+ * horas -y le sumaba la manana-, asi que el "turno pico" terminaba siendo el
+ * ancho del cubo y no la demanda.
+ *
+ * La hora se calcula UNA vez y el CASE la reutiliza; el `GROUP BY 1` evita
+ * repetir la expresion completa con su parametro.
+ */
+async function contarPorFranjaHoraria(
+  condicion: ReturnType<typeof enElPeriodo>,
+  zonaHoraria: string,
+): Promise<FilaFranja[]> {
+  const hora = sql<number>`extract(hour from (${pedido.fechaCreacion} at time zone ${zonaHoraria}))::integer`;
+
+  const franja = sql<string>`
+    case
+      when ${hora} between 7 and 10 then 'MANANA'
+      when ${hora} between 11 and 14 then 'ALMUERZO'
+      when ${hora} between 15 and 18 then 'TARDE'
+      when ${hora} between 19 and 22 then 'CENA'
+      when ${hora} >= 23 or ${hora} <= 2 then 'NOCHE'
+      else 'MADRUGADA'
+    end
+  `;
+
+  const filas = await db
+    .select({ franja, cantidad: count() })
+    .from(pedido)
+    .where(condicion)
+    .groupBy(sql`1`)
+    .orderBy(sql`1`);
+
+  return filas.map((fila) => ({
+    franja: fila.franja as FilaFranja['franja'],
+    cantidad: Number(fila.cantidad),
+  }));
 }

@@ -22,6 +22,15 @@ import {
 const LOCALE = 'es-AR';
 
 /**
+ * Zona de respaldo si el runtime no expone `resolvedOptions().timeZone`.
+ *
+ * La app es es-AR y el proyecto no sale de Argentina, así que asumir la zona
+ * del país es más honesto que mandar UTC y correr un pedido de las 23 h al día
+ * siguiente. Cuando el dispositivo sí la informa, manda la suya.
+ */
+const ZONA_HORARIA_POR_DEFECTO = 'America/Argentina/Buenos_Aires';
+
+/**
  * Se construyen una vez a nivel de módulo por el mismo motivo que en
  * `formato.ts`: `Intl.DateTimeFormat` es caro de instanciar y el encabezado del
  * calendario lo usaría en cada render.
@@ -94,9 +103,32 @@ export function finDelDia(fecha: Date): Date {
   );
 }
 
-/** Las dos fechas como las espera la API: instantes en UTC. */
+/** La zona IANA del dispositivo, con respaldo para runtimes sin `Intl`. */
+function zonaHorariaDelDispositivo(): string {
+  try {
+    return (
+      Intl.DateTimeFormat().resolvedOptions().timeZone ||
+      ZONA_HORARIA_POR_DEFECTO
+    );
+  } catch {
+    return ZONA_HORARIA_POR_DEFECTO;
+  }
+}
+
+/**
+ * Las dos fechas como las espera la API: instantes en UTC, más la zona del
+ * dispositivo.
+ *
+ * La zona viaja en el rango y no como un dato del usuario porque `usuario` no
+ * la guarda: el mismo cocinero puede abrir la app desde otra zona y las
+ * métricas por día y por hora tienen que seguir su reloj, no el del servidor.
+ */
 export function aRangoDeApi(desde: Date, hasta: Date): RangoDashboard {
-  return { desde: desde.toISOString(), hasta: hasta.toISOString() };
+  return {
+    desde: desde.toISOString(),
+    hasta: hasta.toISOString(),
+    zonaHoraria: zonaHorariaDelDispositivo(),
+  };
 }
 
 /**

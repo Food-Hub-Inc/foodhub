@@ -941,6 +941,18 @@ export const TEXTOS_DASHBOARD = {
   /** [PROPIO] Etiquetas accesibles de la navegacion del calendario. */
   mesAnterior: 'Mes anterior',
   mesSiguiente: 'Mes siguiente',
+
+  /**
+   * [PROPIO] Etiqueta accesible del gráfico semanal.
+   *
+   * El SVG queda oculto y el contenedor resume los siete valores acá: a
+   * diferencia de la dona, debajo no hay un listado de texto que diga lo mismo.
+   */
+  pedidosPorDiaSemanaAccesible: 'Gráfico de pedidos por día de la semana',
+
+  /** [PROPIO] Cantidad de pedidos en singular o plural, para los badges. */
+  pedidosCantidad: (cantidad: number) =>
+    `${String(cantidad)} ${cantidad === 1 ? 'pedido' : 'pedidos'}`,
 } as const;
 
 /**

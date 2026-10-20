@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   aClienteRecurrente,
   aDistribucion,
+  aFranjasHorarias,
+  aPedidosAbiertos,
+  aPedidosPorDiaSemana,
   aPlatoMasPedido,
   aResumen,
   type FilaClienteRecurrente,
@@ -189,5 +192,87 @@ describe('aDistribucion (US-DASH-04)', () => {
       expirados: 0,
       total: 0,
     });
+  });
+});
+
+describe('aPedidosAbiertos (reconciliacion del periodo)', () => {
+  it('suma solo los estados abiertos y deja afuera los cerrados', () => {
+    const filas: FilaDistribucion[] = [
+      { estado: 'CREADO', origenRechazo: null, cantidad: 1 },
+      { estado: 'ACEPTADO', origenRechazo: null, cantidad: 2 },
+      { estado: 'LISTO', origenRechazo: null, cantidad: 3 },
+      { estado: 'COMPLETADO', origenRechazo: null, cantidad: 4 },
+      { estado: 'RECHAZADO', origenRechazo: 'CLIENTE', cantidad: 5 },
+      { estado: 'RECHAZADO', origenRechazo: 'SISTEMA', cantidad: 6 },
+    ];
+
+    expect(aPedidosAbiertos(filas)).toBe(6);
+  });
+
+  it('sin filas devuelve cero', () => {
+    expect(aPedidosAbiertos([])).toBe(0);
+  });
+
+  it('cierra con la distribucion cuando todos los pedidos tienen estado valido', () => {
+    const filas: FilaDistribucion[] = [
+      { estado: 'CREADO', origenRechazo: null, cantidad: 1 },
+      { estado: 'ACEPTADO', origenRechazo: null, cantidad: 2 },
+      { estado: 'LISTO', origenRechazo: null, cantidad: 3 },
+      { estado: 'COMPLETADO', origenRechazo: null, cantidad: 1 },
+      { estado: 'RECHAZADO', origenRechazo: 'CLIENTE', cantidad: 1 },
+    ];
+
+    expect(aDistribucion(filas).total + aPedidosAbiertos(filas)).toBe(8);
+  });
+});
+
+describe('aPedidosPorDiaSemana (metrica ampliada)', () => {
+  it('devuelve siempre los siete dias, en orden y con ceros', () => {
+    const dias = aPedidosPorDiaSemana([
+      { diaNumero: 7, cantidad: 3 },
+      { diaNumero: 1, cantidad: 4 },
+    ]);
+
+    expect(dias).toEqual([
+      { diaNumero: 1, cantidad: 4 },
+      { diaNumero: 2, cantidad: 0 },
+      { diaNumero: 3, cantidad: 0 },
+      { diaNumero: 4, cantidad: 0 },
+      { diaNumero: 5, cantidad: 0 },
+      { diaNumero: 6, cantidad: 0 },
+      { diaNumero: 7, cantidad: 3 },
+    ]);
+  });
+
+  it('sin filas devuelve siete ceros', () => {
+    const dias = aPedidosPorDiaSemana([]);
+
+    expect(dias).toHaveLength(7);
+    expect(dias.every((dia) => dia.cantidad === 0)).toBe(true);
+  });
+});
+
+describe('aFranjasHorarias (metrica ampliada)', () => {
+  it('devuelve siempre las seis franjas, en orden y con ceros', () => {
+    const franjas = aFranjasHorarias([
+      { franja: 'CENA', cantidad: 5 },
+      { franja: 'MANANA', cantidad: 2 },
+    ]);
+
+    expect(franjas).toEqual([
+      { franja: 'MANANA', cantidad: 2 },
+      { franja: 'ALMUERZO', cantidad: 0 },
+      { franja: 'TARDE', cantidad: 0 },
+      { franja: 'CENA', cantidad: 5 },
+      { franja: 'NOCHE', cantidad: 0 },
+      { franja: 'MADRUGADA', cantidad: 0 },
+    ]);
+  });
+
+  it('sin filas devuelve seis ceros', () => {
+    const franjas = aFranjasHorarias([]);
+
+    expect(franjas).toHaveLength(6);
+    expect(franjas.every((franja) => franja.cantidad === 0)).toBe(true);
   });
 });

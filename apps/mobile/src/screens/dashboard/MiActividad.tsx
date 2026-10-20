@@ -2,13 +2,17 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import {
+  detalleDeDiasDeSemana,
+  detalleDeFranjasHorarias,
   ESTADOS_DISTRIBUCION,
   MENSAJES_DASHBOARD,
   PERIODO_POR_DEFECTO,
   porcentajesDeDistribucion,
   type ActividadCocinero,
   type ClienteRecurrente,
+  type DiaDeSemanaConteo,
   type DistribucionPedidos,
+  type FranjaHorariaConteo,
   type PlatoMasPedido,
   type ResumenActividad,
 } from '@foodhub/shared';
@@ -16,6 +20,7 @@ import {
   IconoBolsa,
   IconoChevronAbajo,
   IconoCocinero,
+  IconoReloj,
   IconoUsuario,
 } from '../../components/iconos';
 import { PantallaDeTab } from '../../components/PantallaDeTab';
@@ -34,6 +39,8 @@ import {
 } from '../../lib/periodos';
 import { TEXTOS_DASHBOARD } from '../../lib/textos';
 import { ETIQUETA_DE_PERIODO } from './estados';
+import { FranjasHorarias } from './FranjasHorarias';
+import { GraficoDeBarrasSemanal } from './GraficoDeBarrasSemanal';
 import { GraficoDeDona } from './GraficoDeDona';
 import {
   FilaDeCliente,
@@ -150,7 +157,7 @@ export function MiActividad() {
   );
 }
 
-/** Las cuatro secciones, en el orden en que las numeran las historias. */
+/** Las secciones del dashboard, combinando métricas clave y operativas. */
 function Contenido({
   actividad,
   rankingCompleto,
@@ -166,15 +173,19 @@ function Contenido({
       contentContainerClassName="px-4 pb-10 pt-4"
       showsVerticalScrollIndicator={false}
     >
-      <ResumenGeneral
-        resumen={actividad.resumen}
-        sinCompletados={actividad.distribucion.completados === 0}
+      <ResumenGeneral resumen={actividad.resumen} />
+      <DesgloseDePedidos
+        abiertos={actividad.pedidosAbiertos}
+        cerrados={actividad.distribucion.total}
+        total={actividad.resumen.pedidosTotales}
       />
+      <PedidosPorDiaSemana conteos={actividad.pedidosPorDiaSemana} />
       <RankingDePlatos
         completo={rankingCompleto}
         onVerTodos={onVerTodosLosPlatos}
         platos={actividad.platosMasPedidos}
       />
+      <HorariosDeDemanda conteos={actividad.franjasHorarias} />
       <ClientesRecurrentes clientes={actividad.clientesRecurrentes} />
       <DistribucionPorEstado distribucion={actividad.distribucion} />
     </ScrollView>
@@ -182,13 +193,7 @@ function Contenido({
 }
 
 /** US-DASH-01 — Las tres tarjetas de resumen. */
-function ResumenGeneral({
-  resumen,
-  sinCompletados,
-}: {
-  resumen: ResumenActividad;
-  sinCompletados: boolean;
-}) {
+function ResumenGeneral({ resumen }: { resumen: ResumenActividad }) {
   return (
     <View>
       <View className="flex-row gap-3">
@@ -205,15 +210,104 @@ function ResumenGeneral({
         </TarjetaDeResumen>
       </View>
 
-      {/* El criterio ata este aviso a que no haya pedidos COMPLETADOS, no a que
-          no haya pedidos: un período con tres rechazos tiene actividad para las
-          otras secciones pero no tiene ventas que resumir. */}
-      {sinCompletados ? (
+      {/* El aviso literal de US-DASH-01 habla de "actividad registrada". Se
+          muestra solo cuando no entró NINGÚN pedido: con pedidos abiertos hay
+          actividad aunque todavía no haya ventas, y el desglose de abajo la
+          muestra. Antes se ataba a "sin completados" y contradecía la tarjeta
+          de pedidos totales. */}
+      {resumen.pedidosTotales === 0 ? (
         <Text className="mt-3 text-body text-text-secondary">
           {MENSAJES_DASHBOARD.sinActividad}
         </Text>
       ) : null}
     </View>
+  );
+}
+
+/**
+ * Desglose que reconcilia los universos del dashboard.
+ *
+ * «Pedidos totales» incluye todo lo que entró en el período; la distribución
+ * solo muestra lo que ya cerró. Sin este desglose, un cocinero con pedidos
+ * abiertos ve dos números que parecen contradecirse.
+ */
+function DesgloseDePedidos({
+  total,
+  cerrados,
+  abiertos,
+}: {
+  total: number;
+  cerrados: number;
+  abiertos: number;
+}) {
+  if (total === 0) {
+    return null;
+  }
+
+  return (
+    <View
+      accessible
+      accessibilityLabel={`${String(total)} pedidos en el período: ${String(cerrados)} cerrados y ${String(abiertos)} abiertos.`}
+      className="mt-3 flex-row items-center justify-between rounded-md border border-border bg-surface px-4 py-3"
+    >
+      <View className="flex-1">
+        <Text className="text-caption text-text-secondary">
+          {MENSAJES_DASHBOARD.pedidosDelPeriodo}
+        </Text>
+        <Text className="mt-0.5 text-h2 font-extrabold text-text-primary">
+          {String(total)}
+        </Text>
+      </View>
+
+      <View className="flex-row gap-5">
+        <View className="items-end">
+          <Text className="text-body font-bold text-text-primary">
+            {String(cerrados)}
+          </Text>
+          <Text className="text-caption text-text-secondary">
+            {MENSAJES_DASHBOARD.pedidosCerrados}
+          </Text>
+        </View>
+        <View className="items-end">
+          <Text className="text-body font-bold text-primary">
+            {String(abiertos)}
+          </Text>
+          <Text className="text-caption text-text-secondary">
+            {MENSAJES_DASHBOARD.pedidosAbiertos}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Pedidos por día de la semana (extensión del equipo).
+ *
+ * La API manda siete cubos con número y cantidad; los rótulos y el pico los
+ * resuelve `detalleDeDiasDeSemana`, que vive en el paquete compartido y es
+ * puro. El estado vacío es de la sección, no de la pantalla (US-DASH-05).
+ */
+function PedidosPorDiaSemana({ conteos }: { conteos: DiaDeSemanaConteo[] }) {
+  const dias = detalleDeDiasDeSemana(conteos);
+  const tienePedidos = dias.some((dia) => dia.cantidad > 0);
+
+  return (
+    <SeccionDelDashboard
+      descripcion={MENSAJES_DASHBOARD.descripcionTodosLosPedidos}
+      titulo={MENSAJES_DASHBOARD.pedidosPorDiaSemana}
+    >
+      {!tienePedidos ? (
+        <SeccionVacia
+          icono={<IconoBolsa size={24} className="text-primary" />}
+          mensaje={MENSAJES_DASHBOARD.sinPedidosPorDiaSemana}
+        />
+      ) : (
+        <View className="overflow-hidden rounded-md border border-border bg-surface p-3">
+          <GraficoDeBarrasSemanal dias={dias} />
+        </View>
+      )}
+    </SeccionDelDashboard>
   );
 }
 
@@ -238,6 +332,7 @@ function RankingDePlatos({
           </BotonDeTexto>
         ) : undefined
       }
+      descripcion={MENSAJES_DASHBOARD.descripcionPlatosMasPedidos}
       titulo={MENSAJES_DASHBOARD.platosMasPedidos}
     >
       {visibles.length === 0 ? (
@@ -260,10 +355,39 @@ function RankingDePlatos({
   );
 }
 
+/**
+ * Horarios de mayor demanda (extensión del equipo): seis franjas de cuatro
+ * horas. Igual que la sección semanal, la API manda conteos y el detalle
+ * -rótulos, porcentajes y pico- se resuelve con una función pura compartida.
+ */
+function HorariosDeDemanda({ conteos }: { conteos: FranjaHorariaConteo[] }) {
+  const franjas = detalleDeFranjasHorarias(conteos);
+  const tienePedidos = franjas.some((franja) => franja.cantidad > 0);
+
+  return (
+    <SeccionDelDashboard
+      descripcion={MENSAJES_DASHBOARD.descripcionTodosLosPedidos}
+      titulo={MENSAJES_DASHBOARD.horariosMayorDemanda}
+    >
+      {!tienePedidos ? (
+        <SeccionVacia
+          icono={<IconoReloj size={24} className="text-primary" />}
+          mensaje={MENSAJES_DASHBOARD.sinPedidosHorarios}
+        />
+      ) : (
+        <FranjasHorarias franjas={franjas} />
+      )}
+    </SeccionDelDashboard>
+  );
+}
+
 /** US-DASH-03 — Los clientes con más de un pedido completado en el período. */
 function ClientesRecurrentes({ clientes }: { clientes: ClienteRecurrente[] }) {
   return (
-    <SeccionDelDashboard titulo={MENSAJES_DASHBOARD.clientesRecurrentes}>
+    <SeccionDelDashboard
+      descripcion={MENSAJES_DASHBOARD.descripcionClientesRecurrentes}
+      titulo={MENSAJES_DASHBOARD.clientesRecurrentes}
+    >
       {clientes.length === 0 ? (
         <SeccionVacia
           icono={<IconoUsuario size={24} className="text-primary" />}
@@ -298,7 +422,10 @@ function DistribucionPorEstado({
   const porcentajes = porcentajesDeDistribucion(distribucion);
 
   return (
-    <SeccionDelDashboard titulo={MENSAJES_DASHBOARD.pedidosPorEstado}>
+    <SeccionDelDashboard
+      descripcion={MENSAJES_DASHBOARD.descripcionPedidosPorEstado}
+      titulo={MENSAJES_DASHBOARD.pedidosPorEstado}
+    >
       {distribucion.total === 0 ? (
         <SeccionVacia
           icono={<IconoBolsa size={24} className="text-primary" />}
@@ -334,9 +461,10 @@ function DistribucionPorEstado({
 }
 
 /**
- * Carga con la forma del contenido real: tres tarjetas arriba y dos bloques de
- * lista. Solo aparece la primera vez; al cambiar de período los datos anteriores
- * se quedan en pantalla (ver `useActividadDelCocinero`).
+ * Carga con la forma del contenido real: tres tarjetas, el desglose y los seis
+ * bloques, en el mismo orden en que aparecen. Solo se ve la primera vez; al
+ * cambiar de período los datos anteriores se quedan en pantalla (ver
+ * `useActividadDelCocinero`).
  */
 function EsqueletoDelDashboard() {
   return (
@@ -346,10 +474,17 @@ function EsqueletoDelDashboard() {
         <Esqueleto className="h-20 flex-1 rounded-md" />
         <Esqueleto className="h-20 flex-1 rounded-md" />
       </View>
+      <Esqueleto className="mt-3 h-16 rounded-md" />
       <Esqueleto className="mt-6 h-5 w-40" />
+      <Esqueleto className="mt-3 h-52 rounded-md" />
+      <Esqueleto className="mt-6 h-5 w-44" />
       <Esqueleto className="mt-3 h-44 rounded-md" />
       <Esqueleto className="mt-6 h-5 w-44" />
+      <Esqueleto className="mt-3 h-56 rounded-md" />
+      <Esqueleto className="mt-6 h-5 w-40" />
       <Esqueleto className="mt-3 h-32 rounded-md" />
+      <Esqueleto className="mt-6 h-5 w-40" />
+      <Esqueleto className="mt-3 h-56 rounded-md" />
     </View>
   );
 }

@@ -82,19 +82,34 @@ export function ValoracionPromedio({ promedio }: { promedio: number | null }) {
   );
 }
 
-/** Una sección del dashboard: título, acción opcional a la derecha y contenido. */
+/**
+ * Una sección del dashboard: título, leyenda opcional, acción opcional a la
+ * derecha y contenido.
+ *
+ * La leyenda existe porque las secciones no comparten universo: «Pedidos por
+ * día» cuenta todos los pedidos, el ranking solo los completados y la
+ * distribución solo los cerrados. Sin decirlo, los números parecen no cerrar.
+ */
 export function SeccionDelDashboard({
   titulo,
+  descripcion,
   accion,
   children,
 }: {
   titulo: string;
+  descripcion?: string;
   accion?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <View className="mt-6">
-      <View className="mb-3 flex-row items-center justify-between">
+      <View
+        className={
+          descripcion
+            ? 'mb-1 flex-row items-center justify-between'
+            : 'mb-3 flex-row items-center justify-between'
+        }
+      >
         <Text
           className="text-h3 font-bold text-text-primary"
           accessibilityRole="header"
@@ -103,6 +118,11 @@ export function SeccionDelDashboard({
         </Text>
         {accion}
       </View>
+      {descripcion ? (
+        <Text className="mb-3 text-caption text-text-secondary">
+          {descripcion}
+        </Text>
+      ) : null}
       {children}
     </View>
   );
