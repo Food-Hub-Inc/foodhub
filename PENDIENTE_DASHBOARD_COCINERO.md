@@ -144,3 +144,15 @@ Las agregaciones se apoyan en `pedido_cocinero_idx`
 el filtro por cocinero pero no lleva la fecha como segunda columna. A la escala
 del proyecto alcanza; un índice pensado para el rango implicaría una migración y
 se decide aparte.
+
+---
+
+## Extensión posterior: métricas de demanda
+
+El 2026-10-20 se agregaron dos métricas que no pertenecen a las cinco historias
+ni al mockup: **pedidos por día de la semana** y **pedidos por franja horaria**.
+En la misma extensión se agregó `pedidosAbiertos` y una tarjeta que reconcilia
+el total de pedidos con la distribución, para que los universos distintos de
+cada sección no parezcan una contradicción. El detalle del contrato, las
+decisiones y la trazabilidad está en
+[`docs/DASHBOARD-METRICAS-AMPLIADAS.md`](docs/DASHBOARD-METRICAS-AMPLIADAS.md).

@@ -7,14 +7,15 @@
  *
  * Es la unica forma de cubrir este modulo. Vitest corre sin base (el
  * `DATABASE_URL` de `vitest.config.ts` apunta a un puerto cerrado a proposito),
- * y las cuatro consultas del dashboard son justamente lo que no se puede
- * comprobar con tipos: dos `GROUP BY` con columnas dependientes de la clave
- * primaria, un `HAVING` sobre `count(distinct ...)` y una suma de `numeric`
- * casteada a texto.
+ * y las consultas del dashboard son justamente lo que no se puede comprobar con
+ * tipos: tres `GROUP BY` con columnas dependientes de la clave primaria, dos
+ * agrupaciones por `at time zone`, un `HAVING` sobre `count(distinct ...)` y una
+ * suma de `numeric` casteada a texto.
  *
  * Con un cocinero inexistente el resultado esperado es todo en cero, las dos
- * listas vacias y la valoracion en null. Se le puede pasar el id de un cocinero
- * real como argumento para leer sus metricas y contrastarlas a mano:
+ * listas vacias, la valoracion en null, siete dias en cero y seis franjas en
+ * cero. Se le puede pasar el id de un cocinero real como argumento para leer
+ * sus metricas y contrastarlas a mano:
  *
  *   pnpm --filter @foodhub/api exec tsx src/scripts/humo-dashboard.ts <uuid>
  */
@@ -32,15 +33,24 @@ const { desde, hasta } = rangoDePeriodo('ANIO');
 const actividad = await obtenerActividad(cocineroId, {
   desde: desde.toISOString(),
   hasta: hasta.toISOString(),
+  // La misma zona que manda la app; sin ella las agrupaciones por dia y hora
+  // no se pueden ejecutar.
+  zonaHoraria: 'America/Argentina/Buenos_Aires',
 });
 
 console.log('cocinero:', cocineroId);
 console.log('resumen:', JSON.stringify(actividad.resumen));
+console.log('pedidos abiertos:', actividad.pedidosAbiertos);
 console.log('distribucion:', JSON.stringify(actividad.distribucion));
 console.log('platos mas pedidos:', JSON.stringify(actividad.platosMasPedidos));
 console.log(
   'clientes recurrentes:',
   JSON.stringify(actividad.clientesRecurrentes),
 );
+console.log(
+  'pedidos por dia de la semana:',
+  JSON.stringify(actividad.pedidosPorDiaSemana),
+);
+console.log('franjas horarias:', JSON.stringify(actividad.franjasHorarias));
 
 process.exit(0);

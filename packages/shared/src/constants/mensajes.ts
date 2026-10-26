@@ -1701,6 +1701,72 @@ export const MENSAJES_DASHBOARD = {
    */
   rangoInvertido:
     'La fecha de inicio no puede ser posterior a la fecha de fin.',
+
+  // --- Metricas ampliadas (extension del equipo, 2026-10-20) ----------------
+  /*
+   * Estas dos secciones NO pertenecen a US-DASH-01 a US-DASH-05 ni al mockup de
+   * la Etapa 5: el equipo las aprobo como extension de PAN-DASH-01 y quedaron
+   * documentadas en `docs/DASHBOARD-METRICAS-AMPLIADAS.md`.
+   *
+   * Los rotulos de cada dia y de cada franja NO viven aca: son parte del
+   * contrato de presentacion y estan en `DIAS_DE_LA_SEMANA` y
+   * `FRANJAS_HORARIAS` de `dashboard.schema.ts`, para que la API no los mande.
+   */
+
+  /** PROPIO - Seccion de pedidos por dia de la semana. */
+  pedidosPorDiaSemana: 'Pedidos por día de la semana',
+
+  /** PROPIO - Badge del dia con mas pedidos. */
+  diaPicoBadge: (dia: string) => `Día pico: ${dia}`,
+
+  /** PROPIO - Estado vacio de la seccion semanal. */
+  sinPedidosPorDiaSemana:
+    'No tenés pedidos en el período seleccionado para mostrar la distribución semanal.',
+
+  /** PROPIO - Seccion de franjas horarias. */
+  horariosMayorDemanda: 'Horarios de mayor demanda',
+
+  /** PROPIO - Badge de la franja con mas pedidos. */
+  franjaPicoBadge: (franja: string) => `Turno pico: ${franja}`,
+
+  /** PROPIO - Estado vacio de la seccion de horarios. */
+  sinPedidosHorarios:
+    'No tenés pedidos en el período seleccionado para mostrar los horarios de demanda.',
+
+  // --- Reconciliacion de universos (extension del equipo, 2026-10-20) -------
+  /*
+   * El cocinero ve `Pedidos totales`, el ranking y la distribucion en la misma
+   * pantalla, pero cada uno responde una pregunta distinta. Estos rotulos y
+   * leyendas nombran el universo de cada seccion para que los numeros no
+   * parezcan contradictorios.
+   */
+
+  /** PROPIO - Tarjeta que desglosa los pedidos del periodo. */
+  pedidosDelPeriodo: 'Pedidos del período',
+
+  /** PROPIO - Pedidos cerrados: completados, rechazados, cancelados y expirados. */
+  pedidosCerrados: 'Cerrados',
+
+  /** PROPIO - Pedidos que siguen abiertos: creados, aceptados o listos. */
+  pedidosAbiertos: 'Abiertos',
+
+  /** PROPIO - Leyenda de las metricas que incluyen todos los estados. */
+  descripcionTodosLosPedidos:
+    'Incluye todos los pedidos del período, en cualquier estado.',
+
+  /** PROPIO - Leyenda del ranking de US-DASH-02. */
+  descripcionPlatosMasPedidos: 'Solo pedidos completados.',
+
+  /** PROPIO - Leyenda de clientes recurrentes de US-DASH-03. */
+  descripcionClientesRecurrentes:
+    'Solo clientes con más de un pedido completado.',
+
+  /** PROPIO - Leyenda de la distribucion de US-DASH-04. */
+  descripcionPedidosPorEstado:
+    'Solo pedidos cerrados: completados, rechazados, cancelados y expirados.',
+
+  /** PROPIO - La zona horaria IANA del rango no es reconocida por `Intl`. */
+  zonaHorariaInvalida: 'La zona horaria no es válida.',
 } as const;
 
 /**

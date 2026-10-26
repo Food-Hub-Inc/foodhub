@@ -1,13 +1,18 @@
 import { eq, gte, lte, type SQL } from 'drizzle-orm';
 import { pedido } from '@foodhub/db';
-import type {
-  ClienteRecurrente,
-  DistribucionPedidos,
-  EstadoPedido,
-  OrigenTransicion,
-  PlatoMasPedido,
-  RangoDashboard,
-  ResumenActividad,
+import {
+  DIAS_DE_LA_SEMANA,
+  FRANJAS_HORARIAS,
+  type ClienteRecurrente,
+  type DiaDeSemanaConteo,
+  type DistribucionPedidos,
+  type EstadoPedido,
+  type FranjaHoraria,
+  type FranjaHorariaConteo,
+  type OrigenTransicion,
+  type PlatoMasPedido,
+  type RangoDashboard,
+  type ResumenActividad,
 } from '@foodhub/shared';
 import { aValoracion } from '../../lib/valoraciones.js';
 import { todas } from '../pedidos/consultas.js';
@@ -75,6 +80,16 @@ export interface FilaClienteRecurrente {
 export interface FilaDistribucion {
   estado: EstadoPedido;
   origenRechazo: OrigenTransicion | null;
+  cantidad: number;
+}
+
+export interface FilaDiaSemana {
+  diaNumero: number;
+  cantidad: number;
+}
+
+export interface FilaFranja {
+  franja: FranjaHoraria;
   cantidad: number;
 }
 
@@ -192,4 +207,66 @@ export function aDistribucion(filas: FilaDistribucion[]): DistribucionPedidos {
     distribucion.expirados;
 
   return distribucion;
+}
+
+/** Estados en los que un pedido todavia no cerro. */
+const ESTADOS_ABIERTOS = new Set<EstadoPedido>(['CREADO', 'ACEPTADO', 'LISTO']);
+
+/**
+ * Pedidos que siguen abiertos en el periodo: CREADO, ACEPTADO o LISTO.
+ *
+ * Es la contracara de `aDistribucion`, no una metrica de US-DASH-04. Se calcula
+ * de las MISMAS filas del `GROUP BY` para que la pantalla pueda reconciliar
+ * `pedidosTotales` con el grafico sin una consulta extra ni dos universos que se
+ * puedan desincronizar entre si.
+ */
+export function aPedidosAbiertos(filas: FilaDistribucion[]): number {
+  return filas.reduce(
+    (suma, fila) =>
+      suma + (ESTADOS_ABIERTOS.has(fila.estado) ? fila.cantidad : 0),
+    0,
+  );
+}
+
+/**
+ * Pedidos por dia de la semana. Garantiza los SIETE cubos, en orden lunes a
+ * domingo, aunque la consulta no devuelva un dia sin pedidos.
+ *
+ * No resuelve rotulos ni pico: eso es presentacion y lo hace
+ * `detalleDeDiasDeSemana` del paquete compartido, que es puro y se prueba una
+ * sola vez. Asi la API no se acopla al copy en espanol.
+ */
+export function aPedidosPorDiaSemana(
+  filas: FilaDiaSemana[],
+): DiaDeSemanaConteo[] {
+  const cantidades = new Map(
+    filas.map((fila) => [fila.diaNumero, fila.cantidad]),
+  );
+
+  return DIAS_DE_LA_SEMANA.map((dia) => ({
+    diaNumero: dia.diaNumero,
+    cantidad: cantidades.get(dia.diaNumero) ?? 0,
+  }));
+}
+
+/**
+ * Pedidos por franja horaria. Garantiza las SEIS franjas, en el orden de
+ * `FRANJAS_HORARIAS`, y descarta una clave que el CASE no pueda producir.
+ */
+export function aFranjasHorarias(filas: FilaFranja[]): FranjaHorariaConteo[] {
+  const validas = new Set<FranjaHoraria>(
+    FRANJAS_HORARIAS.map((franja) => franja.franja),
+  );
+  const cantidades = new Map<FranjaHoraria, number>();
+
+  for (const fila of filas) {
+    if (validas.has(fila.franja)) {
+      cantidades.set(fila.franja, fila.cantidad);
+    }
+  }
+
+  return FRANJAS_HORARIAS.map((franja) => ({
+    franja: franja.franja,
+    cantidad: cantidades.get(franja.franja) ?? 0,
+  }));
 }
