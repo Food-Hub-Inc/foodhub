@@ -1,0 +1,11 @@
+{
+  // Configuracion usada por `pnpm build`: emite solo `src/` a `dist/` y deja
+  // afuera `drizzle.config.ts` (que solo usa drizzle-kit en migraciones).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts"]
+}

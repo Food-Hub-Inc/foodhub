@@ -1,0 +1,11 @@
+{
+  // Configuracion usada por `pnpm build`: emite JavaScript a `dist/` para que
+  // `node dist/server.js` en produccion pueda importar @foodhub/shared sin
+  // depender de un transpilador en tiempo de ejecucion.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src"
+  }
+}

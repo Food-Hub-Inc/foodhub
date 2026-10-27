@@ -7,8 +7,8 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc --project tsconfig.build.json",
-    "start": "node dist/server.js",
+    "build": "tsc --project tsconfig.build.json && node -e \"require('node:fs').cpSync('src/assets', 'dist/assets', { recursive: true })\"",
+    "start": "node --conditions=production dist/server.js",
     "typecheck": "tsc --noEmit",
     "crear-admin": "tsx src/scripts/crear-administrador.ts",
     "seed": "tsx src/scripts/sembrar-datos-de-prueba.ts",
