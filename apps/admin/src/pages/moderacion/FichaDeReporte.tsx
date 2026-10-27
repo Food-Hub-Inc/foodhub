@@ -1,7 +1,7 @@
 import { Button } from '@heroui/react';
-import type { ReporteModeracion } from '@foodhub/shared';
+import type { ReporteModeracion, ResolucionAnterior } from '@foodhub/shared';
 import { Insignia } from '../../components/Insignia.js';
-import { formatearFecha } from '../../lib/formato.js';
+import { formatearFecha, formatearFechaHora } from '../../lib/formato.js';
 import { TEXTOS_MODERACION } from '../../lib/textos.js';
 
 /**
@@ -25,9 +25,16 @@ export function FichaDeReporte({
   return (
     <article className="aparece space-y-4 rounded-lg border border-border bg-surface p-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <Insignia tono="rojo">
-          {TEXTOS_MODERACION.cantidadReportes(reporte.cantidadReportes)}
-        </Insignia>
+        <div className="flex flex-wrap gap-2">
+          <Insignia tono="rojo">
+            {TEXTOS_MODERACION.cantidadReportes(reporte.cantidadReportes)}
+          </Insignia>
+          {reporte.historial.length === 0 ? null : (
+            <Insignia tono="ambar">
+              {TEXTOS_MODERACION.reportadaNuevamente}
+            </Insignia>
+          )}
+        </div>
 
         <p className="text-caption text-text-secondary">
           {`${TEXTOS_MODERACION.primerReporte}: ${formatearFecha(reporte.fechaPrimerReporte)}`}
@@ -36,6 +43,7 @@ export function FichaDeReporte({
 
       <ResenaDenunciada resena={reporte.resena} />
       <MotivosYDetalles reporte={reporte} />
+      <HistorialDeModeracion historial={reporte.historial} />
 
       <footer className="flex flex-wrap justify-end gap-3">
         {/*
@@ -172,6 +180,81 @@ function MotivosYDetalles({ reporte }: { reporte: ReporteModeracion }) {
           </ul>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Qué se decidió antes sobre esta reseña — corrección del 20/10/2026.
+ *
+ * Una ronda por cada vez que se resolvió: la decisión, quién la tomó y cuándo,
+ * y las denuncias que la motivaron con quién las hizo. La más reciente arriba,
+ * porque es la que el administrador está por confirmar o revertir.
+ *
+ * QUIÉN DENUNCIÓ SE MUESTRA ACÁ Y NO EN LAS DENUNCIAS PENDIENTES. En el
+ * historial sirve para ver si es la misma persona la que insiste después de que
+ * se le dio la razón al autor.
+ */
+function HistorialDeModeracion({
+  historial,
+}: {
+  historial: ResolucionAnterior[];
+}) {
+  if (historial.length === 0) return null;
+
+  return (
+    <div>
+      <p className="mb-1.5 text-caption font-bold uppercase text-text-secondary">
+        {TEXTOS_MODERACION.historial}
+      </p>
+
+      <ol className="space-y-3">
+        {historial.map((ronda) => (
+          <li
+            className="space-y-2 rounded-md border border-border p-3"
+            key={ronda.fechaResolucion}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <Insignia tono={ronda.decision === 'APROBADO' ? 'rojo' : 'verde'}>
+                {TEXTOS_MODERACION.decisionAnterior[ronda.decision]}
+              </Insignia>
+              <span className="text-caption text-text-secondary">
+                {TEXTOS_MODERACION.resueltaPor(
+                  ronda.adminNombre,
+                  formatearFechaHora(ronda.fechaResolucion),
+                )}
+              </span>
+              <span className="text-caption text-text-disabled">
+                {TEXTOS_MODERACION.denunciasDeLaRonda(ronda.denuncias.length)}
+              </span>
+            </div>
+
+            <ul className="space-y-2">
+              {ronda.denuncias.map((denuncia) => (
+                <li
+                  className="border-l-2 border-border pl-3"
+                  key={`${denuncia.fechaReporte}-${denuncia.reportanteNombre}`}
+                >
+                  <p className="text-caption text-text-secondary">
+                    {TEXTOS_MODERACION.reportadaPor(
+                      denuncia.reportanteNombre,
+                      formatearFechaHora(denuncia.fechaReporte),
+                    )}
+                  </p>
+                  <p className="text-body text-text-primary">
+                    {denuncia.motivos.join(', ')}
+                  </p>
+                  {denuncia.detalle === null ? null : (
+                    <p className="text-caption text-text-secondary">
+                      {denuncia.detalle}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }

@@ -7,7 +7,13 @@ import {
   MENSAJES_RESENA,
   ventanaDeEdicionAbierta,
 } from '@foodhub/shared';
-import { aAutor, aResenaPublica, type FilaResena } from './consultas.js';
+import {
+  aAutor,
+  agruparHistorial,
+  aResenaPublica,
+  type FilaReporteResuelto,
+  type FilaResena,
+} from './consultas.js';
 
 /**
  * Reglas del modulo de Resenas que se pueden probar SIN base de datos.
@@ -319,3 +325,79 @@ describe('aResenaPublica', () => {
  * La ventana de la resena DE PLATO sigue viva y se prueba mas arriba: esa si
  * describe un producto que se consumio una vez.
  */
+
+describe('agruparHistorial', () => {
+  const RESENA = '00000000-0000-4000-8000-000000000001';
+  const OTRA = '00000000-0000-4000-8000-000000000002';
+
+  function reporte(
+    cambios: Partial<FilaReporteResuelto> = {},
+  ): FilaReporteResuelto {
+    return {
+      resenaId: RESENA,
+      decision: 'RECHAZADO',
+      adminId: 'admin-1',
+      adminNombre: 'Ana Admin',
+      fechaResolucion: new Date('2026-10-01T12:00:00Z'),
+      reportanteNombre: 'Rita Reporta',
+      motivos: ['Spam o publicidad'],
+      detalle: null,
+      fechaReporte: new Date('2026-09-30T10:00:00Z'),
+      ...cambios,
+    };
+  }
+
+  it('junta en una ronda las denuncias resueltas por la misma decisión', () => {
+    const historial = agruparHistorial([
+      reporte(),
+      reporte({
+        reportanteNombre: 'Pablo Reporta',
+        fechaReporte: new Date('2026-09-30T09:00:00Z'),
+      }),
+    ]).get(RESENA);
+
+    expect(historial).toHaveLength(1);
+    // Dentro de la ronda, en el orden en que llegaron las denuncias.
+    expect(historial?.[0]?.denuncias.map((d) => d.reportanteNombre)).toEqual([
+      'Pablo Reporta',
+      'Rita Reporta',
+    ]);
+  });
+
+  it('separa una reseña dejada visible y después ocultada, la última primero', () => {
+    const historial = agruparHistorial([
+      reporte(),
+      reporte({
+        decision: 'APROBADO',
+        adminId: 'admin-2',
+        adminNombre: 'Beto Admin',
+        fechaResolucion: new Date('2026-10-20T12:00:00Z'),
+        fechaReporte: new Date('2026-10-19T10:00:00Z'),
+      }),
+    ]).get(RESENA);
+
+    expect(historial?.map((r) => [r.decision, r.adminNombre])).toEqual([
+      ['APROBADO', 'Beto Admin'],
+      ['RECHAZADO', 'Ana Admin'],
+    ]);
+  });
+
+  it('mantiene la ronda aunque la cuenta del administrador ya no exista', () => {
+    const historial = agruparHistorial([
+      reporte({ adminId: null, adminNombre: null }),
+    ]).get(RESENA);
+
+    expect(historial?.[0]?.adminNombre).toBeNull();
+    expect(historial?.[0]?.denuncias).toHaveLength(1);
+  });
+
+  it('no mezcla el historial de dos reseñas distintas', () => {
+    const historiales = agruparHistorial([
+      reporte(),
+      reporte({ resenaId: OTRA }),
+    ]);
+
+    expect(historiales.get(RESENA)).toHaveLength(1);
+    expect(historiales.get(OTRA)).toHaveLength(1);
+  });
+});

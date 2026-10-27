@@ -693,6 +693,32 @@ export const reportarResenaSchema = z
     }
   });
 
+/** Una denuncia ya resuelta, con quien la hizo. */
+export const denunciaAnteriorSchema = z.object({
+  reportanteNombre: z.string(),
+  motivos: z.array(z.string()),
+  detalle: z.string().nullable(),
+  fechaReporte: z.iso.datetime(),
+});
+
+/**
+ * Correccion del 20/10/2026 - Una ronda de moderacion ya cerrada sobre la
+ * resena: las denuncias que juntaba y que decidio el administrador.
+ *
+ * ES POR RONDA Y NO POR DENUNCIA porque asi se resuelve: RF086 cierra de una
+ * vez todos los reportes pendientes de la resena, con el mismo administrador
+ * y la misma fecha. Una resena que se dejo visible y la volvieron a denunciar
+ * llega a la bandeja con una ronda en su historial.
+ */
+export const resolucionAnteriorSchema = z.object({
+  /** APROBADO oculto la resena; RECHAZADO la dejo visible. */
+  decision: z.enum(['APROBADO', 'RECHAZADO']),
+  /** `null` si la cuenta del administrador ya no existe. */
+  adminNombre: z.string().nullable(),
+  fechaResolucion: z.iso.datetime(),
+  denuncias: z.array(denunciaAnteriorSchema).min(1),
+});
+
 /** RF086 - Un reporte en la bandeja de moderacion del administrador. */
 export const reporteModeracionSchema = z.object({
   resenaId: z.uuid(),
@@ -723,6 +749,9 @@ export const reporteModeracionSchema = z.object({
     /** El cocinero involucrado: dueno del plato, o el resenado. `null` en las de tipo CLIENTE. */
     cocineroNombre: z.string().nullable(),
   }),
+
+  /** Rondas de moderacion anteriores, la mas reciente primero. */
+  historial: z.array(resolucionAnteriorSchema),
 });
 
 export const paginaReportesSchema = z.object({
@@ -768,6 +797,8 @@ export type ReaccionarInput = z.infer<typeof reaccionarSchema>;
 export type RespuestaCocinero = z.infer<typeof respuestaCocineroSchema>;
 export type ResponderResenaInput = z.infer<typeof responderResenaSchema>;
 export type ReportarResenaInput = z.infer<typeof reportarResenaSchema>;
+export type DenunciaAnterior = z.infer<typeof denunciaAnteriorSchema>;
+export type ResolucionAnterior = z.infer<typeof resolucionAnteriorSchema>;
 export type ReporteModeracion = z.infer<typeof reporteModeracionSchema>;
 export type PaginaReportes = z.infer<typeof paginaReportesSchema>;
 export type ResolverReporteInput = z.infer<typeof resolverReporteSchema>;
