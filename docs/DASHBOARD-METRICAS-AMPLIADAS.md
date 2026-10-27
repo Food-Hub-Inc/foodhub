@@ -151,11 +151,47 @@ Las franjas muestran su porcentaje sobre el total del período. Se reparte por
 cada una darían 33 + 33 + 33 = 99. Es el mismo criterio que
 `porcentajesDeDistribucion` usa para US-DASH-04.
 
+## Evolución en el tiempo (corrección del 20/10/2026)
+
+La corrección pidió, además de la distribución por día de la semana, ver la
+**evolución** de los pedidos —totales y de un plato— a lo largo de la semana y
+del mes. El ranking de US-DASH-02 no alcanzaba: dice cuánto se vendió en el
+período, no cómo se repartió en el tiempo. Decisiones del equipo del
+2026-10-27:
+
+| Tema                | Decisión                                                                        |
+| ------------------- | ------------------------------------------------------------------------------- |
+| Pedidos totales     | Sección «Evolución de pedidos», mismo universo que «Pedidos totales».           |
+| Plato               | Se toca un plato del ranking y se abre su evolución (`/actividad/platos/[id]`). |
+| Qué cuenta el plato | **Pedidos completados** que incluyen el plato (no unidades).                    |
+| Semana o mes        | **Sigue el selector de período** de US-DASH-05; no hay un toggle propio.        |
+
+### Contrato
+
+- `GET /dashboard/actividad` suma `evolucionPedidos: { granularidad, puntos }`.
+- `GET /dashboard/platos/:publicacionId/evolucion` devuelve
+  `{ publicacionId, nombre, eliminado, totalPedidos, evolucion }`. Un plato que
+  no es del cocinero de la sesión responde 404, igual que uno inexistente.
+- `puntos` trae solo los cubos con pedidos (`inicio` = fecha local
+  `YYYY-MM-DD`); la app completa los vacíos con `serieDeEvolucion`.
+
+### Escala según el largo del período (`granularidadDeEvolucion`)
+
+| Largo del rango | Un punto por… | Caso típico               |
+| --------------- | ------------- | ------------------------- |
+| hasta 31 días   | día           | «Esta semana», «Este mes» |
+| hasta 124 días  | semana (lun)  | «Últimos 3 meses»         |
+| más             | mes           | «Este año»                |
+
+La agrupación usa `date_trunc` en la zona del dispositivo (`rango.zonaHoraria`),
+con el mismo cuidado que los días de la semana. La serie termina hoy: en el
+eje del tiempo, un día futuro en cero se leería como un día sin ventas.
+
+Verificado contra foodhub-dev el 2026-10-27: en los cuatro períodos la suma de
+la evolución coincide con `resumen.pedidosTotales`.
+
 ## Lo que NO se agregó
 
-- **Platos por semana o por mes:** ya lo resuelve US-DASH-02. El ranking cuenta
-  unidades de pedidos completados y cambia con el selector de período; «Esta
-  semana» responde qué se está vendiendo últimamente.
 - **Reporte REP-01:** sigue pendiente de definición en el PDF de maquetación
   (ver `PENDIENTE_DASHBOARD_COCINERO.md`).
 
@@ -168,5 +204,5 @@ cada una darían 33 + 33 + 33 = 99. Es el mismo criterio que
 | Pantalla                | `apps/mobile/src/screens/dashboard/`              |
 | Pruebas                 | `reglas.test.ts` y `consultas.test.ts` del módulo |
 
-**No hubo migración ni cambios en `packages/db`:** las dos métricas se derivan
+**No hubo migración ni cambios en `packages/db`:** las métricas se derivan
 de `pedido` tal como está.
