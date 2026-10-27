@@ -43,4 +43,13 @@ describe('acceso al modulo de dashboard', () => {
       'TOKEN_INVALIDO',
     );
   });
+
+  it('GET /api/v1/dashboard/platos/:id/evolucion responde 401 SIN_TOKEN sin sesión', async () => {
+    const respuesta = await request(app).get(
+      '/api/v1/dashboard/platos/00000000-0000-4000-8000-000000000001/evolucion',
+    );
+
+    expect(respuesta.status).toBe(401);
+    expect((respuesta.body as RespuestaError).error.codigo).toBe('SIN_TOKEN');
+  });
 });

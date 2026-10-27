@@ -165,16 +165,26 @@ export function SeccionVacia({
  *
  * Un plato dado de baja NO se saca del ranking: lleva "(eliminado)" pegado al
  * nombre, para preservar la integridad de las métricas del período.
+ *
+ * Tocarla abre la evolución del plato (corrección del 20/10/2026). También la
+ * de un plato eliminado: sus pedidos del período existieron.
  */
 export function FilaDeRanking({
   plato,
   puesto,
+  onPress,
 }: {
   plato: PlatoMasPedido;
   puesto: number;
+  onPress: () => void;
 }) {
   return (
-    <View className="flex-row items-center gap-3 border-t border-border px-3 py-3">
+    <Pressable
+      onPress={onPress}
+      className="flex-row items-center gap-3 border-t border-border px-3 py-3 active:bg-background"
+      accessibilityRole="button"
+      accessibilityLabel={TEXTOS_DASHBOARD.verEvolucionDelPlato(plato.nombre)}
+    >
       <Text
         className="w-5 text-center text-body font-extrabold text-text-secondary"
         accessibilityLabel={TEXTOS_DASHBOARD.puestoEnElRanking(puesto)}
@@ -210,7 +220,8 @@ export function FilaDeRanking({
           {formatearPrecio(plato.precioActual)}
         </Text>
       </View>
-    </View>
+      <IconoChevronDerecha size={18} className="text-text-disabled" />
+    </Pressable>
   );
 }
 

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { rangoDashboardSchema } from '@foodhub/shared';
 import { sesionDe } from '../../lib/request.js';
 import { requiereAutenticacion } from '../../middleware/auth.middleware.js';
@@ -32,4 +33,23 @@ dashboardRouter.get('/actividad', async (req, res) => {
     rango,
   );
   res.json(actividad);
+});
+
+const idPublicacionSchema = z.uuid('El identificador del plato no es válido.');
+
+/**
+ * Evolución de un plato en el período (corrección del 20/10/2026). Se entra
+ * tocando un plato del ranking de US-DASH-02, con el mismo período.
+ *
+ * Este id SÍ viene por parámetro, pero es de un plato y no de un cocinero: el
+ * servicio solo lo encuentra si es de la sesión.
+ */
+dashboardRouter.get('/platos/:publicacionId/evolucion', async (req, res) => {
+  const rango = rangoDashboardSchema.parse(req.query);
+  const evolucion = await dashboardService.obtenerEvolucionDePlato(
+    sesionDe(req).id,
+    idPublicacionSchema.parse(req.params.publicacionId),
+    rango,
+  );
+  res.json(evolucion);
 });

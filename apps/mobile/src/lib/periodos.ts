@@ -1,9 +1,11 @@
 import {
   rangoDePeriodo,
+  type GranularidadEvolucion,
   type PeriodoDashboard,
   type PeriodoPredefinido,
   type RangoDashboard,
 } from '@foodhub/shared';
+import { TEXTOS_DASHBOARD } from './textos';
 
 /**
  * El período del dashboard, del lado de la interfaz (US-DASH-05).
@@ -201,4 +203,36 @@ export function semanasDelMes(mes: Date): (Date | null)[][] {
     semanas.push(celdas.slice(inicio, inicio + 7));
   }
   return semanas;
+}
+
+const formatoMesCorto = new Intl.DateTimeFormat(LOCALE, { month: 'short' });
+
+/**
+ * Rótulo del eje de un cubo de la evolución: "27/10" para un día o para la
+ * semana que arranca ese lunes, "oct" para un mes.
+ *
+ * La semana se rotula con su lunes aunque el período empiece a mitad de semana:
+ * es la fecha de corte del cubo, y la misma con la que la agrupa la API.
+ */
+export function rotuloDeCubo(
+  inicio: Date,
+  granularidad: GranularidadEvolucion,
+): string {
+  if (granularidad === 'MES') return sinPunto(formatoMesCorto.format(inicio));
+  return `${String(inicio.getDate())}/${String(inicio.getMonth() + 1)}`;
+}
+
+/** Rótulo largo de un cubo, para el lector de pantalla. */
+export function rotuloAccesibleDeCubo(
+  inicio: Date,
+  granularidad: GranularidadEvolucion,
+): string {
+  switch (granularidad) {
+    case 'DIA':
+      return describirFecha(inicio);
+    case 'SEMANA':
+      return TEXTOS_DASHBOARD.semanaDel(describirFecha(inicio));
+    case 'MES':
+      return describirMes(inicio);
+  }
 }

@@ -3,12 +3,14 @@ import {
   detalleDeDiasDeSemana,
   detalleDeFranjasHorarias,
   ESTADOS_DISTRIBUCION,
+  granularidadDeEvolucion,
   MENSAJES_DASHBOARD,
   PERIODO_POR_DEFECTO,
   porcentajesDeDistribucion,
   porcentajesQueSumanCien,
   rangoDashboardSchema,
   rangoDePeriodo,
+  serieDeEvolucion,
   type DistribucionPedidos,
 } from '@foodhub/shared';
 
@@ -295,5 +297,87 @@ describe('metricas de demanda ampliadas', () => {
     ).toEqual(['CENA']);
     expect(franjas[0]?.etiqueta).toBe('Mañana');
     expect(franjas[0]?.horario).toBe('07:00 a 11:00');
+  });
+});
+
+describe('granularidadDeEvolucion', () => {
+  const ahora = new Date(2026, 9, 27, 15, 30);
+
+  it('agrupa por día "Esta semana" y "Este mes"', () => {
+    const semana = rangoDePeriodo('SEMANA', ahora);
+    const mes = rangoDePeriodo('MES', ahora);
+
+    expect(granularidadDeEvolucion(semana.desde, semana.hasta)).toBe('DIA');
+    expect(granularidadDeEvolucion(mes.desde, mes.hasta)).toBe('DIA');
+  });
+
+  it('agrupa por semana "Últimos 3 meses" y por mes "Este año"', () => {
+    const trimestre = rangoDePeriodo('TRIMESTRE', ahora);
+    const anio = rangoDePeriodo('ANIO', ahora);
+
+    expect(granularidadDeEvolucion(trimestre.desde, trimestre.hasta)).toBe(
+      'SEMANA',
+    );
+    expect(granularidadDeEvolucion(anio.desde, anio.hasta)).toBe('MES');
+  });
+
+  it('un mes personalizado de 31 días completos sigue siendo diario', () => {
+    const desde = new Date(2026, 0, 1);
+    const hasta = new Date(2026, 0, 31, 23, 59, 59, 999);
+
+    expect(granularidadDeEvolucion(desde, hasta)).toBe('DIA');
+  });
+});
+
+describe('serieDeEvolucion', () => {
+  it('completa con cero los días sin pedidos y termina hoy', () => {
+    const desde = new Date(2026, 9, 26); // lunes
+    const hasta = new Date(2026, 9, 28, 10, 0); // miércoles
+
+    const serie = serieDeEvolucion(
+      { granularidad: 'DIA', puntos: [{ inicio: '2026-10-27', cantidad: 4 }] },
+      desde,
+      hasta,
+    );
+
+    expect(serie.map((p) => [p.clave, p.cantidad])).toEqual([
+      ['2026-10-26', 0],
+      ['2026-10-27', 4],
+      ['2026-10-28', 0],
+    ]);
+  });
+
+  it('las semanas arrancan el lunes, aunque el rango empiece otro día', () => {
+    const desde = new Date(2026, 6, 29); // miércoles 29/07
+    const hasta = new Date(2026, 7, 12, 9, 0); // miércoles 12/08
+
+    const serie = serieDeEvolucion(
+      {
+        granularidad: 'SEMANA',
+        puntos: [{ inicio: '2026-08-03', cantidad: 2 }],
+      },
+      desde,
+      hasta,
+    );
+
+    expect(serie.map((p) => [p.clave, p.cantidad])).toEqual([
+      ['2026-07-27', 0],
+      ['2026-08-03', 2],
+      ['2026-08-10', 0],
+    ]);
+  });
+
+  it('agrupa por mes desde enero hasta el mes en curso', () => {
+    const serie = serieDeEvolucion(
+      { granularidad: 'MES', puntos: [{ inicio: '2026-02-01', cantidad: 7 }] },
+      new Date(2026, 0, 1),
+      new Date(2026, 2, 15),
+    );
+
+    expect(serie.map((p) => [p.clave, p.cantidad])).toEqual([
+      ['2026-01-01', 0],
+      ['2026-02-01', 7],
+      ['2026-03-01', 0],
+    ]);
   });
 });

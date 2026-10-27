@@ -8,10 +8,12 @@ import {
   MENSAJES_DASHBOARD,
   PERIODO_POR_DEFECTO,
   porcentajesDeDistribucion,
+  serieDeEvolucion,
   type ActividadCocinero,
   type ClienteRecurrente,
   type DiaDeSemanaConteo,
   type DistribucionPedidos,
+  type EvolucionPedidos,
   type FranjaHorariaConteo,
   type PlatoMasPedido,
   type ResumenActividad,
@@ -42,6 +44,7 @@ import { ETIQUETA_DE_PERIODO } from './estados';
 import { FranjasHorarias } from './FranjasHorarias';
 import { GraficoDeBarrasSemanal } from './GraficoDeBarrasSemanal';
 import { GraficoDeDona } from './GraficoDeDona';
+import { GraficoDeEvolucion } from './GraficoDeEvolucion';
 import {
   FilaDeCliente,
   FilaDeDistribucion,
@@ -137,6 +140,7 @@ export function MiActividad() {
       ) : (
         <Contenido
           actividad={consulta.data}
+          seleccion={seleccion}
           rankingCompleto={rankingCompleto}
           onVerTodosLosPlatos={() => {
             setRankingCompleto(true);
@@ -160,10 +164,12 @@ export function MiActividad() {
 /** Las secciones del dashboard, combinando métricas clave y operativas. */
 function Contenido({
   actividad,
+  seleccion,
   rankingCompleto,
   onVerTodosLosPlatos,
 }: {
   actividad: ActividadCocinero;
+  seleccion: SeleccionDePeriodo;
   rankingCompleto: boolean;
   onVerTodosLosPlatos: () => void;
 }) {
@@ -179,11 +185,16 @@ function Contenido({
         cerrados={actividad.distribucion.total}
         total={actividad.resumen.pedidosTotales}
       />
+      <EvolucionDePedidos
+        evolucion={actividad.evolucionPedidos}
+        seleccion={seleccion}
+      />
       <PedidosPorDiaSemana conteos={actividad.pedidosPorDiaSemana} />
       <RankingDePlatos
         completo={rankingCompleto}
         onVerTodos={onVerTodosLosPlatos}
         platos={actividad.platosMasPedidos}
+        seleccion={seleccion}
       />
       <HorariosDeDemanda conteos={actividad.franjasHorarias} />
       <ClientesRecurrentes clientes={actividad.clientesRecurrentes} />
@@ -311,15 +322,64 @@ function PedidosPorDiaSemana({ conteos }: { conteos: DiaDeSemanaConteo[] }) {
   );
 }
 
-/** US-DASH-02 — El ranking, cortado en cinco hasta que se toca "Ver todos". */
+/**
+ * Evolución de los pedidos del período (corrección del 20/10/2026).
+ *
+ * La escala la decide el largo del período —día, semana o mes— y la API la
+ * informa en `granularidad`; `serieDeEvolucion` completa los cubos sin pedidos
+ * con las mismas fechas locales que usó la API para agrupar. Mismo universo
+ * que la tarjeta de pedidos totales: todos los estados.
+ */
+function EvolucionDePedidos({
+  evolucion,
+  seleccion,
+}: {
+  evolucion: EvolucionPedidos;
+  seleccion: SeleccionDePeriodo;
+}) {
+  const serie = serieDeEvolucion(evolucion, seleccion.desde, seleccion.hasta);
+  const tienePedidos = serie.some((punto) => punto.cantidad > 0);
+
+  return (
+    <SeccionDelDashboard
+      descripcion={MENSAJES_DASHBOARD.descripcionTodosLosPedidos}
+      titulo={MENSAJES_DASHBOARD.evolucionDePedidos}
+    >
+      {!tienePedidos ? (
+        <SeccionVacia
+          icono={<IconoBolsa size={24} className="text-primary" />}
+          mensaje={MENSAJES_DASHBOARD.sinEvolucionDePedidos}
+        />
+      ) : (
+        <View className="overflow-hidden rounded-md border border-border bg-surface p-3">
+          <GraficoDeEvolucion
+            granularidad={evolucion.granularidad}
+            serie={serie}
+          />
+        </View>
+      )}
+    </SeccionDelDashboard>
+  );
+}
+
+/**
+ * US-DASH-02 — El ranking, cortado en cinco hasta que se toca "Ver todos".
+ *
+ * Cada fila abre la evolución de su plato con el MISMO período (decisión del
+ * equipo del 27/10/2026): las fechas viajan en la ruta para que la otra
+ * pantalla no recalcule "Este mes" y cuente un rango distinto del que dice
+ * esta.
+ */
 function RankingDePlatos({
   platos,
   completo,
   onVerTodos,
+  seleccion,
 }: {
   platos: PlatoMasPedido[];
   completo: boolean;
   onVerTodos: () => void;
+  seleccion: SeleccionDePeriodo;
 }) {
   const visibles = completo ? platos : platos.slice(0, PLATOS_VISIBLES);
 
@@ -332,7 +392,11 @@ function RankingDePlatos({
           </BotonDeTexto>
         ) : undefined
       }
-      descripcion={MENSAJES_DASHBOARD.descripcionPlatosMasPedidos}
+      descripcion={
+        visibles.length === 0
+          ? MENSAJES_DASHBOARD.descripcionPlatosMasPedidos
+          : `${MENSAJES_DASHBOARD.descripcionPlatosMasPedidos} ${MENSAJES_DASHBOARD.tocarPlatoParaEvolucion}`
+      }
       titulo={MENSAJES_DASHBOARD.platosMasPedidos}
     >
       {visibles.length === 0 ? (
@@ -347,6 +411,17 @@ function RankingDePlatos({
               key={plato.publicacionId}
               plato={plato}
               puesto={indice + 1}
+              onPress={() => {
+                router.push({
+                  pathname: '/actividad/platos/[id]',
+                  params: {
+                    id: plato.publicacionId,
+                    periodo: seleccion.periodo,
+                    desde: seleccion.desde.toISOString(),
+                    hasta: seleccion.hasta.toISOString(),
+                  },
+                });
+              }}
             />
           ))}
         </View>
@@ -475,6 +550,8 @@ function EsqueletoDelDashboard() {
         <Esqueleto className="h-20 flex-1 rounded-md" />
       </View>
       <Esqueleto className="mt-3 h-16 rounded-md" />
+      <Esqueleto className="mt-6 h-5 w-40" />
+      <Esqueleto className="mt-3 h-44 rounded-md" />
       <Esqueleto className="mt-6 h-5 w-40" />
       <Esqueleto className="mt-3 h-52 rounded-md" />
       <Esqueleto className="mt-6 h-5 w-44" />

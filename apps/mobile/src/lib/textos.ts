@@ -953,6 +953,15 @@ export const TEXTOS_DASHBOARD = {
   /** [PROPIO] Cantidad de pedidos en singular o plural, para los badges. */
   pedidosCantidad: (cantidad: number) =>
     `${String(cantidad)} ${cantidad === 1 ? 'pedido' : 'pedidos'}`,
+
+  /** [PROPIO] Etiqueta accesible del gráfico de evolución (corrección 20/10). */
+  evolucionAccesible: 'Gráfico de evolución de pedidos',
+
+  /** [PROPIO] Rótulo accesible de un cubo semanal de la evolución. */
+  semanaDel: (fecha: string) => `Semana del ${fecha}`,
+
+  /** [PROPIO] Etiqueta accesible de una fila del ranking: abre su evolución. */
+  verEvolucionDelPlato: (nombre: string) => `Ver la evolución de ${nombre}`,
 } as const;
 
 /**
