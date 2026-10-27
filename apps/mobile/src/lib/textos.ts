@@ -960,6 +960,13 @@ export const TEXTOS_DASHBOARD = {
   /** [PROPIO] Rótulo accesible de un cubo semanal de la evolución. */
   semanaDel: (fecha: string) => `Semana del ${fecha}`,
 
+  /** [PROPIO] Detalle del cubo seleccionado al pie del gráfico de evolución. */
+  detalleDeCuboEvolucion: (fecha: string, cantidad: number) =>
+    `${fecha} (${String(cantidad)} ${cantidad === 1 ? 'pedido' : 'pedidos'})`,
+
+  /** [PROPIO] Ayuda bajo el gráfico de evolución cuando hay más de una barra. */
+  tocarBarraParaDetalle: 'Tocá una barra para ver la fecha exacta.',
+
   /** [PROPIO] Etiqueta accesible de una fila del ranking: abre su evolución. */
   verEvolucionDelPlato: (nombre: string) => `Ver la evolución de ${nombre}`,
 } as const;
