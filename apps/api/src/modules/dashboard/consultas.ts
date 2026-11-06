@@ -1,5 +1,5 @@
 import { eq, gte, lte, type SQL } from 'drizzle-orm';
-import { pedido } from '@foodhub/db';
+import { itemPedido, pedido } from '@foodhub/db';
 import {
   DIAS_DE_LA_SEMANA,
   FRANJAS_HORARIAS,
@@ -9,6 +9,7 @@ import {
   type EstadoPedido,
   type FranjaHoraria,
   type FranjaHorariaConteo,
+  type GranularidadEvolucion,
   type OrigenTransicion,
   type PlatoMasPedido,
   type RangoDashboard,
@@ -269,4 +270,32 @@ export function aFranjasHorarias(filas: FilaFranja[]): FranjaHorariaConteo[] {
     franja: franja.franja,
     cantidad: cantidades.get(franja.franja) ?? 0,
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Evolucion en el tiempo (correccion del 20/10/2026)
+// ---------------------------------------------------------------------------
+
+/** Unidad de `date_trunc` para cada granularidad. `week` arranca el lunes. */
+export const UNIDAD_DE_TRUNCADO: Record<GranularidadEvolucion, string> = {
+  DIA: 'day',
+  SEMANA: 'week',
+  MES: 'month',
+};
+
+/**
+ * Los pedidos de un cocinero que incluyen un plato, completados y dentro del
+ * periodo. Es el universo de la evolucion de un plato: el mismo del ranking de
+ * US-DASH-02 desde el que se entra, acotado a una publicacion.
+ */
+export function completadosDelPlato(
+  cocineroId: string,
+  publicacionId: string,
+  rango: RangoDashboard,
+): SQL {
+  return todas([
+    enElPeriodo(cocineroId, rango),
+    eq(pedido.estadoPedidoActual, 'COMPLETADO'),
+    eq(itemPedido.publicacionId, publicacionId),
+  ]);
 }

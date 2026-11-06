@@ -12,6 +12,7 @@ import {
   type AutorResena,
   type PlatoResenado,
   type ResenaPublica,
+  type ResolucionAnterior,
   type RespuestaCocinero,
   type SocialDeResena,
   type TipoReaccion,
@@ -358,4 +359,80 @@ export function aResenaPublica(
     social: aSocialDeResena(fila, contexto),
     esMia: contexto.esMia,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Historial de moderacion (correccion del 20/10/2026)
+// ---------------------------------------------------------------------------
+
+/** Un reporte ya resuelto, tal como sale de la base. */
+export interface FilaReporteResuelto {
+  resenaId: string;
+  decision: 'APROBADO' | 'RECHAZADO';
+  adminId: string | null;
+  adminNombre: string | null;
+  fechaResolucion: Date;
+  reportanteNombre: string;
+  motivos: string[];
+  detalle: string | null;
+  fechaReporte: Date;
+}
+
+/**
+ * Arma las rondas de moderacion de cada resena a partir de sus reportes
+ * resueltos.
+ *
+ * LA RONDA SE RECONOCE POR (decision, administrador, fecha de resolucion).
+ * `resolverReportesDeResena` cierra todos los pendientes en un solo UPDATE con
+ * el mismo `new Date()`, asi que las denuncias de una misma decision comparten
+ * exactamente esos tres valores. No hay columna de ronda porque no hace falta:
+ * agregarla obligaria a migrar para guardar algo que ya se deduce.
+ *
+ * Las rondas salen de la mas reciente a la mas vieja —lo ultimo que se decidio
+ * es lo que el administrador necesita ver primero— y dentro de cada una las
+ * denuncias van en el orden en que llegaron.
+ */
+export function agruparHistorial(
+  filas: readonly FilaReporteResuelto[],
+): Map<string, ResolucionAnterior[]> {
+  const rondas = new Map<string, Map<string, ResolucionAnterior>>();
+
+  for (const fila of filas) {
+    const fechaResolucion = fila.fechaResolucion.toISOString();
+    const clave = `${fila.decision}|${fila.adminId ?? ''}|${fechaResolucion}`;
+
+    const deLaResena =
+      rondas.get(fila.resenaId) ?? new Map<string, ResolucionAnterior>();
+    rondas.set(fila.resenaId, deLaResena);
+
+    const ronda: ResolucionAnterior = deLaResena.get(clave) ?? {
+      decision: fila.decision,
+      adminNombre: fila.adminNombre,
+      fechaResolucion,
+      denuncias: [],
+    };
+    deLaResena.set(clave, ronda);
+
+    ronda.denuncias.push({
+      reportanteNombre: fila.reportanteNombre,
+      motivos: fila.motivos,
+      detalle: fila.detalle,
+      fechaReporte: fila.fechaReporte.toISOString(),
+    });
+  }
+
+  const resultado = new Map<string, ResolucionAnterior[]>();
+  for (const [resenaId, deLaResena] of rondas) {
+    const ordenadas = [...deLaResena.values()].sort((a, b) =>
+      b.fechaResolucion.localeCompare(a.fechaResolucion),
+    );
+    for (const ronda of ordenadas) {
+      ronda.denuncias.sort((a, b) =>
+        a.fechaReporte.localeCompare(b.fechaReporte),
+      );
+    }
+    resultado.set(resenaId, ordenadas);
+  }
+
+  return resultado;
 }

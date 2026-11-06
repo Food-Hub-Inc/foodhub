@@ -482,6 +482,171 @@ export function detalleDeFranjasHorarias(
   }));
 }
 
+// ---------------------------------------------------------------------------
+// Evolucion de pedidos en el tiempo (correccion del 20/10/2026)
+// ---------------------------------------------------------------------------
+
+/**
+ * Cada cuanto se agrupa una serie de evolucion.
+ *
+ * Los valores son los que entiende `date_trunc` de Postgres en minusculas; el
+ * mapeo vive en la API, no aca.
+ */
+export const GRANULARIDAD_EVOLUCION = ['DIA', 'SEMANA', 'MES'] as const;
+export type GranularidadEvolucion = (typeof GRANULARIDAD_EVOLUCION)[number];
+
+const MS_POR_DIA = 86_400_000;
+
+/**
+ * Granularidad que corresponde a un rango. Funcion PURA: la usan la API para
+ * agrupar y la app para completar la serie, y tienen que coincidir.
+ *
+ * EL PERIODO DE US-DASH-05 DECIDE TAMBIEN LA ESCALA DEL GRAFICO, en lugar de un
+ * selector propio (decision del equipo del 27/10/2026):
+ *
+ *   hasta 31 dias    un punto por dia     "Esta semana" y "Este mes"
+ *   hasta 124 dias   un punto por semana  "Ultimos 3 meses" (13 o 14 barras)
+ *   mas              un punto por mes     "Este ano"
+ *
+ * Los cortes no son los de las opciones sino de la duracion, para que un rango
+ * personalizado caiga en la escala que le corresponde por su largo.
+ */
+export function granularidadDeEvolucion(
+  desde: Date | string,
+  hasta: Date | string,
+): GranularidadEvolucion {
+  const dias =
+    (new Date(hasta).getTime() - new Date(desde).getTime()) / MS_POR_DIA;
+
+  if (dias <= 31) return 'DIA';
+  if (dias <= 124) return 'SEMANA';
+  return 'MES';
+}
+
+/**
+ * Un cubo de la serie. `inicio` es la fecha LOCAL en que empieza (YYYY-MM-DD):
+ * el dia, el lunes de la semana o el dia 1 del mes, en la zona del cocinero.
+ *
+ * La API manda solo los cubos con pedidos; los vacios los completa
+ * `serieDeEvolucion`, igual que los dias de la semana sin pedidos.
+ */
+export const puntoEvolucionSchema = z.object({
+  inicio: z.iso.date(),
+  cantidad: z.number().int().min(0),
+});
+
+export const evolucionPedidosSchema = z.object({
+  granularidad: z.enum(GRANULARIDAD_EVOLUCION),
+  puntos: z.array(puntoEvolucionSchema),
+});
+
+/**
+ * Evolucion de un plato en el periodo - PAN-DASH-01, al tocar un plato del
+ * ranking de US-DASH-02.
+ *
+ * CUENTA PEDIDOS COMPLETADOS QUE INCLUYEN EL PLATO, no unidades (decision del
+ * equipo del 27/10/2026): la pregunta es "cuantos pedidos de este plato tuve",
+ * y un pedido de tres porciones sigue siendo un pedido. El universo -solo
+ * completados- es el mismo que el del ranking desde el que se entra.
+ */
+export const evolucionPlatoSchema = z.object({
+  publicacionId: z.uuid(),
+  nombre: z.string(),
+  eliminado: z.boolean(),
+  totalPedidos: z.number().int().min(0),
+  evolucion: evolucionPedidosSchema,
+});
+
+/** Un cubo listo para dibujar, con los vacios ya completados. */
+export interface PuntoDeSerie {
+  inicio: Date;
+  /** Clave YYYY-MM-DD, la misma que manda la API. */
+  clave: string;
+  cantidad: number;
+}
+
+function claveLocal(fecha: Date): string {
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  return `${String(fecha.getFullYear())}-${mes}-${dia}`;
+}
+
+/** Inicio LOCAL del cubo que contiene `fecha`. La semana arranca el lunes. */
+function inicioDelCubo(fecha: Date, granularidad: GranularidadEvolucion): Date {
+  const dia = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+
+  switch (granularidad) {
+    case 'DIA':
+      return dia;
+    case 'SEMANA':
+      // Mismo corrimiento que `rangoDePeriodo`: getDay() 0 es domingo.
+      dia.setDate(dia.getDate() - ((dia.getDay() + 6) % 7));
+      return dia;
+    case 'MES':
+      return new Date(fecha.getFullYear(), fecha.getMonth(), 1);
+  }
+}
+
+function siguienteCubo(
+  inicio: Date,
+  granularidad: GranularidadEvolucion,
+): Date {
+  switch (granularidad) {
+    case 'DIA':
+      return new Date(
+        inicio.getFullYear(),
+        inicio.getMonth(),
+        inicio.getDate() + 1,
+      );
+    case 'SEMANA':
+      return new Date(
+        inicio.getFullYear(),
+        inicio.getMonth(),
+        inicio.getDate() + 7,
+      );
+    case 'MES':
+      return new Date(inicio.getFullYear(), inicio.getMonth() + 1, 1);
+  }
+}
+
+/**
+ * La serie completa entre `desde` y `hasta`, con cero en los cubos sin
+ * pedidos. Funcion PURA que usa la app, en su zona LOCAL, que es la misma que
+ * la API uso para agrupar (`rango.zonaHoraria`).
+ *
+ * EL EJE NO SALTA LOS VACIOS. Un dia sin pedidos es un dato -es lo que muestra
+ * la evolucion-, y sacarlo juntaria dos barras que no son consecutivas.
+ *
+ * Los dias de "Esta semana" que todavia no llegaron NO se dibujan: la serie
+ * termina en `hasta`, que es ahora. A diferencia del grafico por dia de la
+ * semana, aca el eje es el tiempo y un dia futuro en cero se leeria como un
+ * dia sin ventas.
+ *
+ * Construye las fechas con (anio, mes, dia) y no sumando milisegundos, para que
+ * un cambio de horario no corra un cubo al dia anterior.
+ */
+export function serieDeEvolucion(
+  evolucion: EvolucionPedidos,
+  desde: Date,
+  hasta: Date,
+): PuntoDeSerie[] {
+  const cantidades = new Map(
+    evolucion.puntos.map((punto) => [punto.inicio, punto.cantidad]),
+  );
+  const serie: PuntoDeSerie[] = [];
+
+  for (
+    let inicio = inicioDelCubo(desde, evolucion.granularidad);
+    inicio.getTime() <= hasta.getTime();
+    inicio = siguienteCubo(inicio, evolucion.granularidad)
+  ) {
+    const clave = claveLocal(inicio);
+    serie.push({ inicio, clave, cantidad: cantidades.get(clave) ?? 0 });
+  }
+
+  return serie;
+}
+
 /**
  * Todo el dashboard en una respuesta.
  *
@@ -511,6 +676,12 @@ export const actividadCocineroSchema = z.object({
   pedidosAbiertos: z.number().int().min(0),
   pedidosPorDiaSemana: z.array(diaDeSemanaConteoSchema).length(7),
   franjasHorarias: z.array(franjaHorariaConteoSchema).length(6),
+  /**
+   * Pedidos del periodo dia a dia (o por semana, o por mes, segun el largo del
+   * rango). Mismo universo que `resumen.pedidosTotales`: la suma de los cubos
+   * coincide con esa tarjeta.
+   */
+  evolucionPedidos: evolucionPedidosSchema,
 });
 
 export type RangoDashboard = z.infer<typeof rangoDashboardSchema>;
@@ -523,3 +694,6 @@ export type FranjaHorariaConteo = z.infer<typeof franjaHorariaConteoSchema>;
 export type DiaDeSemanaDetalle = z.infer<typeof diaDeSemanaDetalleSchema>;
 export type FranjaHorariaDetalle = z.infer<typeof franjaHorariaDetalleSchema>;
 export type ActividadCocinero = z.infer<typeof actividadCocineroSchema>;
+export type PuntoEvolucion = z.infer<typeof puntoEvolucionSchema>;
+export type EvolucionPedidos = z.infer<typeof evolucionPedidosSchema>;
+export type EvolucionPlato = z.infer<typeof evolucionPlatoSchema>;

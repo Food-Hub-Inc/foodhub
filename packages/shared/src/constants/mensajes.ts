@@ -1767,6 +1767,37 @@ export const MENSAJES_DASHBOARD = {
 
   /** PROPIO - La zona horaria IANA del rango no es reconocida por `Intl`. */
   zonaHorariaInvalida: 'La zona horaria no es válida.',
+
+  // --- Evolucion en el tiempo (correccion del 20/10/2026) --------------------
+
+  /** PROPIO - Seccion de evolucion de los pedidos del periodo. */
+  evolucionDePedidos: 'Evolución de pedidos',
+
+  /** PROPIO - Estado vacio de la evolucion de pedidos. */
+  sinEvolucionDePedidos:
+    'No tenés pedidos en el período seleccionado para mostrar su evolución.',
+
+  /** PROPIO - Leyenda del ranking: anuncia que cada plato abre su evolucion. */
+  tocarPlatoParaEvolucion: 'Tocá un plato para ver su evolución.',
+
+  /** PROPIO - Titulo de la pantalla de evolucion de un plato. */
+  evolucionDelPlato: 'Evolución del plato',
+
+  /** PROPIO - Leyenda de la evolucion de un plato. */
+  descripcionEvolucionDelPlato: 'Pedidos completados que incluyen este plato.',
+
+  /** PROPIO - Total de pedidos del plato en el periodo. */
+  pedidosDelPlatoEnElPeriodo: (cantidad: number) =>
+    cantidad === 1
+      ? '1 pedido en el período'
+      : `${String(cantidad)} pedidos en el período`,
+
+  /** PROPIO - Estado vacio de la evolucion de un plato. */
+  sinPedidosDelPlato:
+    'Este plato no tiene pedidos completados en el período seleccionado.',
+
+  /** PROPIO - El plato no existe o no es del cocinero (404). */
+  platoNoEncontrado: 'No encontramos este plato.',
 } as const;
 
 /**

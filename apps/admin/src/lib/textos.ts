@@ -647,9 +647,26 @@ export const TEXTOS_MODERACION = {
     'La reseña deja de verse en el perfil del cocinero y en el detalle del plato, y sale de los dos promedios.',
   confirmarMantenerTitulo: '¿Dejar la reseña visible?',
   confirmarMantener:
-    'La reseña se mantiene publicada y los reportes quedan resueltos. No va a volver a aparecer en esta bandeja.',
+    'La reseña se mantiene publicada y los reportes quedan resueltos. Si alguien vuelve a reportarla, reaparece en esta bandeja con esta decisión en su historial.',
   confirmar: 'Confirmar',
   cancelar: 'Cancelar',
+
+  /**
+   * [PROPIO] Historial de moderación (corrección del 20/10/2026). Una reseña
+   * que vuelve a la bandeja muestra qué se decidió antes, quién y cuándo.
+   */
+  reportadaNuevamente: 'Reportada nuevamente',
+  historial: 'Historial de moderación',
+  decisionAnterior: {
+    APROBADO: 'Ocultada',
+    RECHAZADO: 'Dejada visible',
+  },
+  resueltaPor: (admin: string | null, fecha: string) =>
+    `por ${admin ?? 'un administrador dado de baja'} el ${fecha}`,
+  denunciasDeLaRonda: (cantidad: number) =>
+    cantidad === 1 ? '1 denuncia' : `${String(cantidad)} denuncias`,
+  reportadaPor: (reportante: string, fecha: string) =>
+    `${reportante} · ${fecha}`,
 } as const;
 
 /**

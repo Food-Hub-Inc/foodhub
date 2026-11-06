@@ -1,4 +1,8 @@
-import type { ActividadCocinero, RangoDashboard } from '@foodhub/shared';
+import type {
+  ActividadCocinero,
+  EvolucionPlato,
+  RangoDashboard,
+} from '@foodhub/shared';
 import { api } from '../lib/api';
 
 /**
@@ -20,5 +24,19 @@ export function obtenerActividad(
   const parametros = new URLSearchParams(rango);
   return api.obtener<ActividadCocinero>(
     `/dashboard/actividad?${parametros.toString()}`,
+  );
+}
+
+/**
+ * Evolución de un plato en el período (corrección del 20/10/2026). El id es de
+ * una publicación; la API solo la encuentra si es del cocinero de la sesión.
+ */
+export function obtenerEvolucionDePlato(
+  publicacionId: string,
+  rango: RangoDashboard,
+): Promise<EvolucionPlato> {
+  const parametros = new URLSearchParams(rango);
+  return api.obtener<EvolucionPlato>(
+    `/dashboard/platos/${encodeURIComponent(publicacionId)}/evolucion?${parametros.toString()}`,
   );
 }

@@ -9,6 +9,7 @@ import {
   gte,
   lte,
   sql,
+  type SQL,
 } from 'drizzle-orm';
 import {
   categoria,
@@ -18,8 +19,15 @@ import {
   resena,
   usuario,
 } from '@foodhub/db';
-import type { ActividadCocinero, RangoDashboard } from '@foodhub/shared';
+import {
+  granularidadDeEvolucion,
+  type ActividadCocinero,
+  type EvolucionPedidos,
+  type EvolucionPlato,
+  type RangoDashboard,
+} from '@foodhub/shared';
 import { db } from '../../lib/db.js';
+import { noEncontrado } from '../../middleware/error.middleware.js';
 import { todas } from '../pedidos/consultas.js';
 import {
   aClienteRecurrente,
@@ -29,7 +37,9 @@ import {
   aPedidosPorDiaSemana,
   aPlatoMasPedido,
   aResumen,
+  completadosDelPlato,
   enElPeriodo,
+  UNIDAD_DE_TRUNCADO,
   type FilaClienteRecurrente,
   type FilaDiaSemana,
   type FilaDistribucion,
@@ -91,6 +101,7 @@ export async function obtenerActividad(
     estadoDeLosPedidos,
     porDiaSemana,
     porFranja,
+    evolucionPedidos,
   ] = await Promise.all([
     contarPedidos(delPeriodo),
     sumarVentas(completadosDelPeriodo),
@@ -100,6 +111,7 @@ export async function obtenerActividad(
     distribuirPorEstado(delPeriodo),
     contarPorDiaSemana(delPeriodo, rango.zonaHoraria),
     contarPorFranjaHoraria(delPeriodo, rango.zonaHoraria),
+    contarPorCubo(delPeriodo, rango),
   ]);
 
   return {
@@ -115,6 +127,93 @@ export async function obtenerActividad(
     pedidosAbiertos: estadoDeLosPedidos.abiertos,
     pedidosPorDiaSemana: aPedidosPorDiaSemana(porDiaSemana),
     franjasHorarias: aFranjasHorarias(porFranja),
+    evolucionPedidos,
+  };
+}
+
+/**
+ * Evolución de un plato del cocinero en el período (corrección del 20/10/2026).
+ *
+ * LA PUBLICACIÓN SE BUSCA CON EL COCINERO DE LA SESIÓN EN EL `where`. El id
+ * viaja en la URL, así que sin esa condición cualquier cocinero podría medir
+ * las ventas de un plato ajeno cambiando el parámetro. Un plato de otro
+ * responde 404 igual que uno inexistente: distinguirlos confirmaría que existe.
+ *
+ * Un plato dado de baja se sigue pudiendo consultar, igual que sigue en el
+ * ranking: sus pedidos del período existieron.
+ */
+export async function obtenerEvolucionDePlato(
+  cocineroId: string,
+  publicacionId: string,
+  rango: RangoDashboard,
+): Promise<EvolucionPlato> {
+  const [plato] = await db
+    .select({ nombre: publicacion.nombre, activo: publicacion.activo })
+    .from(publicacion)
+    .where(
+      and(
+        eq(publicacion.id, publicacionId),
+        eq(publicacion.cocineroId, cocineroId),
+      ),
+    )
+    .limit(1);
+
+  if (!plato) throw noEncontrado('el plato');
+
+  const evolucion = await contarPorCubo(
+    completadosDelPlato(cocineroId, publicacionId, rango),
+    rango,
+    { conItems: true },
+  );
+
+  return {
+    publicacionId,
+    nombre: plato.nombre,
+    eliminado: !plato.activo,
+    totalPedidos: evolucion.puntos.reduce((suma, p) => suma + p.cantidad, 0),
+    evolucion,
+  };
+}
+
+/**
+ * Pedidos agrupados por día, semana o mes LOCAL del cocinero, según el largo
+ * del rango (`granularidadDeEvolucion`).
+ *
+ * `count(distinct pedido.id)` Y NO `count(*)`: con `conItems` el join con
+ * `item_pedido` repetiría un pedido por cada renglón, y aunque el filtro por
+ * publicación deja uno, el mismo plato puede figurar en dos renglones.
+ *
+ * Mismo cuidado con la zona que `contarPorDiaSemana`: la unidad y la zona
+ * viajan como parámetros y se agrupa por posición. Solo vuelven los cubos con
+ * pedidos; los vacíos los completa la app con `serieDeEvolucion`.
+ */
+async function contarPorCubo(
+  condicion: SQL,
+  rango: RangoDashboard,
+  opciones: { conItems?: boolean } = {},
+): Promise<EvolucionPedidos> {
+  const granularidad = granularidadDeEvolucion(rango.desde, rango.hasta);
+  const inicio = sql<string>`to_char(date_trunc(${UNIDAD_DE_TRUNCADO[granularidad]}, ${pedido.fechaCreacion} at time zone ${rango.zonaHoraria}), 'YYYY-MM-DD')`;
+
+  const base = db
+    .select({ inicio, cantidad: pedidosDistintos })
+    .from(pedido)
+    .$dynamic();
+  const consulta = opciones.conItems
+    ? base.innerJoin(itemPedido, eq(itemPedido.pedidoId, pedido.id))
+    : base;
+
+  const filas = await consulta
+    .where(condicion)
+    .groupBy(sql`1`)
+    .orderBy(sql`1`);
+
+  return {
+    granularidad,
+    puntos: filas.map((fila) => ({
+      inicio: fila.inicio,
+      cantidad: Number(fila.cantidad),
+    })),
   };
 }
 

@@ -1,15 +1,26 @@
-import { count, countDistinct, desc, eq, inArray, min, sql } from 'drizzle-orm';
+import {
+  asc,
+  count,
+  countDistinct,
+  desc,
+  eq,
+  inArray,
+  min,
+  ne,
+  sql,
+} from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { publicacion, reporteResena, resena, usuario } from '@foodhub/db';
 import {
   RESENAS_POR_PAGINA,
   type PaginaReportes,
   type ReporteModeracion,
+  type ResolucionAnterior,
 } from '@foodhub/shared';
 import { db } from '../../lib/db.js';
 import { noEncontrado } from '../../middleware/error.middleware.js';
 import { notificarResolucionDeReporte } from '../notificaciones/disparadores.service.js';
-import { todas } from './consultas.js';
+import { agruparHistorial, todas } from './consultas.js';
 
 /**
  * Bandeja de moderación del administrador — US-RES-06 y RF086 (PAN-ADM-02).
@@ -77,7 +88,11 @@ export async function listarReportesPendientes(entrada: {
       .where(pendientes),
   ]);
 
-  const resenas = await contenidoDeResenas(agrupados.map((f) => f.resenaId));
+  const resenaIds = agrupados.map((f) => f.resenaId);
+  const [resenas, historiales] = await Promise.all([
+    contenidoDeResenas(resenaIds),
+    historialDeResenas(resenaIds),
+  ]);
 
   /**
    * Una reseña sin contenido se descarta en lugar de romper la bandeja. No
@@ -96,6 +111,7 @@ export async function listarReportesPendientes(entrada: {
         detalles: fila.detalles,
         fechaPrimerReporte: fila.fechaPrimerReporte.toISOString(),
         resena: contenido,
+        historial: historiales.get(fila.resenaId) ?? [],
       },
     ];
   });
@@ -175,6 +191,70 @@ async function contenidoDeResenas(
 }
 
 /**
+ * Corrección del 20/10/2026 - Las rondas de moderación anteriores de cada
+ * reseña de la página.
+ *
+ * ES LO QUE LE PERMITE AL ADMINISTRADOR NO DECIDIR A CIEGAS. Una reseña que
+ * otro administrador ya dejó visible y que vuelve a la bandeja con denuncias
+ * nuevas se modera distinto que una denunciada por primera vez: o el criterio
+ * anterior fue un error, o alguien insiste sin motivo.
+ *
+ * No hace falta migrar nada: cada reporte resuelto ya guarda quién lo resolvió,
+ * cuándo y cómo. Lo que faltaba era mostrarlo.
+ *
+ * El reportante va en `inner join` porque su FK es en cascada: un reporte sin
+ * reportante no existe. El administrador va en `left join` porque su FK es
+ * `set null`: la ronda tiene que seguir apareciendo aunque su cuenta no.
+ */
+async function historialDeResenas(
+  resenaIds: readonly string[],
+): Promise<Map<string, ResolucionAnterior[]>> {
+  if (resenaIds.length === 0) return new Map();
+
+  const reportante = alias(usuario, 'reportante');
+  const admin = alias(usuario, 'admin_resolutor');
+
+  const filas = await db
+    .select({
+      resenaId: reporteResena.resenaId,
+      estadoReporte: reporteResena.estadoReporte,
+      adminId: reporteResena.adminResolutorId,
+      adminNombre: sql<
+        string | null
+      >`${admin.nombre} || ' ' || ${admin.apellido}`,
+      fechaResolucion: reporteResena.fechaResolucion,
+      reportanteNombre: sql<string>`${reportante.nombre} || ' ' || ${reportante.apellido}`,
+      motivos: reporteResena.motivos,
+      detalle: reporteResena.detalleAdicional,
+      fechaReporte: reporteResena.fechaReporte,
+    })
+    .from(reporteResena)
+    .innerJoin(reportante, eq(reportante.id, reporteResena.usuarioReportanteId))
+    .leftJoin(admin, eq(admin.id, reporteResena.adminResolutorId))
+    .where(
+      todas([
+        inArray(reporteResena.resenaId, [...resenaIds]),
+        ne(reporteResena.estadoReporte, 'PENDIENTE'),
+      ]),
+    )
+    .orderBy(asc(reporteResena.fechaReporte));
+
+  /**
+   * El `where` ya excluye los PENDIENTE, pero el tipo de la columna no lo sabe:
+   * se estrecha acá. Un reporte resuelto siempre tiene fecha de resolución; si
+   * alguna fila vieja no la tuviera, no hay ronda a la cual asignarla y se
+   * descarta en lugar de inventarle una fecha.
+   */
+  return agruparHistorial(
+    filas.flatMap(({ estadoReporte, fechaResolucion, ...fila }) =>
+      estadoReporte === 'PENDIENTE' || fechaResolucion === null
+        ? []
+        : [{ ...fila, decision: estadoReporte, fechaResolucion }],
+    ),
+  );
+}
+
+/**
  * RF086 - Resuelve TODOS los reportes pendientes de una reseña, de una vez.
  *
  * LAS DOS RAMAS DEL REQUISITO:
@@ -187,7 +267,8 @@ async function contenidoDeResenas(
  *
  * En los dos casos los reportes quedan resueltos con el administrador y la
  * fecha, que es lo que impide que la misma denuncia vuelva a aparecer en la
- * bandeja mañana.
+ * bandeja mañana. Si después llegan denuncias nuevas, la reseña vuelve con
+ * esta resolución en su historial (`historialDeResenas`).
  *
  * Las dos ramas notifican (`notificarResolucionDeReporte`), pero solo a
  * partir de los reportes que ESTA resolución pasó de PENDIENTE a resueltos:
