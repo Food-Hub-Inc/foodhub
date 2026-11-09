@@ -4,12 +4,13 @@ import {
   desc,
   eq,
   ilike,
+  max,
   ne,
   or,
   sql,
   type SQL,
 } from 'drizzle-orm';
-import { cocinero, usuario } from '@foodhub/db';
+import { cocinero, usuario, versionTerminos } from '@foodhub/db';
 import {
   MENSAJES_USUARIO,
   type CambiarPasswordInput,
@@ -24,8 +25,10 @@ import {
 import { env } from '../../config/env.js';
 import { db } from '../../lib/db.js';
 import {
+  bloquearCuenta,
   conCompensacionDeCuenta,
   crearClienteAnonimo,
+  desbloquearCuenta,
   esCorreoYaRegistrado,
   revocarSesiones,
   supabaseAdmin,
@@ -33,6 +36,7 @@ import {
 import { AppError, noEncontrado } from '../../middleware/error.middleware.js';
 import { limpiarFotosDePerfilAnteriores } from '../almacenamiento/almacenamiento.service.js';
 import { registrarOperacion } from '../auditoria/auditoria.service.js';
+import { bloquearConversacionesPorBaja } from '../mensajeria/mensajeria.service.js';
 
 /**
  * Modulo de Gestion de Usuarios, Roles y Permisos (US-GURP-01 a US-GURP-09).
@@ -98,6 +102,29 @@ export function aPerfilUsuario(
   };
 }
 
+/**
+ * US-CFG-04 (RF058) - Si hay una versión de términos y/o de política de
+ * privacidad más nueva que la última que el usuario aceptó.
+ *
+ * Un solo checkbox acepta los dos documentos juntos (criterio de aceptación
+ * de US-CFG-04), así que alcanza con comparar `fecha_aceptacion_terminos`
+ * contra la publicación más reciente entre ambos tipos: no hace falta una
+ * columna de aceptación por documento.
+ */
+async function calcularDebeAceptarTerminos(
+  fechaAceptacionTerminos: Date | null,
+): Promise<boolean> {
+  const [fila] = await db
+    .select({ maxFecha: max(versionTerminos.fechaPublicacion) })
+    .from(versionTerminos)
+    .where(eq(versionTerminos.estadoVersionTerminos, 'VIGENTE'));
+
+  const ultimaPublicacion = fila?.maxFecha;
+  if (!ultimaPublicacion) return false; // todavia no se publico nada (bootstrap)
+  if (!fechaAceptacionTerminos) return true;
+  return fechaAceptacionTerminos < ultimaPublicacion;
+}
+
 /** US-GURP-01 y US-GURP-05 - Perfil completo, con los datos del cocinero si aplica. */
 export async function obtenerPerfil(usuarioId: string): Promise<PerfilUsuario> {
   const [fila] = await db
@@ -108,7 +135,28 @@ export async function obtenerPerfil(usuarioId: string): Promise<PerfilUsuario> {
     .limit(1);
 
   if (!fila) throw noEncontrado('el usuario');
-  return aPerfilUsuario(fila.usuario, fila.descripcionPublica);
+
+  const debeAceptarTerminos = await calcularDebeAceptarTerminos(
+    fila.usuario.fechaAceptacionTerminos,
+  );
+  return {
+    ...aPerfilUsuario(fila.usuario, fila.descripcionPublica),
+    debeAceptarTerminos,
+  };
+}
+
+/**
+ * US-CFG-04 (RF058) - Re-aceptación de los términos vigentes, sexto criterio
+ * de aceptación: el checkbox obligatorio de la app móvil al iniciar sesión
+ * después de una publicación nueva.
+ */
+export async function aceptarTerminosVigentes(
+  usuarioId: string,
+): Promise<void> {
+  await db
+    .update(usuario)
+    .set({ terminosAceptados: true, fechaAceptacionTerminos: sql`now()` })
+    .where(eq(usuario.id, usuarioId));
 }
 
 // ---------------------------------------------------------------------------
@@ -278,10 +326,20 @@ export async function eliminarCuentaPropia(entrada: {
     );
   }
 
-  await db
-    .update(usuario)
-    .set({ estadoCuenta: 'ELIMINADA' })
-    .where(eq(usuario.id, entrada.usuarioId));
+  /**
+   * US-MSG-07 - La baja y el bloqueo de las conversaciones son UNA operacion.
+   * Si la cuenta quedara ELIMINADA y el UPDATE de `conversacion` fallara, la
+   * contraparte seguiria viendo un chat abierto contra alguien que ya no esta y
+   * sus mensajes se perderian en el vacio.
+   */
+  await db.transaction(async (tx) => {
+    await tx
+      .update(usuario)
+      .set({ estadoCuenta: 'ELIMINADA' })
+      .where(eq(usuario.id, entrada.usuarioId));
+
+    await bloquearConversacionesPorBaja(tx, entrada.usuarioId);
+  });
 
   // Alcance global: la cuenta tiene que dejar de funcionar en todos los
   // dispositivos donde haya sesion abierta, no solo en el que pidio la baja.
@@ -561,6 +619,14 @@ export async function suspenderUsuario(entrada: {
       .where(eq(usuario.id, usuarioId));
   });
 
+  /**
+   * "Bloquee nuevos inicios de sesion de ese usuario" (US-GURP-08). Con el
+   * estado solo en la base, `signInWithPassword` seguia emitiendo un token y la
+   * app quedaba mostrando un error de perfil en vez del literal de US-AUT-03.
+   * Va DESPUES del commit: si la transaccion se cae, la cuenta no se banea.
+   */
+  await bloquearCuenta(usuarioId);
+
   void registrarOperacion({
     usuarioId: entrada.administradorId,
     operacion: 'MODIFICACION',
@@ -593,6 +659,10 @@ export async function rehabilitarUsuario(entrada: {
       .where(eq(usuario.id, usuarioId));
   });
 
+  // "Permita que el usuario vuelva a iniciar sesion" (US-GURP-08): sin esto la
+  // cuenta quedaria activa en la base pero baneada en GoTrue.
+  await desbloquearCuenta(usuarioId);
+
   void registrarOperacion({
     usuarioId: entrada.administradorId,
     operacion: 'MODIFICACION',
@@ -620,6 +690,11 @@ export async function eliminarUsuarioPanel(entrada: {
       .update(usuario)
       .set({ estadoCuenta: 'ELIMINADA' })
       .where(eq(usuario.id, usuarioId));
+
+    // US-MSG-07 - Misma regla que en la baja propia: las conversaciones del
+    // usuario quedan bloqueadas y archivadas del lado de quien sigue en la
+    // plataforma, dentro de la misma transaccion que la baja.
+    await bloquearConversacionesPorBaja(tx, usuarioId);
   });
 
   void registrarOperacion({

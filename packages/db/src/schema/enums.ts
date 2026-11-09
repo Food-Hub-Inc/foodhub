@@ -14,6 +14,7 @@ import {
   TIPO_MENSAJE,
   TIPO_NOTIFICACION,
   TIPO_REACCION,
+  TIPO_RESENA,
   TIPO_USUARIO,
 } from '@foodhub/shared';
 
@@ -51,6 +52,7 @@ export const origenTransicionEnum = pgEnum(
   'origen_transicion',
   ORIGEN_TRANSICION,
 );
+export const tipoResenaEnum = pgEnum('tipo_resena', TIPO_RESENA);
 export const estadoResenaEnum = pgEnum('estado_resena', ESTADO_RESENA);
 export const tipoReaccionEnum = pgEnum('tipo_reaccion', TIPO_REACCION);
 export const estadoReporteEnum = pgEnum('estado_reporte', ESTADO_REPORTE);

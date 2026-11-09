@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "turbo run build",
+    "start": "pnpm --filter @foodhub/api run start",
     "dev": "turbo run dev",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -21,6 +22,7 @@
     "db:generate": "pnpm --filter @foodhub/db run db:generate",
     "db:migrate": "pnpm --filter @foodhub/db run db:migrate",
     "db:studio": "pnpm --filter @foodhub/db run db:studio",
+    "db:seed": "pnpm --filter @foodhub/api run seed",
     "prepare": "husky"
   },
   "devDependencies": {

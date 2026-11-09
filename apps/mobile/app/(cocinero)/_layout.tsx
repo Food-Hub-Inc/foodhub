@@ -1,16 +1,11 @@
-import { Tabs } from 'expo-router';
-import {
-  IconoBolsa,
-  IconoCocinero,
-  IconoMensaje,
-  IconoReloj,
-  IconoUsuario,
-} from '../../src/components/iconos';
-import {
-  iconoDeTab,
-  useOpcionesDeTabs,
-} from '../../src/components/navegacion/opcionesDeTabs';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { useOpcionesDeTabs } from '../../src/components/navegacion/opcionesDeTabs';
 import { TEXTOS_NAVEGACION } from '../../src/lib/textos';
+import { useAcuseDeEntrega } from '../../src/hooks/useAcuseDeEntrega';
+import {
+  useInsigniaDeMensajes,
+  useInsigniaDePedidosNuevos,
+} from '../../src/hooks/useInsigniasDeTabs';
 
 /**
  * Barra de navegación del cocinero.
@@ -27,45 +22,71 @@ import { TEXTOS_NAVEGACION } from '../../src/lib/textos';
  * De los cinco destinos, solo Perfil está codificado en este sprint.
  */
 export default function LayoutCocinero() {
+  /**
+   * US-MSG-02 · Acuse de entrega y contador de no leídos del módulo de
+   * Mensajería. Se monta acá, en el layout de pestañas, y no en una pantalla:
+   * "entregado" significa que el mensaje llegó al dispositivo, y eso pasa
+   * mientras el usuario está en cualquier lugar de la app. Ver
+   * `useAcuseDeEntrega` para el detalle.
+   */
+  useAcuseDeEntrega();
+
   const opciones = useOpcionesDeTabs();
+  // Si no hay texto, se ocultan con hidden={true}. Sin hidden,
+  // NativeTabs.Trigger.Badge dibuja un punto indicador (dot badge).
+  const insigniaDeMensajes = useInsigniaDeMensajes();
+  const insigniaDePedidos = useInsigniaDePedidosNuevos();
 
   return (
-    <Tabs screenOptions={opciones}>
-      <Tabs.Screen
-        name="platos"
-        options={{
-          title: TEXTOS_NAVEGACION.platos,
-          tabBarIcon: iconoDeTab(IconoCocinero),
-        }}
-      />
-      <Tabs.Screen
-        name="pedidos"
-        options={{
-          title: TEXTOS_NAVEGACION.pedidos,
-          tabBarIcon: iconoDeTab(IconoBolsa),
-        }}
-      />
-      <Tabs.Screen
-        name="actividad"
-        options={{
-          title: TEXTOS_NAVEGACION.actividad,
-          tabBarIcon: iconoDeTab(IconoReloj),
-        }}
-      />
-      <Tabs.Screen
-        name="mensajes"
-        options={{
-          title: TEXTOS_NAVEGACION.mensajes,
-          tabBarIcon: iconoDeTab(IconoMensaje),
-        }}
-      />
-      <Tabs.Screen
-        name="perfil"
-        options={{
-          title: TEXTOS_NAVEGACION.perfil,
-          tabBarIcon: iconoDeTab(IconoUsuario),
-        }}
-      />
-    </Tabs>
+    <NativeTabs {...opciones}>
+      <NativeTabs.Trigger name="platos">
+        <NativeTabs.Trigger.Icon sf="fork.knife" md="restaurant" />
+        <NativeTabs.Trigger.Label>
+          {TEXTOS_NAVEGACION.platos}
+        </NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="pedidos">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'bag', selected: 'bag.fill' }}
+          md="shopping_bag"
+        />
+        <NativeTabs.Trigger.Label>
+          {TEXTOS_NAVEGACION.pedidos}
+        </NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Badge hidden={!insigniaDePedidos}>
+          {insigniaDePedidos}
+        </NativeTabs.Trigger.Badge>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="actividad">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'clock', selected: 'clock.fill' }}
+          md="schedule"
+        />
+        <NativeTabs.Trigger.Label>
+          {TEXTOS_NAVEGACION.actividad}
+        </NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="mensajes">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'message', selected: 'message.fill' }}
+          md="chat"
+        />
+        <NativeTabs.Trigger.Label>
+          {TEXTOS_NAVEGACION.mensajes}
+        </NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Badge hidden={!insigniaDeMensajes}>
+          {insigniaDeMensajes}
+        </NativeTabs.Trigger.Badge>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="perfil">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'person', selected: 'person.fill' }}
+          md="person"
+        />
+        <NativeTabs.Trigger.Label>
+          {TEXTOS_NAVEGACION.perfil}
+        </NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }

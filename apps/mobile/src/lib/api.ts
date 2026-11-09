@@ -1,4 +1,15 @@
-import { MENSAJES_AUTH, MENSAJES_ERROR } from '@foodhub/shared';
+import {
+  MENSAJES_AUTH,
+  MENSAJES_ERROR,
+  MENSAJES_POR_CODIGO_SUPABASE,
+} from '@foodhub/shared';
+import {
+  Directory,
+  DownloadTask,
+  File as ExpoFile,
+  Paths,
+} from 'expo-file-system';
+import { useSesion } from '../hooks/useSesion';
 import { obtenerToken, supabase } from './supabase';
 
 /**
@@ -77,14 +88,40 @@ export function esErrorApi(error: unknown): error is ErrorApi {
 }
 
 /**
+ * Código de error de Supabase Auth, si el error viene de ahí.
+ *
+ * Se comprueba la forma y no `instanceof AuthApiError`: el SDK no exporta esa
+ * clase de forma estable y un `catch` recibe siempre `unknown`. Lo único que
+ * hace falta es el campo `code`, que GoTrue documenta como su identificador
+ * estable de error.
+ */
+export function codigoDeSupabase(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null) return undefined;
+  const codigo = (error as { code?: unknown }).code;
+  return typeof codigo === 'string' ? codigo : undefined;
+}
+
+/**
  * Texto que se le muestra al usuario ante cualquier error.
  *
  * Un `Error` de JavaScript sin controlar lleva detalle técnico en su mensaje
  * (nombres de módulos, stack). Mostrarlo filtra información y no ayuda a nadie:
  * fuera de un `ErrorApi` se responde siempre con el mensaje genérico.
+ *
+ * La excepción son los errores de Supabase Auth con un código que ya tiene
+ * texto nuestro aprobado: el login y el restablecimiento por enlace hablan
+ * directo con GoTrue y su error nunca pasa por la API, así que sin esta
+ * traducción "la contraseña es igual a la anterior" se mostraba como
+ * "Ocurrió un error inesperado".
  */
 export function mensajeDeError(error: unknown): string {
-  return esErrorApi(error) ? error.message : MENSAJES_ERROR.interno;
+  if (esErrorApi(error)) return error.message;
+
+  const codigo = codigoDeSupabase(error);
+  const traducido =
+    codigo === undefined ? undefined : MENSAJES_POR_CODIGO_SUPABASE[codigo];
+
+  return traducido ?? MENSAJES_ERROR.interno;
 }
 
 /**
@@ -110,6 +147,20 @@ const CODIGOS_SESION_MUERTA = new Set([
 ]);
 
 /**
+ * Los 403 que significan que la cuenta dejó de estar habilitada.
+ *
+ * Son 403 y no 401 —el token es válido, lo que cambió es el estado de la
+ * cuenta— así que no entran por `CODIGOS_SESION_MUERTA`. Sin este caso, un
+ * usuario al que le suspendían la cuenta con la sesión ya abierta se quedaba
+ * dentro de la app viendo "No pudimos cargar tu perfil", con un botón de
+ * reintento que contra un 403 no podía funcionar nunca.
+ */
+const CODIGOS_CUENTA_BLOQUEADA = new Set([
+  'CUENTA_SUSPENDIDA',
+  'CUENTA_ELIMINADA',
+]);
+
+/**
  * Token con el que firmar la request.
  *
  * Se puede pasar uno explícito, y no siempre el de la sesión guardada, por un
@@ -131,6 +182,46 @@ function mensajePorDefecto(estado: number): string {
   return MENSAJES_ERROR.interno;
 }
 
+/**
+ * Cierra la sesión cuando la respuesta dice que ya no sirve para nada.
+ *
+ * Son dos casos con la misma consecuencia y distinto motivo:
+ *
+ *   401 con token muerto     la app queda en un estado engañoso: la sesión
+ *                            sigue en el Keystore, la interfaz se ve iniciada y
+ *                            todas las consultas fallan.
+ *   403 con cuenta bloqueada la cuenta dejó de estar habilitada mientras la
+ *                            sesión estaba abierta (US-AUT-03). Acá además se
+ *                            deja el aviso ANTES de cerrar, para que el login
+ *                            lo encuentre ya puesto cuando el gate lo monte. El
+ *                            texto es el que mandó la API, o sea el literal
+ *                            exacto del criterio: repetirlo del lado del
+ *                            cliente sería tener dos copias que se
+ *                            desincronizan.
+ *
+ * Nada de esto aplica cuando la request llevaba un token explícito: ese token
+ * no es la sesión de la app —todavía no hay ninguna— y cerrar la que hubiera
+ * expulsaría a un usuario que no tiene nada que ver con el fallo.
+ */
+async function cerrarSesionSiHaceFalta(datos: {
+  estado: number;
+  codigo: string;
+  mensaje: string;
+  conTokenExplicito: boolean;
+}): Promise<void> {
+  if (datos.conTokenExplicito) return;
+
+  if (datos.estado === 401 && CODIGOS_SESION_MUERTA.has(datos.codigo)) {
+    await supabase.auth.signOut();
+    return;
+  }
+
+  if (datos.estado === 403 && CODIGOS_CUENTA_BLOQUEADA.has(datos.codigo)) {
+    useSesion.getState().fijarAviso(datos.mensaje);
+    await supabase.auth.signOut();
+  }
+}
+
 async function aError(
   respuesta: Response,
   tokenExplicito?: string,
@@ -145,22 +236,12 @@ async function aError(
   const codigo = cuerpo.error?.codigo ?? `HTTP_${String(respuesta.status)}`;
   const mensaje = cuerpo.error?.mensaje ?? mensajePorDefecto(respuesta.status);
 
-  /**
-   * Con el token muerto la app queda en un estado engañoso: la sesión sigue en
-   * el Keystore, la interfaz se ve iniciada y todas las consultas fallan. Se
-   * cierra acá para que el gate del layout raíz mande al login en el mismo tick.
-   *
-   * No aplica cuando la request llevaba un token explícito: ese token no es la
-   * sesión de la app —todavía no hay ninguna— y cerrar la que hubiera expulsaría
-   * a un usuario que no tiene nada que ver con el fallo.
-   */
-  if (
-    tokenExplicito === undefined &&
-    respuesta.status === 401 &&
-    CODIGOS_SESION_MUERTA.has(codigo)
-  ) {
-    await supabase.auth.signOut();
-  }
+  await cerrarSesionSiHaceFalta({
+    estado: respuesta.status,
+    codigo,
+    mensaje,
+    conTokenExplicito: tokenExplicito !== undefined,
+  });
 
   return new ErrorApi(
     respuesta.status,
@@ -196,7 +277,7 @@ async function leerCuerpo(respuesta: Response): Promise<unknown> {
 }
 
 async function conCuerpo<T>(
-  metodo: 'POST' | 'PATCH' | 'DELETE',
+  metodo: 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   ruta: string,
   datos?: unknown,
   token?: string,
@@ -228,11 +309,59 @@ export const api = {
     return conCuerpo<T>('POST', ruta, datos, token);
   },
 
+  /**
+   * PUT. Lo usan las altas IDEMPOTENTES: marcar un favorito (US-EXP-06) deja el
+   * mismo estado la primera vez y la quinta, y el indice unico de la base lo
+   * garantiza. Con POST, un doble toque del corazon tendria que responder un
+   * error que al usuario no le dice nada.
+   *
+   * Sin cuerpo en el caso normal: el id del recurso va en la ruta y el del
+   * cliente sale de la sesion, asi que no queda nada que mandar.
+   */
+  reemplazar<T>(ruta: string, datos?: unknown): Promise<T> {
+    return conCuerpo<T>('PUT', ruta, datos);
+  },
+
   modificar<T>(ruta: string, datos: unknown, token?: string): Promise<T> {
     return conCuerpo<T>('PATCH', ruta, datos, token);
   },
 
   eliminar<T>(ruta: string, datos?: unknown): Promise<T> {
     return conCuerpo<T>('DELETE', ruta, datos);
+  },
+
+  /**
+   * Descarga un binario (PDF u otro) autentificado con el token de la sesion
+   * y lo guarda en el directorio cache del dispositivo.
+   *
+   * Devuelve la URI local del archivo para que el caller la guarde en la
+   * carpeta Descargas, la abra con `Linking.openURL` o el visor que
+   * corresponda.
+   *
+   * Usa `DownloadTask` de expo-file-system (no `fetch`+`blob`): en RN un
+   * blob no tiene URL estable para abrir desde otra app, y descargar directo
+   * a cache esquiva ese problema. Los headers de auth se envian como
+   * `headers` de la tarea.
+   */
+  async descargarBinario(ruta: string, nombreArchivo: string): Promise<string> {
+    const token = await obtenerToken();
+    const urlCompleta = `${BASE}${ruta}`;
+    const destino = new Directory(Paths.cache, 'foodhub');
+    if (!destino.exists) destino.create();
+
+    const archivoDestino = new ExpoFile(destino, nombreArchivo);
+    const tarea = new DownloadTask(urlCompleta, archivoDestino, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    try {
+      const resultado = await tarea.downloadAsync();
+      if (!resultado) {
+        throw new Error('La descarga del archivo no devolvió un archivo.');
+      }
+      return resultado.uri;
+    } finally {
+      tarea.release();
+    }
   },
 };

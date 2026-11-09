@@ -14,8 +14,27 @@ import {
 import { saludRouter } from './modules/salud/salud.router.js';
 import { almacenamientoRouter } from './modules/almacenamiento/almacenamiento.router.js';
 import { authRouter } from './modules/auth/auth.router.js';
+import { ayudaRouter } from './modules/ayuda/ayuda.router.js';
 import { auditoriaRouter } from './modules/auditoria/auditoria.router.js';
+import { catalogoRouter } from './modules/catalogo/catalogo.router.js';
+import { dashboardRouter } from './modules/dashboard/dashboard.router.js';
+import { carritoRouter } from './modules/exploracion/carrito.router.js';
+import { exploracionRouter } from './modules/exploracion/exploracion.router.js';
+import { mensajeriaRouter } from './modules/mensajeria/mensajeria.router.js';
+import { avisosRouter } from './modules/notificaciones/avisos.router.js';
+import { notificacionesRouter } from './modules/notificaciones/notificaciones.router.js';
+import { pedidosRouter } from './modules/pedidos/pedidos.router.js';
+import { publicacionesRouter } from './modules/publicaciones/publicaciones.router.js';
+import { categoriasRouter } from './modules/configuracion/categorias.router.js';
+import { motivosCancelacionRouter } from './modules/configuracion/motivosCancelacion.router.js';
+import { parametrosSistemaRouter } from './modules/configuracion/parametrosSistema.router.js';
+import { terminosRouter } from './modules/configuracion/terminos.router.js';
+import { metricasRouter } from './modules/metricas/metricas.router.js';
+import { moderacionPublicacionesRouter } from './modules/publicaciones/moderacion.router.js';
+import { moderacionRouter } from './modules/resenas/moderacion.router.js';
+import { resenasRouter } from './modules/resenas/resenas.router.js';
 import { seguridadRouter } from './modules/seguridad/seguridad.router.js';
+import { soporteRouter } from './modules/soporte/soporte.router.js';
 import { usuariosRouter } from './modules/usuarios/usuarios.router.js';
 
 /**
@@ -115,10 +134,75 @@ export function crearApp(): Express {
   app.use(`${PREFIJO_API}/auditoria`, auditoriaRouter);
   app.use(`${PREFIJO_API}/seguridad`, seguridadRouter);
   app.use(`${PREFIJO_API}/almacenamiento`, almacenamientoRouter);
+  app.use(`${PREFIJO_API}/catalogo`, catalogoRouter);
+  app.use(`${PREFIJO_API}/publicaciones`, publicacionesRouter);
+  app.use(`${PREFIJO_API}/soporte`, soporteRouter);
+
+  // Modulo de Configuracion y parametros (US-CFG-01 a US-CFG-04, PAN-ADM-04).
+  app.use(`${PREFIJO_API}/configuracion/categorias`, categoriasRouter);
+  app.use(
+    `${PREFIJO_API}/configuracion/motivos-cancelacion`,
+    motivosCancelacionRouter,
+  );
+  app.use(`${PREFIJO_API}/configuracion/parametros`, parametrosSistemaRouter);
+  app.use(`${PREFIJO_API}/configuracion/terminos`, terminosRouter);
+
+  // Modulos funcionales: exploracion y busqueda (US-EXP-01 a US-EXP-07).
+  // El carrito va en su propio prefijo y no bajo /exploracion: es un recurso
+  // del cliente, no un resultado de explorar, y su pantalla (PAN-PED-01)
+  // pertenece al modulo de Pedidos, que va a leer de estas mismas rutas.
+  app.use(`${PREFIJO_API}/exploracion`, exploracionRouter);
+  app.use(`${PREFIJO_API}/carrito`, carritoRouter);
+
+  // Modulo de Pedidos (US-PED-01 a US-PED-09). US-PED-10, la expiracion
+  // automatica, no tiene ruta: corre con pg_cron dentro de la base.
+  app.use(`${PREFIJO_API}/pedidos`, pedidosRouter);
+
+  // Modulo de Mensajeria directa (US-MSG-01 a US-MSG-07). Cliente y cocinero:
+  // el administrador no tiene pantallas de chat. El tiempo real -mensaje nuevo,
+  // "Leido" y "Escribiendo..."- no pasa por aca: va por Supabase Realtime
+  // directo contra la base, con las politicas RLS de la migracion 0011.
+  app.use(`${PREFIJO_API}/mensajeria`, mensajeriaRouter);
+
+  // Modulo de Notificaciones y Alertas (US-NOT-01 a US-NOT-08). Cliente y
+  // cocinero: el administrador no recibe push. La EMISION la disparan pedidos,
+  // mensajeria y publicaciones; estas rutas son el historial in-app
+  // (PAN-NOT-01), el contador de la campana y el registro de Expo Push Tokens.
+  // El despachador de push corre como proceso periodico y se arranca en
+  // server.ts, no aca (ver `iniciarDespachadorDePush`).
+  app.use(`${PREFIJO_API}/notificaciones`, notificacionesRouter);
+
+  // US-NOT-04 - Avisos generales. Los EMITE el administrador desde el panel;
+  // por eso no cuelgan de `/notificaciones`, que es de quienes los reciben.
+  app.use(`${PREFIJO_API}/avisos`, avisosRouter);
+
+  // Modulo de Dashboard del cocinero (US-DASH-01 a US-DASH-05). Solo lectura y
+  // solo sobre los datos del cocinero de la sesion.
+  app.use(`${PREFIJO_API}/dashboard`, dashboardRouter);
+
+  // Modulo de Resenas y Calificaciones (US-RES-01 a US-RES-03). Las tres
+  // sociales -reacciones, respuestas y reportes- cuelgan de este mismo router.
+  app.use(`${PREFIJO_API}/resenas`, resenasRouter);
+
+  // RF086 - La bandeja de moderacion va aparte: es del panel web y exclusiva
+  // del administrador, mientras que todo `/resenas` es de la app.
+  // US-ADM-04 - Moderacion de publicaciones, tambien del panel. Se monta ANTES
+  // que la de resenas: las dos comparten el prefijo `/moderacion`.
+  app.use(
+    `${PREFIJO_API}/moderacion/publicaciones`,
+    moderacionPublicacionesRouter,
+  );
+  app.use(`${PREFIJO_API}/moderacion`, moderacionRouter);
+
+  // US-ADM-05 - Metricas generales del panel (PAN-ADM-03). Del administrador.
+  app.use(`${PREFIJO_API}/metricas`, metricasRouter);
+
+  // US-AYU-05 - Gestion del manual y las FAQ desde el panel. Tambien exclusivo
+  // del administrador, por eso no cuelga de `/soporte`, que es de la app movil.
+  app.use(`${PREFIJO_API}/ayuda`, ayudaRouter);
 
   // A medida que avance la Etapa 6 se montan aca los routers de cada modulo:
-  //   app.use(`${PREFIJO_API}/publicaciones`, publicacionesRouter);
-  //   app.use(`${PREFIJO_API}/pedidos`, pedidosRouter);
+  //   app.use(`${PREFIJO_API}/notificaciones`, notificacionesRouter);
   //   ...
 
   // --- 7. Errores (siempre al final) -----------------------------------------

@@ -3,9 +3,15 @@ import { RutaProtegida } from './components/RutaProtegida.js';
 import { LayoutPanel } from './components/layout/LayoutPanel.js';
 import { RUTAS } from './lib/rutas.js';
 import { Auditoria } from './pages/auditoria/Auditoria.js';
+import { Avisos } from './pages/avisos/Avisos.js';
+import { Ayuda } from './pages/ayuda/Ayuda.js';
+import { PaginaDeCapitulo } from './pages/ayuda/manual/PaginaDeCapitulo.js';
+import { Configuracion } from './pages/configuracion/Configuracion.js';
 import { Login } from './pages/Login.js';
 import { NuevaPassword } from './pages/NuevaPassword.js';
-import { Proximamente } from './pages/Proximamente.js';
+import { Inicio } from './pages/Inicio.js';
+import { Metricas } from './pages/metricas/Metricas.js';
+import { Moderacion } from './pages/moderacion/Moderacion.js';
 import { Recuperar } from './pages/Recuperar.js';
 import { Usuarios } from './pages/usuarios/Usuarios.js';
 
@@ -27,10 +33,14 @@ import { Usuarios } from './pages/usuarios/Usuarios.js';
  *                    y recuperación)
  *   /usuarios        PAN-ADM-01 · gestión de cuentas              implementada
  *   /auditoria       PAN-AUD-01 · auditoría y seguridad           implementada
- *   /                inicio del panel                             por codificar
- *   /moderacion      PAN-ADM-02 · moderación de contenido         por codificar
- *   /metricas        PAN-ADM-03 · métricas generales              por codificar
- *   /configuracion   PAN-ADM-04 · configuración del sistema       por codificar
+ *   /                inicio del panel (sin código PAN)            implementada
+ *   /moderacion      PAN-ADM-02 · moderación de contenido         implementada
+ *                    (publicaciones US-ADM-04 y reseñas RF086)
+ *   /avisos          US-NOT-04 · avisos generales (sin código PAN) implementada
+ *   /metricas        PAN-ADM-03 · métricas generales + REP-02     implementada
+ *   /ayuda           US-AYU-05 · gestión del manual y las FAQ     implementada
+ *   /configuracion   PAN-ADM-04 · configuración del sistema       implementada
+ *                    (categorías, motivos, parámetros, términos)
  */
 export function App() {
   return (
@@ -49,8 +59,15 @@ export function App() {
         <Route element={<Inicio />} index />
         <Route element={<Usuarios />} path="usuarios" />
         <Route element={<Moderacion />} path="moderacion" />
+        <Route element={<Avisos />} path="avisos" />
         <Route element={<Metricas />} path="metricas" />
         <Route element={<Auditoria />} path="auditoria" />
+        <Route element={<Ayuda />} path="ayuda" />
+        <Route element={<PaginaDeCapitulo />} path="ayuda/capitulos/nuevo" />
+        <Route
+          element={<PaginaDeCapitulo />}
+          path="ayuda/capitulos/:id/editar"
+        />
         <Route element={<Configuracion />} path="configuracion" />
       </Route>
 
@@ -58,56 +75,5 @@ export function App() {
           panel, que es de donde el administrador puede seguir trabajando. */}
       <Route element={<Navigate replace to={RUTAS.inicio} />} path="*" />
     </Routes>
-  );
-}
-
-/**
- * El inicio del panel no tiene código de pantalla propio en el inventario de la
- * Etapa 5: las cuatro pantallas del administrador son PAN-ADM-01 a PAN-ADM-04
- * más PAN-AUD-01. Su contenido previsto —el resumen de la operación— es el de
- * PAN-ADM-03 (REP-02), así que se declara sin código y se remite a esa
- * pantalla.
- */
-function Inicio() {
-  return (
-    <Proximamente
-      historias="US-ADM-05"
-      modulo="ADM · Panel de administración"
-      pantalla={null}
-      titulo="Inicio"
-    />
-  );
-}
-
-function Moderacion() {
-  return (
-    <Proximamente
-      historias="US-ADM-04"
-      modulo="ADM · Panel de administración"
-      pantalla="PAN-ADM-02"
-      titulo="Moderación de contenido"
-    />
-  );
-}
-
-function Metricas() {
-  return (
-    <Proximamente
-      historias="US-ADM-05 · REP-02"
-      modulo="ADM · Panel de administración"
-      pantalla="PAN-ADM-03"
-      titulo="Métricas generales"
-    />
-  );
-}
-
-function Configuracion() {
-  return (
-    <Proximamente
-      historias="US-CFG-01 a US-CFG-04"
-      modulo="CFG · Configuración y parámetros"
-      pantalla="PAN-ADM-04"
-      titulo="Configuración del sistema"
-    />
   );
 }

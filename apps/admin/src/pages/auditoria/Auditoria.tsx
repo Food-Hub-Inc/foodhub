@@ -77,7 +77,6 @@ export function Auditoria() {
             exportar={exportar}
           />
         }
-        notificacionesPendientes={null}
         subtitulo={
           activa.consulta.isPending
             ? ' '

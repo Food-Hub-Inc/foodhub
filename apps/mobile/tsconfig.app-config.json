@@ -1,0 +1,12 @@
+{
+  // `app.config.ts` corre en Node en tiempo de build (lo ejecuta Expo CLI),
+  // no en el runtime React Native. Usa `node:fs`, `node:path` y `__dirname`,
+  // que el preset de la app (tsconfig.react-native.json) excluye a propósito
+  // para que el codigo de la app no pueda usar globals de Node por error. Se
+  // typecheca aparte, con el mismo criterio que el preset node de la API.
+  "extends": "../../packages/config/tsconfig.react-native.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["app.config.ts"]
+}

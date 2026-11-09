@@ -26,6 +26,9 @@ export default function LayoutAutenticacion() {
       <Stack.Screen name="registro-cocinero" />
       <Stack.Screen name="login" />
       <Stack.Screen name="recuperar" />
+      {/* Se abre desde el enlace "términos y condiciones" del registro, por
+          eso se anima como el resto del flujo de autenticación. */}
+      <Stack.Screen name="terminos" />
       {/* Se abre por deep link desde el correo, nunca desde otra pantalla: no
           tiene sentido animarla como si viniera de la anterior. */}
       <Stack.Screen name="nueva-password" options={{ animation: 'fade' }} />

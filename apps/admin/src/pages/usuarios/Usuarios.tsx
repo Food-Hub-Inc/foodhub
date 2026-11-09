@@ -72,7 +72,6 @@ export function Usuarios() {
             }}
           />
         }
-        notificacionesPendientes={null}
         subtitulo={
           consulta.isPending
             ? ' '

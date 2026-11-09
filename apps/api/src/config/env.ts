@@ -112,7 +112,98 @@ const envSchema = z.object({
   // --- Almacenamiento -------------------------------------------------------
   STORAGE_BUCKET_PERFILES: z.string().default('perfiles'),
   STORAGE_BUCKET_PUBLICACIONES: z.string().default('publicaciones'),
+  STORAGE_BUCKET_CONFIGURACION: z.string().default('configuracion'),
   STORAGE_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(5),
+
+  /**
+   * US-MSG-03 - Bucket de las imagenes del chat.
+   *
+   * Separado de `publicaciones` a proposito: ahi viven las fotos de platos, que
+   * son contenido publico del catalogo, y aca imagenes de una conversacion
+   * privada entre dos personas. Mezclarlas en un bucket haria que cualquier
+   * cambio de politica sobre uno alcanzara al otro.
+   *
+   * El tope es propio y no `STORAGE_MAX_FILE_SIZE_MB`: US-MSG-03 fija 8 MB para
+   * el chat, mientras que la foto de perfil (US-AUT-01) y la del plato
+   * (US-PUB-01) fijan 5 MB. Son tres criterios distintos y cada uno se ajusta
+   * por su lado.
+   */
+  STORAGE_BUCKET_MENSAJES: z.string().default('mensajes'),
+  STORAGE_MAX_IMAGEN_CHAT_MB: z.coerce.number().positive().default(8),
+
+  /**
+   * US-AYU-03 - Bucket dedicado para los adjuntos de las consultas de soporte.
+   *
+   * Se separa de `STORAGE_BUCKET_CONFIGURACION` porque ese bucket aloja
+   * archivos administrados por el backoffice (logo institucional, imagenes
+   * de categorias) con una configuracion de `allowedMimeTypes` que NO
+   * incluye `application/pdf`. Un PDF de consulta de soporte seria rechazado
+   * con 415. Un bucket dedicado permite fijar la lista de MIME types del
+   * criterio (image/jpeg, image/png, application/pdf) sin afectar al resto.
+   *
+   * Debe crearse PUBLICO en Supabase Storage: `adjunto_ticket.archivo_url`
+   * se construye con `getPublicUrl` y la URL se sirve directo al cliente.
+   */
+  STORAGE_BUCKET_TICKETS: z.string().default('tickets'),
+
+  /**
+   * US-RES-01 - Bucket de las fotos que el cliente adjunta a una resena.
+   *
+   * Separado de `publicaciones` aunque las dos sean fotos de platos publicas:
+   * en `publicaciones` escribe el COCINERO sobre su propio catalogo, y aca
+   * escribe el CLIENTE sobre contenido de un tercero. Son dos poblaciones de
+   * autores distintas, y si manana la moderacion necesita purgar fotos de
+   * resenas -RF086 oculta la resena, y la foto la acompania- no puede estar
+   * revisando la carpeta donde el cocinero guarda su catalogo.
+   *
+   * Debe crearse PUBLICO en los dos proyectos de Supabase: `resena.foto_url`
+   * guarda la URL permanente que devuelve `getPublicUrl` y la pantalla la
+   * consume directo, igual que `perfiles` y `publicaciones`.
+   */
+  STORAGE_BUCKET_RESENAS: z.string().default('resenas'),
+
+  // --- Correo transaccional (US-AYU-03) -------------------------------------
+  /**
+   * API key de Resend, el servicio que envia el correo de acuse de recibo del
+   * formulario de contacto al soporte (US-AYU-03). Es OBLIGATORIA en
+   * produccion: sin un canal de salida, la consulta queda registrada pero el
+   * usuario no recibe el acuse, y eso rompe el criterio de aceptacion.
+   *
+   * En desarrollo es opcional para no bloquear a quien levanta la API sin
+   * todavia tener una cuenta en Resend: si falta, `lib/email.ts` loguea con
+   * `info` y simula un envio exitoso. La idea es que la consulta se cree
+   * normalmente y la falla del correo se vea en los logs, no en pantalla.
+   */
+  RESEND_API_KEY: z.string().optional(),
+  /**
+   * Remitente del correo (`From:`). El formato es el de Resend:
+   * `"FoodHub <soporte@foodhub.com>"`. Tambien opcional en dev.
+   */
+  RESEND_REMITENTE: z.string().default('FoodHub <soporte@foodhub.com>'),
+
+  // --- Notificaciones push (US-NOT-01 a US-NOT-06, punto 1.3.1.11) ---------
+  /**
+   * Access token del proyecto de Expo. Solo hace falta si el proyecto tiene
+   * activada "Enhanced Security for Push Notifications" en el panel de Expo;
+   * sin eso, la Expo Push API acepta los envios sin autenticacion. Opcional
+   * para no bloquear a quien levanta la API sin configurar Expo: si falta, el
+   * despachador manda igual y, si el proyecto exige el token, Expo responde con
+   * un error que queda logueado (no rompe ninguna operacion de negocio).
+   */
+  EXPO_ACCESS_TOKEN: z.string().optional(),
+  /**
+   * Cada cuantos milisegundos el despachador de push barre `notificacion` en
+   * busca de filas `push_estado = 'PENDIENTE'`. Es la latencia maxima entre que
+   * se registra la notificacion y sale el push (el emisor ademas programa un
+   * barrido inmediato tras cada alta, asi que el caso tipico es < 1 s). El
+   * barrido de la funcion SQL de expiracion de pedidos depende solo de este
+   * intervalo.
+   */
+  NOTIFICACIONES_DESPACHO_INTERVALO_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(10_000),
 });
 
 const parsed = envSchema.safeParse(process.env);

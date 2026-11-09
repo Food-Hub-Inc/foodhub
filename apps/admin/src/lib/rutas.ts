@@ -19,5 +19,16 @@ export const RUTAS = {
   moderacion: '/moderacion',
   metricas: '/metricas',
   auditoria: '/auditoria',
+  ayuda: '/ayuda',
+  ayudaNuevoCapitulo: '/ayuda/capitulos/nuevo',
+  avisos: '/avisos',
   configuracion: '/configuracion',
 } as const;
+
+/**
+ * Edición de un capítulo del manual (US-AYU-05). Es una función y no una
+ * constante porque el id forma parte de la dirección.
+ */
+export function rutaEditarCapitulo(capituloId: string): string {
+  return `${RUTAS.ayuda}/capitulos/${capituloId}/editar`;
+}

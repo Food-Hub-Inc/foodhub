@@ -1,25 +1,11 @@
-import { IconoInicio } from '../../src/components/iconos';
-import { PantallaPendiente } from '../../src/components/ui/PantallaPendiente';
-import { PANTALLAS_PENDIENTES } from '../../src/lib/textos';
+import { Feed } from '../../src/screens/exploracion/Feed';
 
 /**
- * Inicio — PAN-EXP-01.
+ * Inicio — PAN-EXP-01 (US-EXP-01, US-EXP-03 y el filtro de US-EXP-06).
  *
- * Pendiente de codificación: pertenece al módulo de Exploración y búsqueda, que se desarrolla
- * en un sprint posterior al de los módulos transversales. La pantalla anuncia
- * su código y qué va a hacer, para que el destino exista y se pueda navegar el
- * shell completo sin encontrarse con una pantalla en blanco.
+ * El archivo de ruta solo declara el destino; la pantalla vive en
+ * `src/screens/exploracion/Feed.tsx`, mismo criterio que el resto de la app.
  */
 export default function Inicio() {
-  const ficha = PANTALLAS_PENDIENTES.feed;
-
-  return (
-    <PantallaPendiente
-      codigo={ficha.codigo}
-      descripcion={ficha.descripcion}
-      icono={<IconoInicio size={34} className="text-primary" />}
-      modulo={ficha.modulo}
-      titulo={ficha.titulo}
-    />
-  );
+  return <Feed />;
 }

@@ -2,6 +2,7 @@ import { Modal, Text, View } from 'react-native';
 import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import { useDuracion } from '../../hooks/useMovimientoReducido';
 import { IconoAlerta } from '../iconos';
+import { Aviso } from './Aviso';
 import { Boton, BotonDeTexto } from './Boton';
 import { FondoTenue } from './FondoTenue';
 
@@ -16,11 +17,32 @@ import { FondoTenue } from './FondoTenue';
  *
  * El botón destructivo NO es el que queda bajo el pulgar por defecto ni tiene
  * foco automático: la salida cómoda es cancelar.
+ *
+ * `mensaje` es OPCIONAL: la mayoría de los usos (baja de cuenta, US-PUB-01
+ * "¿Confirmás la publicación del plato?") llevan título Y mensaje, pero el
+ * criterio de aceptación de "Cancelar" en US-PUB-01 define una única línea de
+ * texto sin encabezado propio ("¿Está seguro de que desea volver? Los
+ * cambios no se guardarán"). Para ese caso ese texto se pasa como `titulo`
+ * -es lo único que hay para mostrar, y merece el tratamiento prominente- y se
+ * omite `mensaje`.
+ *
+ * `error` es OPCIONAL y lo usa US-PUB-03: el rechazo de la baja por pedidos
+ * activos ("No se puede eliminar una publicación con pedidos activos...") es
+ * un mensaje de error del servidor, no una pregunta de confirmación, así que
+ * no reemplaza a `mensaje` -que sigue siendo la pregunta fija- sino que se
+ * agrega debajo, con el mismo `Aviso` rojo que ya usan los formularios del
+ * módulo. El diálogo permanece abierto para mostrarlo: a diferencia de
+ * `NuevaPublicacion`/`EditarPublicacion` (que cierran su propio diálogo y
+ * muestran el error en la pantalla de atrás), acá no hay pantalla propia
+ * detrás -la tarjeta del listado no tiene dónde poner un aviso persistente-,
+ * así que el error se muestra en el mismo lugar donde el cocinero ya está
+ * mirando.
  */
 export function DialogoSevero({
   abierto,
   titulo,
   mensaje,
+  error,
   textoConfirmar,
   textoCancelar,
   onConfirmar,
@@ -29,7 +51,8 @@ export function DialogoSevero({
 }: {
   abierto: boolean;
   titulo: string;
-  mensaje: string;
+  mensaje?: string;
+  error?: string;
   textoConfirmar: string;
   textoCancelar: string;
   onConfirmar: () => void;
@@ -69,9 +92,15 @@ export function DialogoSevero({
           >
             {titulo}
           </Text>
-          <Text className="mt-2 text-center text-body text-text-secondary">
-            {mensaje}
-          </Text>
+          {mensaje === undefined ? null : (
+            <Text className="mt-2 text-center text-body text-text-secondary">
+              {mensaje}
+            </Text>
+          )}
+
+          {error === undefined ? null : (
+            <Aviso className="mt-4" mensaje={error} tono="error" />
+          )}
 
           <Boton
             variante="destructivo"

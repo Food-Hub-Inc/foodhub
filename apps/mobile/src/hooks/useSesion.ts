@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 
@@ -55,10 +56,32 @@ export const useSesion = create<EstadoSesion>((set) => ({
  * `onAuthStateChange` cubre también el refresh silencioso del token y el cierre
  * de sesión que dispara `api.ts` cuando el servidor responde 401: la interfaz
  * reacciona sin que nadie tenga que avisarle.
+ *
+ * ES ADEMÁS DONDE SE TIRA LA CACHÉ DE REACT QUERY AL CAMBIAR DE USUARIO
+ * ---------------------------------------------------------------------------
+ * El `QueryClient` es un singleton de módulo y NINGUNA clave lleva el id del
+ * usuario (`['perfil','yo']`, `['carrito']`, `['pedidos']`…). Como `GateDeSesion`
+ * nunca se desmonta, sus observers siguen vivos después del `signOut` y el
+ * `gcTime` no llega a correr: al entrar con otra cuenta, `usePerfil` devolvía el
+ * perfil del usuario anterior ya resuelto y el gate elegía la barra de pestañas
+ * con el rol equivocado. Reiniciar la app lo tapaba porque moría el proceso.
+ *
+ * Va colgado del CAMBIO DE `user.id` y no de `cerrarSesion()` a propósito: hay
+ * cuatro llamadas a esa función más el cierre automático de `api.ts`, y así
+ * quedan cubiertas todas de una sola vez, incluido el caso de entrar con otra
+ * cuenta sin haber cerrado la anterior. Un `TOKEN_REFRESHED` no cambia el id, y
+ * por lo tanto no tira nada.
+ *
+ * NO se toca `aviso`: el gate lo escribe justo ANTES de cerrar la sesión (la
+ * expulsión del administrador, la cuenta suspendida) y limpiarlo acá borraría
+ * el cartel que el login tiene que mostrar.
  */
 export function useEscucharSesion(): void {
+  const clienteDeConsultas = useQueryClient();
+
   useEffect(() => {
     const fijarSesion = useSesion.getState().fijarSesion;
+    let usuarioAnterior = useSesion.getState().sesion?.user.id ?? null;
 
     /**
      * UN SOLO ESCRITOR. `onAuthStateChange` emite `INITIAL_SESSION` apenas se
@@ -70,11 +93,16 @@ export function useEscucharSesion(): void {
      * no.
      */
     const { data } = supabase.auth.onAuthStateChange((_evento, sesion) => {
+      const usuarioNuevo = sesion?.user.id ?? null;
+      if (usuarioNuevo !== usuarioAnterior) {
+        usuarioAnterior = usuarioNuevo;
+        clienteDeConsultas.clear();
+      }
       fijarSesion(sesion);
     });
 
     return () => {
       data.subscription.unsubscribe();
     };
-  }, []);
+  }, [clienteDeConsultas]);
 }

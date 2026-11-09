@@ -35,25 +35,48 @@ body de las requests.
 
 Cómo el cliente descubre qué comer.
 
-| Historia  | Pantalla   | Qué hace                                                      |
-| --------- | ---------- | ------------------------------------------------------------- |
-| US-EXP-01 | PAN-EXP-01 | feed dinámico de publicaciones recientes                      |
-| US-EXP-02 | PAN-EXP-02 | mapa geolocalizado de cocineros cercanos                      |
-| US-EXP-03 | PAN-EXP-03 | filtros combinables: categoría, precio, distancia, valoración |
-| US-EXP-04 | PAN-EXP-04 | perfil público del cocinero                                   |
-| US-EXP-05 | PAN-EXP-05 | detalle de la publicación                                     |
-| US-EXP-06 | —          | favoritos de cocinero y de publicación                        |
-| US-EXP-07 | PAN-PED-01 | carrito                                                       |
+| Historia  | Pantalla     | Qué hace                                                      |
+| --------- | ------------ | ------------------------------------------------------------- |
+| US-EXP-01 | PAN-EXP-01   | feed ordenado por cercanía, con scroll infinito               |
+| US-EXP-02 | PAN-EXP-02   | mapa geolocalizado de cocineros cercanos                      |
+| US-EXP-03 | PAN-EXP-03   | filtros combinables: categoría, precio, distancia, valoración |
+| US-EXP-04 | PAN-EXP-04   | perfil público del cocinero                                   |
+| US-EXP-05 | PAN-EXP-05   | detalle de la publicación                                     |
+| US-EXP-06 | (sin código) | favoritos de cocinero y de publicación + "Mis favoritos"      |
+| US-EXP-07 | PAN-PED-01   | carrito                                                       |
 
-**Proximidad.** Se resuelve en el backend con PostGIS. El backend devuelve las
-coordenadas de los cocineros dentro del radio configurado; el cliente dibuja los
-marcadores sobre Google Maps y, al tocar uno, navega al perfil. Con zoom bajo se
-agrupan los marcadores cercanos (clustering).
+**El feed no tiene radio.** Trae todas las publicaciones activas en estado
+`DISPONIBLE` o `ULTIMAS_UNIDADES`, ordenadas por distancia ascendente; el que
+acota es el filtro de distancia de US-EXP-03. El mapa, en cambio, consulta por la
+**zona visible**, porque su criterio de aceptación habla de "la zona visible del
+mapa".
 
-**Carrito.** Índice único sobre `(cliente_id, cocinero_id)`: agregar un plato de
-otro cocinero abre un carrito separado. Los ítems guardan snapshot de nombre,
-precio e imagen, así el cliente ve lo que agregó aunque el cocinero edite el
-plato mientras tanto.
+**La ubicación del cliente no se persiste.** El cliente no la declara al
+registrarse (`usuario.ubicacion` queda `null`; el CHECK solo se la exige al
+cocinero), así que la app la pide al GPS y la manda como query params `lat`/`lng`
+en cada consulta. Sin permiso, el feed cae a orden por fecha y sin distancia.
+
+**Proximidad.** Se resuelve en el backend con PostGIS (`ST_Distance` sobre
+`geography` para la distancia y el orden, `ST_MakeEnvelope` para la zona visible).
+El cliente dibuja los marcadores sobre Google Maps y, al tocar uno, abre la
+tarjeta con "Ver perfil". Con zoom bajo se agrupan los marcadores cercanos
+(clustering) con un contador visible.
+
+**"Mis favoritos"** no tiene código PAN en la maquetación. Se entra por un ícono
+de corazón en el encabezado del feed, al lado de la campana de notificaciones
+(decisión del equipo, 2026-08-18), y tiene dos pestañas: Cocineros y
+Publicaciones. Un cocinero dado de baja desaparece de la lista sin error: se
+filtra al leer, la fila del favorito no se borra.
+
+**Carrito.** Índice único sobre `(cliente_id)`: hay **un solo carrito activo por
+cliente**. Agregar un plato de otro cocinero abre el diálogo "Tu carrito tiene
+platos de otro cocinero. ¿Querés vaciarlo y comenzar uno nuevo?" y, si el cliente
+confirma, reemplaza el carrito. Los ítems guardan snapshot de nombre, precio e
+imagen, así el cliente ve lo que agregó aunque el cocinero edite el plato
+mientras tanto.
+
+Al abrir el carrito, los platos que pasaron a `NO_DISPONIBLE` se quitan solos y
+se avisa con "Este plato ya no está disponible y fue quitado de tu carrito."
 
 ---
 
@@ -101,32 +124,59 @@ antes de tocar la base.
 
 ---
 
-## RES · Reseñas y calificaciones (6 historias)
+## RES · Reseñas y calificaciones (7 historias)
 
-Reputación **bidireccional**: el cliente califica al cocinero y el cocinero
-califica al cliente.
+Reputación **bidireccional**: el cliente reseña los platos que pidió y al
+cocinero que lo atendió, y el cocinero reseña al cliente.
 
-| Historia  | Quién califica a quién / qué hace                           |
-| --------- | ----------------------------------------------------------- |
-| US-RES-01 | cliente → cocinero, sobre un pedido completado (PAN-RES-01) |
-| US-RES-02 | cocinero → cliente                                          |
-| US-RES-03 | ver reseñas y promedio en el perfil público                 |
+| Historia  | Quién reseña a quién / qué hace                              |
+| --------- | ------------------------------------------------------------ |
+| US-RES-01 | cliente → **un plato** de un pedido completado (PAN-RES-01)   |
+| US-RES-02 | cocinero → cliente, tras un pedido que llegó a aceptado       |
+| US-RES-03 | ver reseñas y promedio en el perfil público                   |
 | US-RES-04 | reaccionar a una reseña (me gusta / no me gusta)            |
 | US-RES-05 | el cocinero responde una reseña                             |
 | US-RES-06 | reportar una reseña inapropiada                             |
+| US-RES-07 | cliente → **el cocinero**, tras un pedido completado (RF087, PAN-RES-03) |
+
+**La regla que ordena todo el módulo:**
+
+> Una reseña se identifica por **(autor, objeto reseñado)**, y el objeto es un
+> **plato, un cocinero o un cliente**. Hay una sola por autor y objeto. El pedido
+> **solo valida el derecho** a reseñar; no es la clave de negocio y no aparece en
+> ninguna tabla del módulo.
 
 Reglas:
 
 - Calificación de **1 a 5** (CHECK en la base).
-- **Una reseña por pedido** en cada dirección (`pedido_id` UNIQUE).
-- Solo se reseñan pedidos **completados**.
-- Solo las reseñas `VISIBLE` promedian en el perfil público. La moderación las
-  pasa a `OCULTA_MODERACION`; el autor puede pasarlas a `ELIMINADA_AUTOR`.
+- Los tres tipos viven en una tabla con discriminador `tipo_resena`; ver el
+  capítulo 02.
+- **Qué hito habilita cada una:** un pedido `COMPLETADO` para reseñar un plato o
+  un cocinero, y uno que llegó a `ACEPTADO` para reseñar a un cliente —US-RES-02
+  quiere que el cocinero pueda dejar constancia del que no apareció a retirar, y
+  ese pedido nunca se completa—. Se valida contra `historial_estado_pedido`, no
+  contra el estado actual.
+- **Solo la reseña de PLATO tiene ventana de edición** (48 h, que se reabre con
+  cada pedido nuevo del mismo plato). Las de una persona son la opinión vigente y
+  se editan siempre.
+- **Dónde se ve cada listado:** las reseñas de un plato, en el detalle del plato
+  (RF019); las que le dejaron a un cocinero, en su perfil público; las de sus
+  platos, en "Mis reseñas"; las de un cliente, en su perfil, **solo para
+  cocineros**.
+- **El promedio público del cocinero sale de las reseñas de tipo COCINERO** en
+  todo el sistema —feed, mapa, tarjetas, favoritos, carrito y perfil—.
+- Solo las reseñas `VISIBLE` promedian. La moderación las pasa a
+  `OCULTA_MODERACION`; el autor puede pasarlas a `ELIMINADA_AUTOR`.
 - **Una reacción por usuario y reseña**: cambiar de opinión es un UPDATE, no una
   fila nueva.
-- La respuesta del cocinero tiene **ventana de edición** (`fecha_edicion_limite`):
-  pasada, se congela, para que no se altere después de que el cliente la leyó.
+- La respuesta del cocinero tiene **ventana de edición** de 24 h: pasada, se
+  congela, para que no se altere después de que el cliente la leyó.
 - Un usuario no puede reportar dos veces la misma reseña.
+
+> El módulo se corrigió el **2026-09-04**: la reseña al cocinero estaba anclada
+> al pedido. Los desvíos deliberados respecto de la especificación —ese anclaje,
+> el ícono de US-RES-06 y dónde vive el listado de reseñas de plato— están en la
+> sección 17 de `PENDIENTE_RESENAS.md`.
 
 ---
 
@@ -171,15 +221,27 @@ Reglas:
 | US-NOT-07 | historial de notificaciones en la app (PAN-NOT-01)    |
 | US-NOT-08 | habilitar o deshabilitar cada tipo                    |
 
-Reglas:
+Reglas (implementación en `docs/API-NOTIFICACIONES.md`):
 
-- **La fila en `notificacion` se escribe siempre**, aunque el push falle o el
-  usuario tenga las notificaciones apagadas en el sistema operativo. El envío
-  push es un efecto adicional, no la notificación en sí.
+- **Regla de escritura de la fila** (documento del módulo, rev. 01/09/2026):
+  para un tipo **configurable** con la preferencia en `activa = false`, **no se
+  escribe fila ni se manda push**. Para los tipos **esenciales**
+  (`AVISO_SISTEMA`, `PUBLICACION_ELIMINADA_ADMIN`) la fila se escribe siempre.
+  El push es un efecto adicional que puede fallar sin tocar la fila.
+  _(Esto corrige la regla anterior "la fila se escribe siempre".)_
+- Los tres rechazos de un pedido —cocinero, cliente (cancela), sistema
+  (expira)— son el **único** tipo `PEDIDO_RECHAZADO`; el texto y el
+  destinatario los elige `pedido.origen_rechazo`.
 - `preferencia_notificacion.modificable = false` marca las críticas que no se
-  pueden apagar (US-NOT-07 lo especifica para al menos una). La interfaz las
-  muestra **deshabilitadas**, no ocultas: así queda claro que existen.
+  pueden apagar. La interfaz las muestra **deshabilitadas**, no ocultas.
 - Un usuario puede tener **varios dispositivos** (`dispositivo_push`), y el
   token se renueva ante reinstalación o rotación del sistema operativo.
-- El envío por FCM tarda menos de 200 ms, así que se resuelve de forma síncrona
-  dentro del handler: el MVP **no** incorpora cola de mensajes (punto 1.3.1.12).
+- El push **no** es síncrono: `emision.service.ts` solo escribe la fila; un
+  **planificador** (`server.ts`) barre lo pendiente cada ~10 s y lo manda por
+  la **Expo Push API** (no FCM directo). El MVP **no** incorpora cola de
+  mensajes (punto 1.3.1.12). La expiración automática, que corre en pg_cron,
+  la notifica ese mismo planificador.
+- **Alcance implementado**: US-NOT-01 a US-NOT-08 y las notificaciones de RF086
+  (como `AVISO_SISTEMA`). Los avisos generales los emite el administrador
+  desde la sección "Avisos" del panel (`POST /avisos`) y se leen en PAN-NOT-03.
+  El administrador no recibe notificaciones (el panel no tiene campana).

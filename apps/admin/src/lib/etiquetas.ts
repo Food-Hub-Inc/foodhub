@@ -1,8 +1,11 @@
 import type {
   EstadoCuenta,
+  EstadoPedido,
+  EstadoPublicacion,
   OperacionAuditoria,
   TipoEventoSeguridad,
   TipoUsuario,
+  TipoUsuarioCancelacion,
 } from '@foodhub/shared';
 
 /**
@@ -52,6 +55,20 @@ export const ETIQUETA_EVENTO_SEGURIDAD: Record<TipoEventoSeguridad, string> = {
 };
 
 /**
+ * Opciones del selector "Aplicable a" de motivos de cancelación (US-CFG-02,
+ * RF056): textos literales del criterio de aceptación, no el código interno
+ * (`COCINERO` / `CLIENTE` / `AMBOS`) que usa el contrato de la API.
+ */
+export const ETIQUETA_TIPO_USUARIO_CANCELACION: Record<
+  TipoUsuarioCancelacion,
+  string
+> = {
+  COCINERO: 'Cancelación por cocinero',
+  CLIENTE: 'Cancelación por cliente',
+  AMBOS: 'Ambos',
+};
+
+/**
  * Nombres legibles de los campos que la API guarda en `datos_adicionales`.
  *
  * El modal de detalle de PAN-AUD-01 debe mostrar esos datos "estructurados" y
@@ -73,4 +90,23 @@ export const ETIQUETA_DATO_ADICIONAL: Record<string, string> = {
   motivoSuspension: 'Motivo de la suspensión',
   origen: 'Origen',
   camposModificados: 'Campos modificados',
+};
+
+/**
+ * Estado de disponibilidad de una publicación (US-ADM-04). Mismos textos que
+ * ve el cliente en la app: "Disponible", "Últimas unidades", "No disponible".
+ */
+export const ETIQUETA_ESTADO_PUBLICACION: Record<EstadoPublicacion, string> = {
+  DISPONIBLE: 'Disponible',
+  ULTIMAS_UNIDADES: 'Últimas unidades',
+  NO_DISPONIBLE: 'No disponible',
+};
+
+/** Estado de un pedido en el bloque "Pedidos por estado" de PAN-ADM-03. */
+export const ETIQUETA_ESTADO_PEDIDO: Record<EstadoPedido, string> = {
+  CREADO: 'Creado',
+  ACEPTADO: 'Aceptado',
+  LISTO: 'Listo',
+  COMPLETADO: 'Completado',
+  RECHAZADO: 'Rechazado',
 };

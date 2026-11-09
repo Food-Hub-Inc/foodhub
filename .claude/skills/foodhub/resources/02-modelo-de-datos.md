@@ -1,9 +1,10 @@
 # Capítulo 02 · Modelo de datos
 
-Fuente: `FoodHub - DG12082026_V5.drawio` (43 clases).
+Diagrama vigente: `DG13092026_V7.drawio` (43 clases), en el Drive del proyecto.
 Implementación: `packages/db/src/schema/`.
 
-> El **V3 y el V4 quedaron obsoletos**. Usá siempre el V5.
+> Este capítulo se redactó sobre el `DG12082026_V5`. Los diagramas anteriores
+> al V7 quedaron reemplazados: ante cualquier diferencia, manda el V7.
 
 ---
 
@@ -109,8 +110,11 @@ ninguna distancia real.
 
 - `Favorito` (abstracta) se traduce a **dos tablas concretas**, así cada FK
   puede ser `NOT NULL` y la base impide por sí sola un favorito huérfano.
-- `carrito` tiene índice único sobre `(cliente_id, cocinero_id)`: es la regla
-  "un pedido, un cocinero" implementada a nivel de base.
+- `carrito` tiene índice único sobre `(cliente_id)`: **un solo carrito activo por
+  cliente**. Es la regla "un pedido, un cocinero" implementada a nivel de base —
+  mientras el carrito exista, todo lo que se agregue tiene que ser de
+  `carrito.cocinero_id`. Agregar un plato de otro cocinero pide confirmación y
+  reemplaza el carrito (US-EXP-05).
 
 ### Pedidos — `schema/pedidos.ts`
 
@@ -132,14 +136,51 @@ CREADO ──→ ACEPTADO ──→ LISTO ──→ COMPLETADO
 
 ### Reseñas — `schema/social.ts`
 
-`resena` · `calificacion_cocinero` · `reaccion_resena` · `respuesta_cocinero` ·
-`reporte_resena`
+`resena` · `reaccion_resena` · `respuesta_cocinero` · `reporte_resena`
 
-- `resena.pedido_id` y `calificacion_cocinero.pedido_id` son **UNIQUE**: una
-  reseña por pedido en cada dirección. Sin eso se podría inflar o hundir la
-  reputación de alguien repitiendo la reseña sobre la misma transacción.
-- Calificación entre 1 y 5, verificado por CHECK.
-- Solo las reseñas `VISIBLE` promedian en el perfil público.
+- **Una reseña se identifica por (autor, objeto reseñado)**, y el objeto es un
+  **plato, un cocinero o un cliente**. Hay una sola por autor y objeto: si se
+  vuelve a opinar, se **edita** la que ya existe. Sin esa restricción cualquiera
+  podría inflar o hundir una reputación repitiendo la reseña.
+- **El pedido no aparece en ninguna tabla del módulo.** Solo responde "¿tiene
+  derecho a reseñar?" en el momento del alta, y eso se verifica por consulta
+  contra `historial_estado_pedido`.
+- **Los tres tipos viven en UNA tabla con discriminador** `tipo_resena`, igual
+  que `mensaje` y al revés que `favorito`. El motivo es que los tres agregados
+  sociales cuelgan de `resena_id` y así sirven a los tres tipos sin una línea
+  extra, incluida la cola de moderación de PAN-ADM-02.
+
+| `tipo_resena` | destino              | autor    | quién la ve                  |
+| ------------- | -------------------- | -------- | ---------------------------- |
+| `PLATO`       | `publicacion_id`     | cliente  | cualquiera (US-RES-01/03)    |
+| `COCINERO`    | `cocinero_res_id`    | cliente  | cualquiera (RF087/US-RES-07) |
+| `CLIENTE`     | `cliente_destino_id` | cocinero | solo cocineros (US-RES-02)   |
+
+- El CHECK `resena_destino_segun_tipo` garantiza que esté poblado **exactamente**
+  el destino de su tipo. Los tres índices únicos son **parciales**, uno por tipo:
+  la columna de destino es `NULL` en los otros dos y en PostgreSQL los NULL no
+  chocan entre sí, así que un único índice no restringiría nada.
+- `cocinero_res_id` cumple dos papeles: es el **destino** en las de tipo
+  COCINERO y el **dueño del plato** —desnormalizado— en las de tipo PLATO. Toda
+  consulta sobre esa columna tiene que filtrar además por tipo.
+- **La reputación pública del cocinero sale de las reseñas de tipo COCINERO**, no
+  de las de sus platos. El promedio **por plato** sale de las de tipo PLATO. Son
+  dos preguntas distintas y las dos aplican `resena_minimo_para_promedio`.
+- **Las de tipo CLIENTE no llevan reacciones, respuesta ni reporte**, y no es un
+  olvido: el cliente no las ve. Su privacidad ya no la da el modelo —comparten
+  tabla con las públicas— sino el `requiereRol('COCINERO')` de sus rutas, con una
+  prueba de router dedicada.
+- Calificación entre 1 y 5, verificado por CHECK. Solo las `VISIBLE` promedian.
+
+> **Cambio del 2026-08-18.** Antes la reseña era por pedido. Se cambió porque
+> US-EXP-03 (filtro por valoración mínima) y US-EXP-05 (promedio en el detalle
+> del plato) exigen la valoración de UNA publicación.
+>
+> **Corrección del 2026-09-04 (migración `0015`).** La reseña al cocinero había
+> quedado anclada al PEDIDO —una por pedido— y eso permitía que un cliente
+> frecuente pesara varias veces sobre la misma reputación. Se unificaron las tres
+> tablas bajo la regla de arriba. **El diagrama `DG12082026_V5` todavía no
+> refleja esto**: ver el punto 14 de `PENDIENTE_RESENAS.md`.
 
 ### Mensajería — `schema/mensajeria.ts`
 

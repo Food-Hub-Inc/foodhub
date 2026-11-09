@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { HeroUINativeProvider } from 'heroui-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -14,6 +15,7 @@ import {
   useFonts,
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { GateDeSesion } from '../src/components/GateDeSesion';
+import { useNotificacionesPush } from '../src/hooks/useNotificacionesPush';
 import '../global.css';
 
 /**
@@ -29,6 +31,15 @@ import '../global.css';
  * importar qué tan anidada esté dentro de un ScrollView. Tiene que estar por
  * encima de `GateDeSesion` y del `Stack`: cualquier pantalla, en cualquier
  * ruta, puede abrir una hoja.
+ *
+ * Y TIENE QUE ESTAR POR DEBAJO de `HeroUINativeProvider` y
+ * `QueryClientProvider`, no por encima. El portal donde @gorhom/bottom-sheet
+ * monta el contenido de la hoja (`BottomSheetHostingContainer`) es HERMANO
+ * de la porción del árbol que ve `children`, no descendiente: hereda el
+ * contexto de lo que envuelve a `BottomSheetModalProvider` desde afuera, no
+ * el de lo que está declarado adentro. Con el orden invertido, cualquier hoja
+ * que use `useQuery` (como el selector de categorías de `HojaDeFiltros`)
+ * revienta con "No QueryClient set" apenas se abre.
  */
 
 // Mantiene el splash visible hasta que las fuentes estén listas: sin esto la
@@ -47,6 +58,16 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+/**
+ * US-NOT · Registra el token push, escucha los taps sobre un push y navega al
+ * recurso relacionado. Va dentro de `GateDeSesion` -necesita saber si hay
+ * sesión- y no dibuja nada.
+ */
+function NotificacionesPush(): null {
+  useNotificacionesPush();
+  return null;
+}
 
 export default function LayoutRaiz() {
   const [fuentesListas, errorFuentes] = useFonts({
@@ -71,19 +92,25 @@ export default function LayoutRaiz() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <BottomSheetModalProvider>
+      {/* Mide el teclado y publica su altura por contexto. Va lo más arriba
+          posible: lo consumen `PantallaConTeclado` y el chat, que están en
+          ramas distintas del árbol. */}
+      <KeyboardProvider>
         <HeroUINativeProvider>
           <QueryClientProvider client={queryClient}>
-            <StatusBar style="dark" />
-            {/* El gate va DENTRO del proveedor de consultas y por encima del
+            <BottomSheetModalProvider>
+              <StatusBar style="dark" />
+              {/* El gate va DENTRO del proveedor de consultas y por encima del
                 Stack: necesita React Query para preguntar el perfil, y tiene que
                 poder redirigir antes de que se dibuje ninguna pantalla. */}
-            <GateDeSesion>
-              <Stack screenOptions={{ headerShown: false }} />
-            </GateDeSesion>
+              <GateDeSesion>
+                <NotificacionesPush />
+                <Stack screenOptions={{ headerShown: false }} />
+              </GateDeSesion>
+            </BottomSheetModalProvider>
           </QueryClientProvider>
         </HeroUINativeProvider>
-      </BottomSheetModalProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

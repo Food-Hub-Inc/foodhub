@@ -15,6 +15,132 @@
       "when": 1786665087684,
       "tag": "0001_habilitar_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787002227447,
+      "tag": "0002_bizarre_quentin_quire",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787002254371,
+      "tag": "0003_sembrar_tipos_usuario_cancelacion",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787004464035,
+      "tag": "0004_sembrar_configuracion_sistema",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787012536746,
+      "tag": "0005_sembrar_preferencias_notificacion",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787073572562,
+      "tag": "0002_seed_ayuda",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787076307446,
+      "tag": "0006_quitar_pedido_de_resenas",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787076318282,
+      "tag": "0007_resena_por_plato",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787178927224,
+      "tag": "0009_quitar_check_rechazo_y_secuencia_numero",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1787178986843,
+      "tag": "0010_expiracion_automatica_pedidos",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1787179046843,
+      "tag": "0011_realtime_mensajeria",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1787179146843,
+      "tag": "0012_sembrar_horario_atencion_soporte",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1787351786843,
+      "tag": "0013_sembrar_terminos_moderacion",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1787351886843,
+      "tag": "0013_sembrar_tipo_consulta_ayu03",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1787351986843,
+      "tag": "0014_notificaciones_favoritos_y_push_estado",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1787438186843,
+      "tag": "0014_calificacion_al_cocinero",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1787438186844,
+      "tag": "0015_resena_por_objeto_resenado",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1787524586843,
+      "tag": "0016_ayu05_fechas_contenido_ayuda",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1787524586844,
+      "tag": "0017_sembrar_rol_destino_ambos",
+      "breakpoints": true
     }
   ]
 }

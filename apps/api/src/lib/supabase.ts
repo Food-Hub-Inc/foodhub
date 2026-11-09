@@ -135,3 +135,69 @@ export async function revocarSesiones(
     );
   }
 }
+
+/**
+ * Duracion del baneo con el que se bloquea una cuenta suspendida.
+ *
+ * GoTrue no tiene un baneo "hasta nuevo aviso": pide una duracion. Cien anios
+ * es la forma habitual de expresar "indefinido", y no importa que sea finita
+ * porque `rehabilitarUsuario` lo levanta explicitamente.
+ */
+const BANEO_INDEFINIDO = '876000h';
+
+/**
+ * Bloquea o desbloquea una cuenta en GoTrue (US-GURP-08 / US-ADM-02).
+ *
+ * POR QUE NO ALCANZA CON `estado_cuenta` EN LA BASE
+ * ---------------------------------------------------------------------------
+ * El middleware de autenticacion lee ese estado y responde 403, pero solo
+ * cuando hay una request. Un usuario suspendido con la sesion ya abierta
+ * conserva un JWT valido y un refresh token que GoTrue le sigue renovando: el
+ * criterio "bloquee nuevos inicios de sesion" no se cumplia porque
+ * `signInWithPassword` seguia funcionando.
+ *
+ * POR QUE BANEAR Y NO `revocarSesiones`
+ * ---------------------------------------------------------------------------
+ * Esa funcion necesita el access token del propio usuario y el administrador no
+ * lo tiene. El baneo es la unica operacion de administrador que corta el
+ * ingreso, y ademas frena la renovacion del refresh token.
+ *
+ * `usuario.id` es el mismo id que `auth.users.id` (lo emite GoTrue al registrar
+ * y el perfil se crea con el), asi que alcanza con el id del perfil.
+ *
+ * Es "fire and forget" con la misma justificacion que `revocarSesiones`: el
+ * estado en la base ya cambio y el middleware bloquea igual en la proxima
+ * request, asi que un fallo de GoTrue no puede transformar una suspension
+ * aplicada en un 500 que le haga creer al administrador que no se aplico.
+ */
+async function cambiarBaneo(
+  usuarioId: string,
+  banDuration: string,
+): Promise<void> {
+  try {
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(usuarioId, {
+      ban_duration: banDuration,
+    });
+    if (error) {
+      logger.error(
+        { err: error, usuarioId, banDuration },
+        'no se pudo cambiar el baneo de la cuenta en GoTrue',
+      );
+    }
+  } catch (error) {
+    logger.error(
+      { err: error, usuarioId, banDuration },
+      'no se pudo cambiar el baneo de la cuenta en GoTrue',
+    );
+  }
+}
+
+/** US-GURP-08 - impide que la cuenta suspendida vuelva a iniciar sesion. */
+export function bloquearCuenta(usuarioId: string): Promise<void> {
+  return cambiarBaneo(usuarioId, BANEO_INDEFINIDO);
+}
+
+/** US-GURP-08 - levanta el bloqueo al rehabilitar la cuenta. */
+export function desbloquearCuenta(usuarioId: string): Promise<void> {
+  return cambiarBaneo(usuarioId, 'none');
+}

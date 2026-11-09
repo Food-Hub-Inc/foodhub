@@ -41,6 +41,14 @@ export function crearConexion(url: string) {
     // Si la base no responde en 10 s, la request falla rapido en lugar de
     // acumular conexiones colgadas.
     connect_timeout: 10,
+
+    /**
+     * Keepalive TCP cada 60 s. Sin esto, una conexion ociosa del pool puede
+     * ser reseteada por el pooler de Supabase o por un NAT/firewall
+     * intermedio, y el ECONNRESET llega como rechazo sin manejar y mata el
+     * proceso (se observo en desarrollo con el pooler en modo transaction).
+     */
+    keep_alive: 60,
   });
 
   return drizzle(cliente, { schema, casing: 'snake_case' });

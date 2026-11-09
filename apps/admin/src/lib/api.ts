@@ -1,4 +1,8 @@
-import { MENSAJES_AUTH, MENSAJES_ERROR } from '@foodhub/shared';
+import {
+  MENSAJES_AUTH,
+  MENSAJES_ERROR,
+  MENSAJES_POR_CODIGO_SUPABASE,
+} from '@foodhub/shared';
 import { obtenerToken, supabase } from './supabase.js';
 
 /**
@@ -240,8 +244,33 @@ export const api = {
   },
 };
 
-/** Convierte cualquier excepción en un mensaje mostrable al usuario. */
+/**
+ * Código de error de Supabase Auth, si el error viene de ahí.
+ *
+ * Se comprueba la forma y no `instanceof AuthApiError`: el SDK no exporta esa
+ * clase de forma estable y un `catch` recibe siempre `unknown`. Lo único que
+ * hace falta es el campo `code`, que GoTrue documenta como su identificador
+ * estable de error.
+ */
+export function codigoDeSupabase(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null) return undefined;
+  const codigo = (error as { code?: unknown }).code;
+  return typeof codigo === 'string' ? codigo : undefined;
+}
+
+/**
+ * Convierte cualquier excepción en un mensaje mostrable al usuario.
+ *
+ * Gemelo de `apps/mobile/src/lib/api.ts`: los errores de Supabase Auth con
+ * texto propio aprobado se traducen; el resto cae al genérico para no filtrar
+ * detalle técnico.
+ */
 export function mensajeDeError(error: unknown): string {
   if (error instanceof ErrorApi) return error.message;
-  return MENSAJES_ERROR.interno;
+
+  const codigo = codigoDeSupabase(error);
+  const traducido =
+    codigo === undefined ? undefined : MENSAJES_POR_CODIGO_SUPABASE[codigo];
+
+  return traducido ?? MENSAJES_ERROR.interno;
 }

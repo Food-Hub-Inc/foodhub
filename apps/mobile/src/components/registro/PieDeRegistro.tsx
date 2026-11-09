@@ -1,9 +1,16 @@
 import { Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Boton, BotonDeTexto } from '../ui/Boton';
 import { Casilla } from '../ui/Casilla';
 import { SelectorDeFoto, type FotoElegida } from '../ui/SelectorDeFoto';
 import { TEXTOS_REGISTRO } from '../../lib/textos';
+
+/**
+ * Pantalla de terminos dentro del grupo `(auth)`: el registro es sin sesion,
+ * asi que el enlace del checkbox no puede apuntar a `/ayuda/legal/terminos`
+ * (esa ruta pide sesion y `GateDeSesion` la redirige a `/bienvenida`).
+ */
+const rutaTerminos = '/terminos' as Href;
 
 /**
  * Cierre común de PAN-AUT-01 y PAN-AUT-02: foto opcional, términos y envío.
@@ -56,19 +63,11 @@ export function PieDeRegistro({
       </View>
 
       <View className="mt-5">
-        <Casilla
+        <CasillaDeTerminos
           error={errorTerminos}
-          etiquetaAccesible={`${TEXTOS_REGISTRO.aceptoTerminos}${TEXTOS_REGISTRO.terminos}${TEXTOS_REGISTRO.deFoodHub}`}
           marcada={terminosAceptados}
-          nombre="terminosAceptados"
-          onChange={onTerminos}
-        >
-          <Text className="text-body text-text-primary">
-            {TEXTOS_REGISTRO.aceptoTerminos}
-            <Text className="text-primary">{TEXTOS_REGISTRO.terminos}</Text>
-            {TEXTOS_REGISTRO.deFoodHub}
-          </Text>
-        </Casilla>
+          onMarcar={onTerminos}
+        />
       </View>
 
       <Boton
@@ -83,7 +82,7 @@ export function PieDeRegistro({
         {cuentaCreada ? TEXTOS_REGISTRO.continuar : TEXTOS_REGISTRO.registrarse}
       </Boton>
 
-      <View className="mt-6 flex-row justify-center">
+      <View className="mt-6 flex-col items-center justify-center">
         <Text className="text-body text-text-secondary">
           {TEXTOS_REGISTRO.yaTenesCuenta}
         </Text>
@@ -96,5 +95,51 @@ export function PieDeRegistro({
         </BotonDeTexto>
       </View>
     </View>
+  );
+}
+
+/**
+ * Checkbox "Acepto los términos y condiciones de FoodHub" con el enlace a la
+ * pantalla de terminos embebido en el texto.
+ *
+ * Vive aparte del pie del registro (y no inline en `PieDeRegistro`) para que
+ * la fila táctil de `Casilla` no se mezcle con la navegación del enlace y por
+ * los limites de complejidad de ESLint: la funcion del pie ya roza el maximo.
+ */
+function CasillaDeTerminos({
+  error,
+  marcada,
+  onMarcar,
+}: {
+  error: string | undefined;
+  marcada: boolean;
+  onMarcar: (aceptados: boolean) => void;
+}) {
+  return (
+    <Casilla
+      error={error}
+      etiquetaAccesible={`${TEXTOS_REGISTRO.aceptoTerminos}${TEXTOS_REGISTRO.terminos}${TEXTOS_REGISTRO.deFoodHub}`}
+      marcada={marcada}
+      nombre="terminosAceptados"
+      onChange={onMarcar}
+    >
+      <Text className="text-body text-text-primary">
+        {TEXTOS_REGISTRO.aceptoTerminos}
+        <Text
+          className="text-primary"
+          onPress={(evento) => {
+            // Salir del area tactil sin marcar el checkbox: la fila acepta, y
+            // el enlace solo debe leer.
+            evento.stopPropagation();
+            router.push(rutaTerminos);
+          }}
+          accessibilityRole="link"
+          accessibilityLabel={TEXTOS_REGISTRO.terminos}
+        >
+          {TEXTOS_REGISTRO.terminos}
+        </Text>
+        {TEXTOS_REGISTRO.deFoodHub}
+      </Text>
+    </Casilla>
   );
 }

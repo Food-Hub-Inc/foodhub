@@ -1,12 +1,12 @@
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { MENSAJES_USUARIO } from '@foodhub/shared';
-import { SafeAreaView } from '../../components/SafeAreaView';
-import { IconoEngranaje } from '../../components/iconos';
+import { PantallaDeTab } from '../../components/PantallaDeTab';
 import { BotonDeNotificaciones } from '../../components/ui/BotonDeNotificaciones';
 import { EncabezadoPantalla } from '../../components/ui/EncabezadoPantalla';
 import { Esqueleto } from '../../components/ui/Esqueleto';
 import { EstadoDeError } from '../../components/ui/EstadoDeError';
 import { HojaDeOrigenDeFoto } from '../../components/ui/HojaDeOrigenDeFoto';
+import { PantallaConTeclado } from '../../components/ui/PantallaConTeclado';
 import { useCambiarFotoDePerfil } from '../../hooks/useCambiarFotoDePerfil';
 import { usePerfil } from '../../hooks/usePerfil';
 import { TEXTOS_PERFIL } from '../../lib/textos';
@@ -33,16 +33,9 @@ export function MiPerfil() {
   const foto = useCambiarFotoDePerfil();
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <PantallaDeTab>
       <EncabezadoPantalla
-        accion={
-          <View className="flex-row items-center">
-            <BotonDeNotificaciones />
-            <View className="h-11 w-11 items-center justify-center">
-              <IconoEngranaje className="text-text-primary" size={22} />
-            </View>
-          </View>
-        }
+        accion={<BotonDeNotificaciones />}
         titulo={TEXTOS_PERFIL.titulo}
       />
 
@@ -58,10 +51,7 @@ export function MiPerfil() {
       ) : null}
 
       {perfil.data ? (
-        <ScrollView
-          contentContainerClassName="px-4 pt-4 pb-10"
-          keyboardShouldPersistTaps="handled"
-        >
+        <PantallaConTeclado contentContainerClassName="px-4 pt-4 pb-10">
           <TarjetaDeIdentidad
             errorDeFoto={foto.error}
             onCambiarFoto={foto.abrir}
@@ -70,7 +60,7 @@ export function MiPerfil() {
           />
           <FormularioDePerfil perfil={perfil.data} />
           <AccionesDeCuenta />
-        </ScrollView>
+        </PantallaConTeclado>
       ) : null}
 
       <HojaDeOrigenDeFoto
@@ -79,7 +69,7 @@ export function MiPerfil() {
         onElegirDeGaleria={foto.elegirDeGaleria}
         onTomarFoto={foto.tomarFoto}
       />
-    </SafeAreaView>
+    </PantallaDeTab>
   );
 }
 

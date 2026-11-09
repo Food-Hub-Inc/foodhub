@@ -37,7 +37,14 @@ import { AppError } from './error.middleware.js';
  *   router.post('/publicaciones', requiereAutenticacion, requiereRol('COCINERO'), crear);
  */
 export function requiereRol(...rolesPermitidos: TipoUsuario[]) {
-  return (req: Request, _res: Response, next: NextFunction): void => {
+  // Nombrada y no anonima: es lo que permite comprobar, inspeccionando la pila
+  // de un router, que una ruta sensible no quedo sin su guarda de rol. Lo usa
+  // `resenas.router.test.ts` para US-RES-02, y de paso mejora los stack traces.
+  return function verificarRol(
+    req: Request,
+    _res: Response,
+    next: NextFunction,
+  ): void {
     if (!req.usuario) {
       next(new AppError(401, MENSAJES_AUTH.sesionRequerida, 'SIN_SESION'));
       return;

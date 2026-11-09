@@ -1,7 +1,16 @@
 import {
+  MENSAJES_MENSAJERIA,
+  MENSAJES_PUBLICACION,
+  MENSAJES_RESENA,
   MENSAJES_USUARIO,
+  type FormatoAdjuntoTicket,
   type FormatoImagenPerfil,
+  type SolicitarUrlCargaAdjuntoTicketInput,
+  type SolicitarUrlDeCargaCategoriaInput,
+  type SolicitarUrlDeCargaFotoResenaInput,
   type SolicitarUrlDeCargaInput,
+  type SolicitarUrlDeCargaImagenChatInput,
+  type SolicitarUrlDeCargaPlatoInput,
   type UrlDeCarga,
 } from '@foodhub/shared';
 import { env } from '../../config/env.js';
@@ -31,6 +40,19 @@ const EXTENSION: Record<FormatoImagenPerfil, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
+};
+
+/**
+ * Extension del archivo para los adjuntos de un ticket (US-AYU-03).
+ *
+ * Reutiliza el par de imagenes de `EXTENSION` y agrega el PDF. Son tres
+ * valores: JPG, PNG y PDF, exactamente los que admite el criterio de
+ * aceptacion.
+ */
+const EXTENSION_ADJUNTO_TICKET: Record<FormatoAdjuntoTicket, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'application/pdf': 'pdf',
 };
 
 /** Carpeta propia de cada usuario dentro del bucket de perfiles. */
@@ -78,6 +100,86 @@ export async function crearUrlDeCargaDeFotoPerfil(entrada: {
 }
 
 /**
+ * US-CFG-01 - Permiso para subir la imagen representativa de una categoria.
+ *
+ * Exclusivo del administrador (lo exige el router con `soloAdministrador`), a
+ * diferencia de la foto de perfil, que cualquier usuario autenticado sube
+ * sobre si mismo. La carpeta se arma con `categoriaId` cuando la categoria ya
+ * existe (edicion) y con `nueva` cuando todavia no (alta): el formulario sube
+ * la imagen antes de crear la fila, igual que la foto de perfil durante el
+ * registro.
+ */
+export async function crearUrlDeCargaDeImagenCategoria(entrada: {
+  categoriaId: string | null;
+  datos: SolicitarUrlDeCargaCategoriaInput;
+}): Promise<UrlDeCarga> {
+  const extension = EXTENSION[entrada.datos.mimeType];
+  const carpeta = entrada.categoriaId ? `${entrada.categoriaId}/` : 'nueva/';
+  const ruta = `${carpeta}${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_CONFIGURACION);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
+}
+
+/**
+ * US-CFG-03 - Permiso para subir el logo de la plataforma (Información
+ * institucional). Reusa el mismo contrato que la imagen de categoría
+ * (`SolicitarUrlDeCargaCategoriaInput`): RF057 fija el mismo tope de 2 MB, y
+ * son dos imágenes administradas por el mismo módulo.
+ */
+export async function crearUrlDeCargaDeLogoPlataforma(
+  datos: SolicitarUrlDeCargaCategoriaInput,
+): Promise<UrlDeCarga> {
+  const extension = EXTENSION[datos.mimeType];
+  const ruta = `plataforma/${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_CONFIGURACION);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
+}
+
+/**
+ * US-AYU-05 - Permiso para subir una imagen ilustrativa del manual de usuario.
+ *
+ * Reusa el bucket de configuracion y su contrato de imagen de categoria (2 MB,
+ * JPG/PNG/WEBP): la US no fija un tope propio y el bucket ya admite esos MIME
+ * types, asi que no hace falta crear otro. La carpeta `ayuda/` separa estos
+ * archivos de las imagenes de categoria y del logo.
+ */
+export async function crearUrlDeCargaDeImagenAyuda(
+  datos: SolicitarUrlDeCargaCategoriaInput,
+): Promise<UrlDeCarga> {
+  const extension = EXTENSION[datos.mimeType];
+  const ruta = `ayuda/${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_CONFIGURACION);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
+}
+
+/**
  * Borra las fotos anteriores del usuario y deja solo la vigente.
  *
  * Se invoca DESPUES de que la URL nueva quedo guardada en `usuario`, nunca
@@ -112,4 +214,250 @@ export async function limpiarFotosDePerfilAnteriores(
       'quedaron fotos de perfil huérfanas en Storage',
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Foto de plato (US-PUB-01 y US-PUB-02)
+// ---------------------------------------------------------------------------
+
+/** Carpeta del bucket de publicaciones donde caen las fotos de un cocinero. */
+function carpetaDePlatosDe(cocineroId: string): string {
+  return `${cocineroId}/`;
+}
+
+/**
+ * US-PUB-01 - Permiso para subir la foto de un plato.
+ *
+ * Mismo mecanismo que `crearUrlDeCargaDeFotoPerfil` (URL firmada, nombre con
+ * marca de tiempo para invalidar la cache de imagen del dispositivo), pero
+ * contra `STORAGE_BUCKET_PUBLICACIONES` y con la carpeta nombrada por
+ * `cocineroId`, no por el id de la publicación: la foto se sube ANTES de
+ * crear la fila (el flujo de alta encadena la subida y recién después el
+ * `POST /publicaciones`), así que todavía no existe un id de publicación al
+ * que asociar la carpeta.
+ *
+ * Reutiliza `EXTENSION`: los formatos admitidos de plato y de perfil son hoy
+ * el mismo conjunto de tres, y la tabla de extensiones no es una regla de
+ * negocio (a diferencia de `FORMATOS_IMAGEN_PLATO` / `MAXIMO_IMAGEN_PLATO_BYTES`,
+ * que sí son constantes propias): es un detalle técnico de cómo se nombra el
+ * archivo.
+ */
+export async function crearUrlDeCargaDeFotoPlato(entrada: {
+  cocineroId: string;
+  datos: SolicitarUrlDeCargaPlatoInput;
+}): Promise<UrlDeCarga> {
+  const topeBytes = env.STORAGE_MAX_FILE_SIZE_MB * 1024 * 1024;
+  if (entrada.datos.tamano > topeBytes) {
+    throw new AppError(
+      400,
+      MENSAJES_PUBLICACION.imagenInvalida,
+      'IMAGEN_INVALIDA',
+    );
+  }
+
+  const extension = EXTENSION[entrada.datos.mimeType];
+  const ruta = `${carpetaDePlatosDe(entrada.cocineroId)}${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_PUBLICACIONES);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
+}
+
+/** Carpeta del bucket de resenas donde caen las fotos de un cliente. */
+function carpetaDeResenasDe(clienteId: string): string {
+  return `${clienteId}/`;
+}
+
+/**
+ * US-RES-01 - Permiso para subir la foto que el cliente adjunta a una resena.
+ *
+ * LA CARPETA LLEVA EL ID DEL CLIENTE Y NO EL DE LA PUBLICACION NI EL DE LA
+ * RESENA. Es el mismo motivo que en `crearUrlDeCargaDeFotoPlato`: la foto se
+ * sube ANTES de crear la fila -el formulario encadena la subida y recien
+ * despues el `POST /resenas`-, asi que todavia no hay id de resena al que
+ * colgarla. Nombrarla por el cliente ademas impide que un usuario pise la foto
+ * de otro: la ruta la arma la API con `req.usuario.id` y no con nada que venga
+ * en el body.
+ *
+ * Se valida el tope de nuevo aca aunque el schema compartido ya lo haya hecho,
+ * por la misma razon que en las otras dos: ese schema corre tambien en el
+ * telefono y una validacion que el cliente puede saltear no es un control.
+ */
+export async function crearUrlDeCargaDeFotoResena(entrada: {
+  clienteId: string;
+  datos: SolicitarUrlDeCargaFotoResenaInput;
+}): Promise<UrlDeCarga> {
+  const topeBytes = env.STORAGE_MAX_FILE_SIZE_MB * 1024 * 1024;
+  if (entrada.datos.tamano > topeBytes) {
+    throw new AppError(400, MENSAJES_RESENA.fotoInvalida, 'IMAGEN_INVALIDA');
+  }
+
+  const extension = EXTENSION[entrada.datos.mimeType];
+  const ruta = `${carpetaDeResenasDe(entrada.clienteId)}${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_RESENAS);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
+}
+
+/**
+ * US-PUB-02 - Borra la foto ANTERIOR de un plato puntual tras editarlo.
+ *
+ * NO ES el mismo patrón que `limpiarFotosDePerfilAnteriores` a pesar de lo que
+ * describía el plan original: esa función lista TODA la carpeta del usuario y
+ * borra todo lo que no coincide con la URL vigente, lo cual es correcto para
+ * un perfil (una persona, una sola foto activa) pero destructivo para un
+ * plato. Un cocinero tiene varias publicaciones a la vez y todas sus fotos
+ * conviven en la misma carpeta `${cocineroId}/` del bucket (no hay una
+ * subcarpeta por publicación posible: la foto se sube antes de que la
+ * publicación tenga id, ver `crearUrlDeCargaDeFotoPlato`). Vaciar la carpeta
+ * al editar UN plato borraría también las fotos de los OTROS platos vigentes
+ * del mismo cocinero. Por eso esta función recibe la URL anterior puntual del
+ * plato que se está editando y borra únicamente ese objeto, dejando intacto
+ * el resto de la carpeta.
+ *
+ * Se invoca solo cuando `imagenUrl` participó de la edición (mismo criterio
+ * que `editarPerfil` con `fotoPerfilUrl`), con la URL que tenía la fila ANTES
+ * del `UPDATE` y la que quedó guardada después.
+ */
+export async function limpiarFotoDePlatoAnterior(entrada: {
+  cocineroId: string;
+  urlAnterior: string | null;
+  urlNueva: string | null;
+}): Promise<void> {
+  const { cocineroId, urlAnterior, urlNueva } = entrada;
+  if (!urlAnterior || urlAnterior === urlNueva) return;
+
+  try {
+    const nombreArchivo = urlAnterior.split('/').pop();
+    if (!nombreArchivo) return;
+
+    const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_PUBLICACIONES);
+    const { error } = await bucket.remove([
+      `${carpetaDePlatosDe(cocineroId)}${nombreArchivo}`,
+    ]);
+    if (error) throw error;
+  } catch (error) {
+    logger.error(
+      { err: error, cocineroId },
+      'quedó una foto de plato huérfana en Storage',
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Imagen del chat (US-MSG-03)
+// ---------------------------------------------------------------------------
+
+/**
+ * US-MSG-03 - Permiso para subir una imagen dentro de una conversacion.
+ *
+ * LA CARPETA ES LA CONVERSACION, no el usuario. Es la diferencia con la foto de
+ * perfil y con la del plato: aquellas pertenecen a una persona, y esta al hilo
+ * que comparten dos. Agrupar por conversacion es lo que permite, el dia que
+ * haga falta, borrar de una vez todo lo que se intercambio en un chat.
+ *
+ * LA PERTENENCIA SE VERIFICA ANTES DE FIRMAR. El router le pasa la conversacion
+ * ya validada contra la sesion (`obtenerConversacion` responde 404 si quien pide
+ * no participa): sin ese paso, cualquiera podria subir archivos a la carpeta de
+ * una conversacion ajena con solo conocer su UUID.
+ *
+ * El nombre lleva marca de tiempo por el mismo motivo que en los otros dos
+ * casos: con un nombre reutilizado, el CDN de Storage y la cache de expo-image
+ * seguirian sirviendo la imagen anterior.
+ */
+export async function crearUrlDeCargaDeImagenChat(entrada: {
+  conversacionId: string;
+  datos: SolicitarUrlDeCargaImagenChatInput;
+}): Promise<UrlDeCarga> {
+  const topeBytes = env.STORAGE_MAX_IMAGEN_CHAT_MB * 1024 * 1024;
+  if (entrada.datos.tamano > topeBytes) {
+    throw new AppError(
+      400,
+      MENSAJES_MENSAJERIA.imagenInvalida,
+      'IMAGEN_INVALIDA',
+    );
+  }
+
+  const extension = EXTENSION[entrada.datos.mimeType];
+  const ruta = `${entrada.conversacionId}/${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_MENSAJES);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Adjunto de ticket (US-AYU-03)
+// ---------------------------------------------------------------------------
+
+/**
+ * Carpeta del bucket donde caen los adjuntos de los tickets de un usuario.
+ *
+ * Mismo criterio que la carpeta de fotos de plato: la ruta la arma el
+ * servidor a partir del `usuarioId` y la fecha, no del cliente. La inclusion
+ * del id del usuario en la ruta es la salvaguarda contra que un cliente
+ * pisara el archivo de otro: cambiar un UUID en la URL es indistinguible de
+ * un id cualquiera y la policy RLS que Storage aplica por prefijo de carpeta
+ * rechaza la escritura.
+ */
+function carpetaDeAdjuntosDe(usuarioId: string): string {
+  return `tickets/${usuarioId}/`;
+}
+
+/**
+ * US-AYU-03 - Permiso de carga para un archivo adjunto a un ticket (JPG,
+ * PNG o PDF de hasta 5 MB).
+ *
+ * Usa el bucket dedicado `STORAGE_BUCKET_TICKETS` (ver `env.ts`): el
+ * bucket `configuracion` (donde caen el logo y las imagenes de las
+ * categorias) tiene `allowedMimeTypes` restringido y rechaza el PDF
+ * del soporte con 415 "InvalidMimeType". Un bucket dedicado permite
+ * fijar la lista de MIME types del criterio sin tocar al resto. La
+ * ruta bajo el bucket es `tickets/{usuarioId}/{timestamp}.{ext}`.
+ *
+ * LA VALIDACION DE TAMANO Y FORMATO la hace el schema compartido
+ * (`SolicitarUrlCargaAdjuntoTicketInput`) con `zod`; replicarla aca seria
+ * duplicar la regla en dos lugares y exponerse a que un cambio no se
+ * propague. El middleware de errores convierte el `ZodError` en un 400 con
+ * el mensaje literal que definio el schema.
+ */
+export async function crearUrlDeCargaDeAdjuntoTicket(entrada: {
+  usuarioId: string;
+  datos: SolicitarUrlCargaAdjuntoTicketInput;
+}): Promise<UrlDeCarga> {
+  const extension = EXTENSION_ADJUNTO_TICKET[entrada.datos.mimeType];
+  const ruta = `${carpetaDeAdjuntosDe(entrada.usuarioId)}${String(Date.now())}.${extension}`;
+
+  const bucket = supabaseAdmin.storage.from(env.STORAGE_BUCKET_TICKETS);
+  const { data, error } = await bucket.createSignedUploadUrl(ruta);
+  if (error) throw error;
+
+  return {
+    url: data.signedUrl,
+    token: data.token,
+    ruta: data.path,
+    urlPublica: bucket.getPublicUrl(ruta).data.publicUrl,
+  };
 }

@@ -42,6 +42,14 @@ export interface ValidadorZod<TSalida> {
     | { success: false; error: { issues: readonly ProblemaZod[] } };
 }
 
+/**
+ * Los metodos se declaran como PROPIEDADES con tipo de funcion y no con
+ * sintaxis de metodo porque en la implementacion son funciones flecha
+ * creadas con `useCallback` (no usan `this`). Separar una propiedad
+ * funcion es seguro; separar un metodo de su objeto dispara
+ * `@typescript-eslint/unbound-method`. Es el mismo criterio que ya
+ * aplica `useSesion` (ver el comentario de `fijarSesion` ahi).
+ */
 export interface Formulario<TValores, TSalida> {
   /** Estado crudo de los inputs. */
   readonly valores: TValores;
@@ -50,13 +58,13 @@ export interface Formulario<TValores, TSalida> {
   /** `true` cuando el schema acepta el estado actual. */
   readonly esValido: boolean;
   /** Mensaje a mostrar debajo de un campo, o `undefined` si no corresponde. */
-  mensajeDe(campo: keyof TValores & string): string | undefined;
+  mensajeDe: (campo: keyof TValores & string) => string | undefined;
   /** Actualiza un campo y lo marca como tocado. */
-  fijar<K extends keyof TValores>(campo: K, valor: TValores[K]): void;
+  fijar: <K extends keyof TValores>(campo: K, valor: TValores[K]) => void;
   /** Fuerza la aparición de todos los errores: se llama al intentar enviar. */
-  revelarErrores(): void;
+  revelarErrores: () => void;
   /** Vuelve el formulario a su estado inicial. */
-  reiniciar(): void;
+  reiniciar: () => void;
 }
 
 export function useFormulario<

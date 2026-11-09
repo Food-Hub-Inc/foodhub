@@ -102,6 +102,16 @@ export function Boton({
 
   const { fondo, color, alto } = clasesDelBoton(variante, tamano, inactivo);
 
+  /**
+   * EL `className` DEL CALLER VA EN EL `Pressable`, NO EN LA CAPA ANIMADA.
+   *
+   * El `Pressable` es el hijo real del layout: es a él a quien el padre le
+   * aplica flexbox. Un `w-full` o un `flex-1` puestos en la vista de adentro no
+   * podían estirar nada, porque el `Pressable` ya se había encogido al tamaño
+   * de su contenido — así quedaba angosto el botón "Cerrar sesión" de la hoja
+   * de PAN-AUT-05. La capa animada lleva ahora un `w-full` propio para llenar
+   * al `Pressable`, mida lo que mida.
+   */
   return (
     <Pressable
       onPress={onPress}
@@ -115,10 +125,11 @@ export function Boton({
       accessibilityRole="button"
       accessibilityState={{ disabled: inactivo, busy: cargando }}
       accessibilityLabel={accessibilityLabel ?? children}
+      className={className}
     >
       <Animated.View
         style={estiloPulso}
-        className={`flex-row items-center justify-center gap-2 rounded-md ${alto} ${fondo} ${className}`}
+        className={`w-full flex-row items-center justify-center gap-2 rounded-md ${alto} ${fondo}`}
       >
         {icono !== undefined && !cargando ? <View>{icono}</View> : null}
         <Text className={`text-body font-bold ${color}`} numberOfLines={1}>
@@ -153,7 +164,7 @@ export function BotonDeTexto({
       onPress={onPress}
       accessibilityRole="link"
       accessibilityLabel={accessibilityLabel ?? children}
-      className="min-h-11 justify-center py-2"
+      className="min-h-11 items-center justify-center py-2"
     >
       <Text className={`text-body font-bold ${className}`}>{children}</Text>
     </Pressable>

@@ -5,9 +5,9 @@ metadata:
   proyecto: FoodHub - Proyecto Final 2026 - UTN FRM - Grupo 21
   version: '1.0.0'
   fuentes:
-    - 'FoodHub - Documentación de Proyecto.md'
-    - 'FoodHub - DG12082026_V5.drawio'
-    - 'FoodHub - Pantallas Mockup FoodHub.pdf'
+    - 'FoodHub - Documentación de Proyecto.docx (Drive, última versión)'
+    - 'DG13092026_V7.drawio (Drive)'
+    - 'Pantallas Mockup FoodHub.pdf (Drive)'
 ---
 
 # FoodHub
@@ -74,8 +74,9 @@ Auditoría (AUD)            Reseñas (RES)             Ayuda y soporte (AYU)
 
 Estas son las que más errores de implementación generan. Verificalas siempre.
 
-1. **Un pedido pertenece a un solo cocinero.** El carrito se separa por
-   cocinero: agregar un plato de otro abre un carrito nuevo.
+1. **Un pedido pertenece a un solo cocinero.** Hay **un solo carrito activo por
+   cliente** (`carrito_cliente_uq`): agregar un plato de otro cocinero pregunta
+   si se vacía el actual, y recién entonces lo reemplaza (US-EXP-05).
 2. **El precio se congela al confirmar.** `item_pedido` guarda un snapshot de
    nombre, precio e imagen. Editar la publicación después no puede alterar un
    pedido cerrado.
@@ -83,8 +84,12 @@ Estas son las que más errores de implementación generan. Verificalas siempre.
    `TRANSICIONES_PEDIDO` (`@foodhub/shared`). `CREADO → COMPLETADO` no existe.
 4. **Un rechazo siempre lleva motivo.** Lo exige la API y también un CHECK en
    la base.
-5. **Una reseña por pedido**, y solo sobre pedidos completados. `pedido_id` es
-   UNIQUE en `resena` y en `calificacion_cocinero`.
+5. **La reseña es por plato, no por pedido.** Una por cliente y publicación
+   (`resena_cliente_publicacion_uq`), y solo si ese cliente tiene un pedido
+   **completado** que incluya ese plato. En la otra dirección, una calificación
+   por par cocinero-cliente (`calificacion_cocinero_uq`), y solo si hubo un
+   pedido que llegó a **aceptado**. Ninguna de las dos tablas referencia
+   `pedido`: el derecho a opinar se valida por consulta.
 6. **El pedido sin responder expira solo** a los N minutos (por defecto 15,
    parametrizable) y pasa a `RECHAZADO` con origen `SISTEMA` (US-PED-10).
 7. **Nada se borra físicamente.** Las bajas son lógicas (`activo`,

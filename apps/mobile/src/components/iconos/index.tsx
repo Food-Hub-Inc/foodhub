@@ -113,6 +113,30 @@ export function IconoCorazon(props: PropsIcono) {
   );
 }
 
+/**
+ * El mismo corazón, relleno.
+ *
+ * US-EXP-06 fija los dos estados del botón de favorito: "corazón relleno"
+ * cuando el elemento está guardado y "corazón vacío" cuando no. Es el único
+ * ícono del sistema con variante rellena, y comparte el path exacto de
+ * `IconoCorazon` para que el contorno no se corra un píxel al alternar.
+ *
+ * El relleno se declara en el `Path` y no en el `Svg`: `Lienzo` fija
+ * `fill="none"` en la raíz, y `currentColor` acá hereda el token que resuelve la
+ * clase, así que el ícono sigue sin contener un literal de color.
+ */
+export function IconoCorazonRelleno(props: PropsIcono) {
+  return (
+    <Lienzo {...props}>
+      <Path
+        d="M19.5 12.57 12 20l-7.5-7.43a4.75 4.75 0 1 1 7.5-5.7 4.75 4.75 0 1 1 7.5 5.7Z"
+        {...TRAZO}
+        fill="currentColor"
+      />
+    </Lienzo>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Acciones y estado
 // ---------------------------------------------------------------------------
@@ -238,6 +262,32 @@ export function IconoTacho(props: PropsIcono) {
   );
 }
 
+/**
+ * Bandera de "reportar" (US-RES-06).
+ *
+ * REEMPLAZA A LOS TRES PUNTOS VERTICALES que el criterio describe. El texto de
+ * la historia pide un menu contextual detras de un `⋮`, pero ese control no
+ * decia que hacia: sobre una resena ajena la unica opcion era reportar y sobre
+ * la propia, eliminar, asi que el menu era un paso de mas delante de una accion
+ * unica. Con la bandera y el tacho se ve de entrada cual de las dos es.
+ *
+ * El literal del criterio sobrevive como `accessibilityLabel` del boton, asi
+ * que "Reportar reseña" sigue siendo verificable palabra por palabra.
+ *
+ * Mastil y panio en dos `Path`, como el resto del set: stroke 1.75, sin fill.
+ */
+export function IconoBandera(props: PropsIcono) {
+  return (
+    <Lienzo {...props}>
+      <Path d="M5.75 21V3.5" {...TRAZO} />
+      <Path
+        d="M5.75 4.25h11.4a.6.6 0 0 1 .47.97L15.25 8.5l2.37 3.28a.6.6 0 0 1-.47.97H5.75"
+        {...TRAZO}
+      />
+    </Lienzo>
+  );
+}
+
 export function IconoEngranaje(props: PropsIcono) {
   return (
     <Lienzo {...props}>
@@ -298,6 +348,29 @@ export function IconoEstrella(props: PropsIcono) {
       <Path
         d="m12 3.75 2.7 5.47 6.05.88-4.38 4.26 1.04 6.02L12 17.53l-5.41 2.85 1.04-6.02L3.25 10.1l6.05-.88L12 3.75Z"
         {...TRAZO}
+      />
+    </Lienzo>
+  );
+}
+
+/**
+ * Variante rellena de la estrella, para la calificación ya seleccionada
+ * (US-RES-01) y para el promedio del perfil público (US-RES-03).
+ *
+ * Mismo par que `IconoCorazon` / `IconoCorazonRelleno`, y por el mismo motivo:
+ * el relleno es un ícono distinto y no una bandera del mismo, así el llamador
+ * elige cuál dibuja y no hay una prop booleana que cambie la forma.
+ *
+ * `fill="currentColor"` hereda el token que resuelve la clase, de modo que el
+ * ícono sigue sin contener un literal de color.
+ */
+export function IconoEstrellaRellena(props: PropsIcono) {
+  return (
+    <Lienzo {...props}>
+      <Path
+        d="m12 3.75 2.7 5.47 6.05.88-4.38 4.26 1.04 6.02L12 17.53l-5.41 2.85 1.04-6.02L3.25 10.1l6.05-.88L12 3.75Z"
+        {...TRAZO}
+        fill="currentColor"
       />
     </Lienzo>
   );
@@ -375,6 +448,35 @@ export function IconoInformacion(props: PropsIcono) {
       <Circle cx={12} cy={12} r={8.25} {...TRAZO} />
       <Path d="M12 11.25v5" {...TRAZO} />
       <Path d="M12 7.9h.01" {...TRAZO} />
+    </Lienzo>
+  );
+}
+
+/** Fuera de la guía: acceso al hub de Ayuda y soporte. */
+export function IconoAyuda(props: PropsIcono) {
+  return (
+    <Lienzo {...props}>
+      <Circle cx={12} cy={12} r={8.25} {...TRAZO} />
+      <Path
+        d="M9.75 9.25a2.35 2.35 0 1 1 3.55 2.03c-.8.47-1.3 1-1.3 2.22"
+        {...TRAZO}
+      />
+      <Path d="M12 16.75h.01" {...TRAZO} />
+    </Lienzo>
+  );
+}
+
+/**
+ * Fuera de la guía: boton "Descargar PDF" del sub-hub de Informacion legal
+ * (US-AYU-04, CA5). Flecha hacia abajo con base, mismo lenguaje que el
+ * resto (24x24, trazo 1.75).
+ */
+export function IconoDescargar(props: PropsIcono) {
+  return (
+    <Lienzo {...props}>
+      <Path d="M12 3.75v11" {...TRAZO} />
+      <Path d="m7.5 10.25 4.5 4.5 4.5-4.5" {...TRAZO} />
+      <Path d="M4.75 18.25h14.5" {...TRAZO} />
     </Lienzo>
   );
 }

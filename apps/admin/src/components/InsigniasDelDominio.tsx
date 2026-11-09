@@ -1,11 +1,15 @@
 import type {
   EstadoCuenta,
+  EstadoPedido,
+  EstadoPublicacion,
   OperacionAuditoria,
   TipoEventoSeguridad,
   TipoUsuario,
 } from '@foodhub/shared';
 import {
   ETIQUETA_ESTADO_CUENTA,
+  ETIQUETA_ESTADO_PEDIDO,
+  ETIQUETA_ESTADO_PUBLICACION,
   ETIQUETA_EVENTO_SEGURIDAD,
   ETIQUETA_OPERACION,
   ETIQUETA_TIPO_USUARIO,
@@ -101,6 +105,73 @@ export function InsigniaEventoSeguridad({
   return (
     <Insignia tono={TONO_POR_EVENTO[tipo]}>
       {ETIQUETA_EVENTO_SEGURIDAD[tipo]}
+    </Insignia>
+  );
+}
+
+/**
+ * HABILITACIÓN — categorías de platos y motivos de cancelación (US-CFG-01,
+ * US-CFG-02, PAN-ADM-04): "indicador visual de color" del estado de
+ * habilitación. Verde disponible, gris fuera de uso, misma escala que
+ * `InsigniaEstadoCuenta`.
+ *
+ * Los textos no son fijos porque el género cambia según la entidad:
+ * "Habilitada" (categoría) vs. "Habilitado" (motivo).
+ */
+export function InsigniaHabilitacion({
+  activo,
+  etiquetaHabilitado = 'Habilitada',
+  etiquetaDeshabilitado = 'Deshabilitada',
+}: {
+  activo: boolean;
+  etiquetaHabilitado?: string;
+  etiquetaDeshabilitado?: string;
+}) {
+  return (
+    <Insignia tono={activo ? 'verde' : 'neutro'}>
+      {activo ? etiquetaHabilitado : etiquetaDeshabilitado}
+    </Insignia>
+  );
+}
+
+/**
+ * DISPONIBILIDAD de una publicación — guía visual, "Badges de disponibilidad":
+ * Disponible verde, Últimas unidades ámbar, No disponible gris.
+ */
+const TONO_POR_ESTADO_PUBLICACION: Record<EstadoPublicacion, TonoInsignia> = {
+  DISPONIBLE: 'verde',
+  ULTIMAS_UNIDADES: 'ambar',
+  NO_DISPONIBLE: 'neutro',
+};
+
+export function InsigniaEstadoPublicacion({
+  estado,
+}: {
+  estado: EstadoPublicacion;
+}) {
+  return (
+    <Insignia tono={TONO_POR_ESTADO_PUBLICACION[estado]}>
+      {ETIQUETA_ESTADO_PUBLICACION[estado]}
+    </Insignia>
+  );
+}
+
+/**
+ * ESTADO DE PEDIDO — mismos tonos que la app (`screens/pedidos/estados.ts`):
+ * creado gris, aceptado ámbar, listo y completado verde, rechazado rojo.
+ */
+const TONO_POR_ESTADO_PEDIDO: Record<EstadoPedido, TonoInsignia> = {
+  CREADO: 'gris',
+  ACEPTADO: 'ambar',
+  LISTO: 'verde',
+  COMPLETADO: 'verde',
+  RECHAZADO: 'rojo',
+};
+
+export function InsigniaEstadoPedido({ estado }: { estado: EstadoPedido }) {
+  return (
+    <Insignia tono={TONO_POR_ESTADO_PEDIDO[estado]}>
+      {ETIQUETA_ESTADO_PEDIDO[estado]}
     </Insignia>
   );
 }

@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { MENSAJES_USUARIO } from '../constants/mensajes.js';
+import {
+  MENSAJES_CONFIGURACION,
+  MENSAJES_PUBLICACION,
+  MENSAJES_RESENA,
+  MENSAJES_USUARIO,
+} from '../constants/mensajes.js';
 
 /**
  * Contrato de la subida de imagenes a Supabase Storage.
@@ -69,7 +74,106 @@ export const urlDeCargaSchema = z.object({
   urlPublica: z.url(),
 });
 
+/**
+ * Formatos e imagen de categoria (US-CFG-01, RF054): "Imagen representativa
+ * [Archivo de imagen] (maximo 2 MB, opcional)". El RF no acota los formatos
+ * admitidos, asi que se reutilizan los mismos tres que el resto de la
+ * plataforma en lugar de inventar una lista nueva.
+ */
+export const MAXIMO_IMAGEN_CATEGORIA_BYTES = 2 * 1024 * 1024;
+
+export const solicitarUrlDeCargaCategoriaSchema = z.object({
+  mimeType: z.enum(FORMATOS_IMAGEN_PERFIL, {
+    message: MENSAJES_CONFIGURACION.imagenCategoriaInvalida,
+  }),
+  tamano: z
+    .number()
+    .int()
+    .positive(MENSAJES_CONFIGURACION.imagenCategoriaInvalida)
+    .max(
+      MAXIMO_IMAGEN_CATEGORIA_BYTES,
+      MENSAJES_CONFIGURACION.imagenCategoriaInvalida,
+    ),
+});
+
 export type SolicitarUrlDeCargaInput = z.infer<
   typeof solicitarUrlDeCargaSchema
 >;
+export type SolicitarUrlDeCargaCategoriaInput = z.infer<
+  typeof solicitarUrlDeCargaCategoriaSchema
+>;
 export type UrlDeCarga = z.infer<typeof urlDeCargaSchema>;
+
+/**
+ * US-PUB-01 - "Imagen del plato ... (JPG, PNG o WEBP, máximo 5 MB) — opcional".
+ *
+ * Mismos valores que `FORMATOS_IMAGEN_PERFIL` / `MAXIMO_IMAGEN_PERFIL_BYTES`
+ * hoy, pero son constantes propias: son restricciones de negocio de un
+ * criterio de aceptación distinto (US-PUB-01, no US-AUT-01/US-AUT-02), y
+ * endurecer el límite de una no debería mover el límite de la otra sin que
+ * nadie lo note.
+ */
+export const FORMATOS_IMAGEN_PLATO = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+] as const;
+export type FormatoImagenPlato = (typeof FORMATOS_IMAGEN_PLATO)[number];
+
+export const MAXIMO_IMAGEN_PLATO_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Lo que el dispositivo declara antes de recibir la URL firmada de la foto de
+ * un plato. La respuesta reutiliza `urlDeCargaSchema` tal cual: el shape del
+ * permiso de escritura no depende de qué se está subiendo.
+ */
+export const solicitarUrlDeCargaPlatoSchema = z.object({
+  mimeType: z.enum(FORMATOS_IMAGEN_PLATO, {
+    message: MENSAJES_PUBLICACION.imagenInvalida,
+  }),
+  tamano: z
+    .number()
+    .int()
+    .positive(MENSAJES_PUBLICACION.imagenInvalida)
+    .max(MAXIMO_IMAGEN_PLATO_BYTES, MENSAJES_PUBLICACION.imagenInvalida),
+});
+
+export type SolicitarUrlDeCargaPlatoInput = z.infer<
+  typeof solicitarUrlDeCargaPlatoSchema
+>;
+
+/**
+ * US-RES-01 - "Foto del plato (Archivo de imagen, máximo 5 MB) — opcional".
+ *
+ * Constantes propias por el mismo motivo que las del plato: el criterio es
+ * otro (US-RES-01, no US-PUB-01) y los límites de uno no deberían moverse al
+ * tocar los del otro. Que hoy coincidan los tres formatos y los 5 MB es una
+ * coincidencia del documento, no una regla compartida.
+ *
+ * QUIEN SUBE ACA ES UN CLIENTE, no un cocinero. Es la única subida del sistema
+ * que hace el comprador sobre contenido público, y por eso el endpoint pide
+ * rol CLIENTE en lugar de reusar `/foto-plato`, que exige COCINERO.
+ */
+export const FORMATOS_FOTO_RESENA = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+] as const;
+export type FormatoFotoResena = (typeof FORMATOS_FOTO_RESENA)[number];
+
+export const MAXIMO_FOTO_RESENA_BYTES = 5 * 1024 * 1024;
+
+export const solicitarUrlDeCargaFotoResenaSchema = z.object({
+  mimeType: z.enum(FORMATOS_FOTO_RESENA, {
+    message: MENSAJES_RESENA.fotoInvalida,
+  }),
+  tamano: z
+    .number()
+    .int()
+    .positive(MENSAJES_RESENA.fotoInvalida)
+    .max(MAXIMO_FOTO_RESENA_BYTES, MENSAJES_RESENA.fotoInvalida),
+});
+
+export type SolicitarUrlDeCargaFotoResenaInput = z.infer<
+  typeof solicitarUrlDeCargaFotoResenaSchema
+>;
