@@ -70,8 +70,8 @@ estable que el linter necesita (llega en 7.1).
 | Componente    | Desarrollo                     | Producción                    |
 | ------------- | ------------------------------ | ----------------------------- |
 | App móvil     | EAS Build perfil `development` | EAS Build perfil `production` |
-| Panel admin   | Vite en `localhost:5173`       | Vercel                        |
-| API           | `localhost:3000`               | Railway                       |
+| Panel admin   | Vite en `localhost:5173`       | Cloudflare Pages              |
+| API           | `localhost:3000`               | Render                        |
 | Base de datos | Supabase `foodhub-dev`         | Supabase `foodhub-prod`       |
 | Storage       | Supabase `foodhub-dev`         | Supabase `foodhub-prod`       |
 | Push          | Firebase proyecto dev          | Firebase proyecto prod        |

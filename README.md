@@ -70,8 +70,8 @@ Para la app móvil, ver [`apps/mobile/EAS.md`](apps/mobile/EAS.md).
 | Componente     | Desarrollo                     | Producción                    |
 | -------------- | ------------------------------ | ----------------------------- |
 | App móvil      | EAS Build perfil `development` | EAS Build perfil `production` |
-| Panel admin    | Vite en `localhost:5173`       | Vercel                        |
-| API            | `localhost:3000`               | Railway                       |
+| Panel admin    | Vite en `localhost:5173`       | Cloudflare Pages              |
+| API            | `localhost:3000`               | Render                        |
 | Base + Storage | Supabase `foodhub-dev`         | Supabase `foodhub-prod`       |
 
 ## Flujo de trabajo
