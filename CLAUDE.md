@@ -68,7 +68,7 @@ No las revierta sin consultarlo con el equipo.
 | **Autenticación**      | Supabase Auth (GoTrue). La API **solo verifica** el JWT contra el JWKS.                                                                   |
 | **Base de datos**      | PostgreSQL + PostGIS en Supabase. Drizzle ORM para schema y migraciones.                                                                  |
 | **Almacenamiento**     | Supabase Storage. La imagen va del dispositivo al bucket por URL firmada; nunca pasa por la API.                                          |
-| **Hosting de la API**  | Railway (dos servicios: dev y prod).                                                                                                      |
+| **Hosting de la API**  | Render, plan gratuito, un servicio (prod) definido en `render.yaml`. Panel en Cloudflare Pages. Ver `docs/DESPLIEGUE.md`.                 |
 | **Ambientes**          | Dos proyectos de Supabase separados: `foodhub-dev` y `foodhub-prod`.                                                                      |
 | **Distribución móvil** | EAS Build en **los tres perfiles**. **Expo Go está descartado** (ver `apps/mobile/EAS.md`).                                               |
 | **TypeScript**         | Línea **6.0.x**, no 7.x. typescript-eslint declara `typescript <6.1.0` y TS 7 todavía no expone la API programática estable que necesita. |
@@ -137,9 +137,11 @@ lo saques.
 **`node-linker=hoisted` en `.npmrc`.** Metro no resuelve los symlinks anidados
 de pnpm. Si lo cambiás, la app móvil deja de compilar.
 
-**`app.set('trust proxy', 1)` en la API.** Sin esto, detrás del proxy de Railway
-todas las requests parecen venir de la misma IP: el rate limiting agrupa a todos
-los usuarios en un contador y `evento_seguridad` registra siempre la misma IP.
+**`TRUST_PROXY_SALTOS` en la API.** Es el valor de `app.set('trust proxy', n)` y
+tiene que coincidir con la cantidad de proxies de la plataforma: en Render son
+**3** (proxy local, balanceador y Cloudflare), no 1. Con un valor menor todas las
+requests parecen venir de la misma IP: el rate limiting agrupa a todos los
+usuarios en un contador y `evento_seguridad` registra siempre la misma IP.
 
 **`uniwind-types.d.ts` es generado.** Metro lo reescribe en el primer arranque.
 El archivo versionado es un stub mínimo para que `tsc` y el editor anden en un

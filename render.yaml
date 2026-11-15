@@ -1,0 +1,86 @@
+# Blueprint de Render para la API de FoodHub (plan gratuito).
+#
+# Render lee este archivo al crear el servicio desde Dashboard -> New ->
+# Blueprint. El paso a paso completo, incluido el panel en Cloudflare Pages,
+# esta en docs/DESPLIEGUE.md.
+#
+# Un solo servicio y no dos (dev y prod): las 750 horas gratuitas por mes son
+# por workspace y un servicio despierto todo el mes ya consume ~744.
+
+services:
+  - type: web
+    name: foodhub-api
+    runtime: node
+    plan: free
+    # Render no tiene region en Sudamerica; Virginia es la de menor latencia
+    # hacia Supabase sa-east-1, que es donde vive la base.
+    region: virginia
+    branch: main
+
+    # NODE_ENV no se declara en envVars a proposito: Render expone las variables
+    # tambien durante el build, y con NODE_ENV=production `pnpm install` omite
+    # las devDependencies (typescript, turbo) y el build falla. Por eso se fija
+    # recien en el comando de arranque.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm turbo run build --filter=@foodhub/api
+    startCommand: NODE_ENV=production pnpm --filter @foodhub/api run start
+    healthCheckPath: /salud
+
+    # Solo se redespliega si cambia algo que entra en el build de la API: un
+    # commit que toca solo apps/mobile o apps/admin no gasta minutos de build.
+    buildFilter:
+      paths:
+        - apps/api/**
+        - packages/**
+        - package.json
+        - pnpm-lock.yaml
+        - pnpm-workspace.yaml
+        - turbo.json
+        - tsconfig.base.json
+        - render.yaml
+
+    envVars:
+      # --- Plataforma ---------------------------------------------------------
+      # Igual que el CI. Sin fijarlo, Render toma `engines.node` (>=22) y elige
+      # la ultima version disponible.
+      - key: NODE_VERSION
+        value: "22"
+      # corepack instala la version de pnpm de `packageManager`; sin esto se
+      # queda esperando una confirmacion que en el build nunca llega.
+      - key: COREPACK_ENABLE_DOWNLOAD_PROMPT
+        value: "0"
+      - key: APP_ENV
+        value: production
+      # Proxies delante de la API en Render: el local de la instancia, el
+      # balanceador interno y el borde de Cloudflare. Verificado con el
+      # X-Forwarded-For de una request real; con 1, req.ip es la IP del
+      # balanceador para todos los usuarios.
+      - key: TRUST_PROXY_SALTOS
+        value: "3"
+
+      # --- Secretos: se cargan a mano en el dashboard (sync: false) -----------
+      # Credenciales del proyecto foodhub-prod. DATABASE_URL tiene que ser la
+      # del pooler (puerto 6543): Render solo sale por IPv4 y la conexion
+      # directa de Supabase es solo IPv6.
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # Obligatoria con APP_ENV=production: env.ts no deja arrancar sin ella.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_REMITENTE
+        sync: false
+      - key: EXPO_ACCESS_TOKEN
+        sync: false
+
+      # --- Dependen de la URL del panel en Cloudflare Pages -------------------
+      # CORS_ORIGINS: https://<panel>.pages.dev
+      # URL_INVITACION_PANEL: https://<panel>.pages.dev/nueva-password
+      - key: CORS_ORIGINS
+        sync: false
+      - key: URL_INVITACION_PANEL
+        sync: false

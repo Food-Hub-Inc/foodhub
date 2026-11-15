@@ -6,9 +6,9 @@ import { AppError } from '../middleware/error.middleware.js';
 /**
  * IP real del cliente.
  *
- * Detras del proxy de Railway, `req.ip` devuelve la IP del propio proxy salvo
- * que Express confie en el encabezado X-Forwarded-For. Por eso
- * `app.set('trust proxy', 1)` en app.ts: sin eso, todos los registros de
+ * Detras del proxy de la plataforma, `req.ip` devuelve la IP del propio proxy
+ * salvo que Express confie en el encabezado X-Forwarded-For. Por eso
+ * `app.set('trust proxy', ...)` en app.ts: sin eso, todos los registros de
  * auditoria y los eventos de seguridad quedarian con la misma IP y el dato
  * seria inutil como evidencia.
  *

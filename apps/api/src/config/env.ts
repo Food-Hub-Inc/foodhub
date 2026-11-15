@@ -62,6 +62,20 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120),
 
+  /**
+   * Cantidad de proxies delante de la API, para `app.set('trust proxy', n)`.
+   * Express toma como IP del cliente la entrada n-esima de X-Forwarded-For
+   * contando desde la derecha: con un valor menor queda la IP de un proxy, y
+   * con uno mayor un cliente puede falsificar su IP agregando entradas al
+   * encabezado.
+   *
+   * Depende de la plataforma. Render pone tres: el proxy local de la
+   * instancia, su balanceador interno y el borde de Cloudflare (verificado
+   * leyendo el X-Forwarded-For de una request real). El default 1 es el caso
+   * de un unico proxy, que nunca expone a falsificacion.
+   */
+  TRUST_PROXY_SALTOS: z.coerce.number().int().min(0).default(1),
+
   // --- Reglas de negocio parametrizables ------------------------------------
   // Valor por defecto de la expiracion automatica de pedidos (US-PED-10). En
   // caliente lo sobrescribe configuracion_sistema, editable desde el panel.
