@@ -113,14 +113,15 @@ build del panel.
 - [ ] Recargar el navegador estando en una ruta interna (`/usuarios`): tiene que
       volver a cargar el panel, no un 404.
 - [ ] Invitar un administrador de prueba y abrir el enlace del correo.
-- [ ] **IP real del cliente.** `app.set('trust proxy', 1)` asume un único proxy
-      delante de la API. Provocar un acceso denegado por rol (un token de
-      cliente contra un endpoint del panel): la IP que `requiereRol` registra
-      en `evento_seguridad` tiene que ser la propia y no una de Render. Si
-      siempre aparece la misma IP para todos, el rate limiting está contando a
-      todos los usuarios juntos y hay que revisar ese valor. (El login fallido
-      no sirve para esta prueba: lo registra el Auth Hook de Supabase, no la
-      API.)
+- [ ] **IP real del cliente.** `render.yaml` fija `TRUST_PROXY_SALTOS=3`: en
+      Render la request llega con
+      `X-Forwarded-For: <cliente>, <borde Cloudflare>, <balanceador 10.x>` y
+      desde un proxy local (`::1`). Con 1, `req.ip` sería la del balanceador
+      para todos. Para confirmarlo, provocar un acceso denegado por rol (un
+      token de cliente contra un endpoint del panel): la IP que `requiereRol`
+      registra en `evento_seguridad` tiene que ser la propia. (El login
+      fallido no sirve para esta prueba: lo registra el Auth Hook de Supabase,
+      no la API.)
 
 ---
 

@@ -59,14 +59,15 @@ export function crearApp(): Express {
   const app = express();
 
   /**
-   * Railway termina TLS en su proxy y reenvia la request por HTTP interno.
-   * Sin `trust proxy`, Express ve la IP del proxy en lugar de la del cliente:
-   * el rate limiting agruparia a TODOS los usuarios en un mismo contador y los
-   * eventos de seguridad registrarian siempre la misma IP.
-   * El valor 1 confia en un unico salto, el de Railway, y no en cualquier
+   * La plataforma termina TLS en su proxy y reenvia la request por HTTP
+   * interno. Sin `trust proxy`, Express ve la IP del proxy en lugar de la del
+   * cliente: el rate limiting agruparia a TODOS los usuarios en un mismo
+   * contador y los eventos de seguridad registrarian siempre la misma IP.
+   * Se confia en exactamente tantos saltos como proxies tiene la plataforma
+   * (ver TRUST_PROXY_SALTOS en config/env.ts), y no en cualquier
    * X-Forwarded-For que llegue de afuera.
    */
-  app.set('trust proxy', 1);
+  app.set('trust proxy', env.TRUST_PROXY_SALTOS);
   app.disable('x-powered-by'); // no revelar el stack del servidor
 
   // --- 1. Encabezados de seguridad ------------------------------------------

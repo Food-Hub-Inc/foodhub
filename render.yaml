@@ -50,6 +50,12 @@ services:
         value: "0"
       - key: APP_ENV
         value: production
+      # Proxies delante de la API en Render: el local de la instancia, el
+      # balanceador interno y el borde de Cloudflare. Verificado con el
+      # X-Forwarded-For de una request real; con 1, req.ip es la IP del
+      # balanceador para todos los usuarios.
+      - key: TRUST_PROXY_SALTOS
+        value: "3"
 
       # --- Secretos: se cargan a mano en el dashboard (sync: false) -----------
       # Credenciales del proyecto foodhub-prod. DATABASE_URL tiene que ser la

@@ -137,9 +137,11 @@ lo saques.
 **`node-linker=hoisted` en `.npmrc`.** Metro no resuelve los symlinks anidados
 de pnpm. Si lo cambiás, la app móvil deja de compilar.
 
-**`app.set('trust proxy', 1)` en la API.** Sin esto, detrás del proxy de Render
-todas las requests parecen venir de la misma IP: el rate limiting agrupa a todos
-los usuarios en un contador y `evento_seguridad` registra siempre la misma IP.
+**`TRUST_PROXY_SALTOS` en la API.** Es el valor de `app.set('trust proxy', n)` y
+tiene que coincidir con la cantidad de proxies de la plataforma: en Render son
+**3** (proxy local, balanceador y Cloudflare), no 1. Con un valor menor todas las
+requests parecen venir de la misma IP: el rate limiting agrupa a todos los
+usuarios en un contador y `evento_seguridad` registra siempre la misma IP.
 
 **`uniwind-types.d.ts` es generado.** Metro lo reescribe en el primer arranque.
 El archivo versionado es un stub mínimo para que `tsc` y el editor anden en un
